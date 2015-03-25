@@ -1,0 +1,9 @@
+useDynLib(WMAM)
+importFrom(Rcpp, evalCpp)
+import(RcppEigen, matrixcalc, Matrix)
+
+export(
+   check.genofile,
+   read.phenotypes,
+   read.genotypes,
+   wgEMMA)

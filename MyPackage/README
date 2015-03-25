@@ -1,0 +1,57 @@
+24/03/2015   I created package by running R from this directory, loading Rcpp, and running
+       Rcpp.package.skeleton("WMAM", cpp_files="RcppFunctions.cpp", 
+                             example_code=FALSE, code_files="wgEMMA.R")
+
+        and then
+
+       1. Modifying the DESCRIPTION file to be:
+
+Package: WMAM
+Type: Package
+Title: What the package does (short line)
+Version: 1.0
+Date: 2015-03-23
+Author: Your Name
+Maintainer: Your Name <your@email.com>
+Description: More about what it does (maybe more than one line)
+License: GPL (>= 2)
+Imports: Rcpp (>= 0.11.3),  matrixcalc, Matrix
+LinkingTo: Rcpp 
+
+
+       2. Modifying the NAMESPACE file to be:
+
+useDynLib(WMAM)
+importFrom(Rcpp, evalCpp)
+import(matrixcalc, Matrix)
+
+export(
+   check.genofile,
+   read.phenotypes,
+   read.genotypes,
+   wgEMMA)
+
+
+
+      3. Modify ./src/RcppExports.cpp's include  and namespace statements to be:
+
+#include <RcppEigen.h>
+#include <omp.h>
+
+
+#include <iostream>
+#include <fstream>
+#include <istream>
+#include <vector>
+#include <bitset>
+#include <string>
+
+using namespace std;
+using namespace Rcpp;
+using Eigen::MatrixXi;
+using Eigen::MatrixXd;
+using Eigen::Lower;
+using Eigen::Map;   // maps rather than copies
+
+
+
