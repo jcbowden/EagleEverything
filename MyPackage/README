@@ -1,6 +1,25 @@
-24/03/2015   I created package by running R from this directory, loading Rcpp, and running
-       Rcpp.package.skeleton("WMAM", cpp_files="RcppFunctions.cpp", 
+26/03/2015  To create WMAM package, from the prompt run 
+          >  build_package.bsh
+
+ 
+
+
+
+I created package by running R from this directory, loading Rcpp, and running
+       library(Rcpp)
+       library(roxygen2)
+
+       Rcpp.package.skeleton("WMAM", cpp_files="RcppFunctions.cpp", list="pheno.txt",  
                              example_code=FALSE, code_files="wgEMMA.R")
+
+
+        # go into WMAM package directory to run roxygenise()
+        setwd("./WMAM")
+        roxgenise()  ## creates .Rd files for package automatically.
+
+
+
+
 
         and then
 
@@ -29,7 +48,7 @@ export(
    check.genofile,
    read.phenotypes,
    read.genotypes,
-   wgEMMA)
+   multiple_locus_am)
 
 
 

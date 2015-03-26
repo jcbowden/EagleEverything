@@ -7,7 +7,7 @@ DIR="/home/geo047/gitHUB_WMAM/MyPackage/"
 cd $DIR
 
 ## removing WMAM and WMAM.Rcheck
-
+echo " Removing WMAM and WMAM.Rcheck"
 rm -rf ./WMAM  ./WMAM.Rcheck
 
 ## create and run Rcpp.package.skeleton
@@ -18,6 +18,7 @@ echo  "    example_code=FALSE, code_files=\"wgEMMA.R\", ) " >> ./tmp.R
 echo "  " >> tmp.R
 
 # run tmp.R in batch mode of R
+echo "Running R CMD BATCH ./tmp.R"  
 R CMD BATCH ./tmp.R
 
 
@@ -50,7 +51,16 @@ awk 'NR > 7' "RcppExports.cpp" > ./block2.tmp
 
 cat ./block1.tmp ./tmp1  ./block2.tmp  > ./RcppExports.cpp.new
 
+## add raw data to package
+echo  " Adding raw data to package ... "
+cd $DIR
 
+mkdir ./WMAM/inst
+mkdir ./WMAM/inst/extdata
+cp ./pheno.txt ./WMAM/inst/extdata/.
 
+cd $DIR
+
+cp ./pheno.txt ./WMAM/inst/extdata/.
 
 

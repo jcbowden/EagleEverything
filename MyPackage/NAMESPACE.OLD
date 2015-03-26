@@ -6,4 +6,4 @@ export(
    check.genofile,
    read.phenotypes,
    read.genotypes,
-   wgEMMA)
+   multiple_locus_am)
