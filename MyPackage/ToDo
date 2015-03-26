@@ -1,0 +1,16 @@
+26/03/2015
+1.  add roxygen2 comments to read.phenotypes, check.genofile, read.genotypes,
+    and wmam functions. 
+
+2.  add Arabidopsis data and comment. 
+
+3.  modify wmam to allow the user specify there own trait column and 
+    which covariates if any are to be included in the analysis. 
+
+4.  modify wmam to check for NA's in the covariates. IF present, error. 
+    If NA present in trait value, then need to remove associated row.
+
+5.  Will assume rows of markers match rows of phenoytpes but need to cheack 
+    that the number of rows in the phenotype file is the same as the number 
+    of rows in the genotype file. Do check in wmam. 
+
