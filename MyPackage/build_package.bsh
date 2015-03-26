@@ -1,0 +1,56 @@
+#!/bin/bash
+
+## bash script to build WMAM package 
+
+DIR="/home/geo047/gitHUB_WMAM/MyPackage/"
+
+cd $DIR
+
+## removing WMAM and WMAM.Rcheck
+
+rm -rf ./WMAM  ./WMAM.Rcheck
+
+## create and run Rcpp.package.skeleton
+echo   "library(Rcpp)" > ./tmp.R
+echo   "    " >> tmp.R  
+echo  " Rcpp.package.skeleton(\"WMAM\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
+echo  "    example_code=FALSE, code_files=\"wgEMMA.R\", ) " >> ./tmp.R
+echo "  " >> tmp.R
+
+# run tmp.R in batch mode of R
+R CMD BATCH ./tmp.R
+
+
+## Replace generated NAMESPACE and DESCRIPTION with correct versions
+cp ./NAMESPACE.OLD ./WMAM/NAMESPACE
+cp ./DESCRIPTION.OLD ./WMAM/DESCRIPTION
+
+## Modify ./WMAM/src/RcppExports.cpp
+
+ cd $DIR/WMAM/src
+ awk 'NR>=1&&NR<=3' "RcppExports.cpp" > ./block1.tmp
+
+ echo "#include <RcppEigen.h> " > ./tmp1
+echo " #include <omp.h>a "  >> ./tmp1
+echo " #include <iostream> " >> ./tmp1
+echo " #include <fstream> " >> ./tmp1
+echo " #include <istream> " >> ./tmp1
+echo " #include <vector> " >> ./tmp1
+echo " #include <bitset> " >> ./tmp1
+echo " #include <string> " >> ./tmp1
+echo " using namespace std;"  >> ./tmp1
+echo " using namespace Rcpp;"  >> ./tmp1
+echo " using Eigen::MatrixXi;"  >> ./tmp1
+echo " using Eigen::MatrixXd;"  >> ./tmp1
+echo " using Eigen::Lower;"  >> ./tmp1
+echo " using Eigen::Map;  "  >> ./tmp1
+echo "    " >> tmp1
+
+awk 'NR > 7' "RcppExports.cpp" > ./block2.tmp
+
+cat ./block1.tmp ./tmp1  ./block2.tmp  > ./RcppExports.cpp.new
+
+
+
+
+
