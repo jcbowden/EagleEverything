@@ -412,8 +412,18 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
 ##-------------------------------
 ## R Function Declaration 
 ##-------------------------------
-
-
+#' @title Check correctness of marker genotypes.
+#' 
+#' @description
+#' \code{check.genofile} performs various checks on the marker genotype file.
+#' @param fnameIN  character vector containing the name of the marker genotype file
+#' @param dirPath  character vector contain the directory path to where the marker genotype file is located. 
+#' @param check_num_geno_in_row a logical value. When \code{TRUE}, the number of genotypes in each row is returned.
+#' @param check_genotypes a logical value. When \code{TRUE}, it checks that the marker genoyptes are either 0, 1, or 2. 
+#'
+#' @return  a list is returned with elements \code{file_exists} and \code{\num_genotypes_per_row}. \code{num_genotypes_per_row}
+#'          will be \code{NULL} unless the \check_num_geno_in_row} parameter has been set to \code{TRUE}.
+#' @seealso \code{\link{read.genotypes}}
 check.genofile <- function(fnameIN=NULL, dirPath=getwd(), 
                            check_num_geno_in_row=FALSE,
                            check_genotypes=FALSE)
@@ -427,6 +437,9 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
  ##                             long time if the file is large. 
  ##      check_genotypes        if TRUE, each row is checked for genotypes that are not 0,1,2
 
+  res <- list(file_exists=TRUE, num_genotypes_per_row=NULL) 
+
+
   if(.Platform$OS.type == "unix") {
     dir_path  <- paste(dirPath, "/",  sep="")
   } else {
@@ -435,9 +448,12 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
 
   file_geno <- paste(dir_path, fnameIN, sep="")
 
+
+
   ## does the file exist
   if(!file.exists(file_geno))
   {
+    res[["file_exists"]] <- FALSE
     cat(" File ", file_geno, " does not exist. \n")
     stop(" Please modify path and/or name of genotype file. \n")
   }
@@ -450,13 +466,13 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
 
   ## does the file contain a constant number of records. 
   if(check_num_geno_in_row){
-     cf <- count.fields(file=file_geno)
-     if(length(unique(cf))>1){
+     res[["num_genotypes_per_row"]] <- count.fields(file=file_geno)
+     if(length(unique( res[["num_genotypes_per_row"]] ))>1){
        cat(" File ", file_geno, " has  differing numbers of genotypes per line ... \n")
        cat(" The differing number of gentoypes per line are ", unique(cf), "\n")
        stop(" Please modify the genotype file to have the same number of genotypes per row. \n")
      } else {
-       cat(" File ", file_geno, " has ", unique(cf), " genotypes per line...\n\n")
+       cat(" File ", file_geno, " has ", unique( res[["num_genotypes_per_row"]] ), " genotypes per line...\n\n")
      } ## end if else
   }  ## end if checkrownum
 
@@ -465,7 +481,7 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
   if(check_genotypes)
       checkGenotypes(file_geno)
 
-
+  return(res)
 }
 
 
@@ -880,10 +896,22 @@ if(!is.null(file_phenotype))
 
 }
 
-
-
-
-read.phenotypes <- function(path, file_phenotype, header=TRUE){
+#' @title Read phenotype file
+#' @description Read in the phenotypic data
+#' @param path  a character vector containing the absolute path for where the phenotype file is located.
+#' @param file_phenotype a character vector containgin the name of the phenotype file.
+#' @param header a logical value. When \code{TRUE}, the first row of the file contains the names of the columns. 
+#' @details
+#' A space separated ASCIII file is assumed. This file is allowed to contain \code{NA} values (coded as \code{NA}). However, if
+#' \code{NA} values are contained in the covariates (or explanatory variables) and these covariates are being used by 
+#' \code{\link{multiple_locus_am}}, then an error will occur. \code{NA} values are allowed in the trait values.  
+#' @seealso \code{\link{read.genotypes}}
+#' @return 
+#' a data frame is returned of the phenotypic data. If \code{header} is true, the 
+#' names of the columns will be as specified by the first row of the phenotypic file. If \code{header} is \code{FALSE}, 
+#' generic names are supplied by R in the form of V1, V2, etc.   
+#'
+read.phenotypes <- function(path=getwd() , file_phenotype = NULL, header=TRUE){
 
   check.inputs(path=path, file_phenotype=file_phenotype)
 
@@ -966,8 +994,43 @@ create.bin.M <- function(file_genotype, bin_path, workingmemGb, dim_of_M){
 
 
 
+#' @title Read  marker genotype file.
+#' 
+#' @description
+#' \code{read.genotypes} reads in the genotypes from the marker genoytpe file.
+#' @param path  character vector containing the directory path to where the marker genotype file is located.
+#' @param bin_path  character vector containing the directory path to where the binary converted marker genotype files are to be located. 
+#' @param file_genotype character vector containing the name of the marker genotype file.
+#' @param  check  a logical value. If \code{TRUE}, then \code{\link{check.genofile}} is run to check the marker genotype file
+#'         for errors. 
+#' @param workingmemGb a numeric value. It specifies the amount of memory (in Gigabytes) available for reading in the marker 
+#'                     genotype file. 
+#' @details
+#' \code{read.genotypes} reads the marker genoytpes from file and converts it into two binary files:
+#' a binary packed file of the original marker data and a binary packed file of the transpose of the original 
+#' marker data.  
+#'
+#' The two binary files created by \code{read.genotypes} are called M.bin and Mt.bin and they are created in 
+#' directory \code{bin_path}. 
+#'
+#' It is assumed that the marker genotype file is a space separated ASCII file with the rows being the samples/individuals 
+#' and the columns being the SNP loci. 
+#'
+#' Missing values are not allowed. If present, this will cause \code{read.genotypes} to fail. Such values should be imputed to 
+#'      0,1, or 2 values first. 
 
-read.genotypes <- function(path=getwd(), bin_path=getwd(), file_genotype=NULL, header=TRUE, check=FALSE, workingmemGb=8){
+#' The \code{path} and \code{bin_path} parameters, if not set, will default to the current directory. 
+#'
+#' The \code{workingmemGb} parameter should be set to the largest amout of RAM for the machine, when practical.  If the marker 
+#' genotype file is too large for the available memory, then it converted, chunk-wise,  into a single binary packed file.  
+#' The consequences of reading the marker genotype file chunk- or block-wise is a longer processing time. 
+#'
+#' @return  a list is returned with elements \code{binfileM} , \code{binfileMt}, and \code{dim_of_M}. 
+#' which is the absolute path and file name of the binrary file for the marker genotype data, 
+#' the absolute path and file name of the binary file for the transpose of the marker genotype data, 
+#' and the number of rows and columns in the marker genotype file, respectively.
+#' @seealso \code{\link{read.genofile}}
+read.genotypes <- function(path=getwd(), bin_path=getwd(), file_genotype=NULL, check=FALSE, workingmemGb=8){
  ## an Rcpp based function to check for problems in reading the genotyope file 
  ## and to created binary packed M and Mt. 
 
@@ -1057,10 +1120,32 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, workingmemG
   }
 
 
-
-
-
-wgEMMA <- function(numcores=1,workingmemGb=8, bin_path=getwd(), geno=NULL,   pheno=NULL, alpha=0.05, error_checking=FALSE){
+#' @title multiple locus association mapping for genome-wide association studies
+#' @description Main  function for performing multiple locus association mapping via whole-genome multi-locus association mapping (WMAM)
+#' @param numcores a numeric value for the number of cores that are available for distributed computing. 
+#' @param workingmemGb a numeric value. It specifies the amount of memory (in Gigabytes) available for reading analysis. 
+#' @param bin_path  character vector containing the directory path to where the binary converted marker genotype files are located. 
+#' @param geno the name of the list object returned from running \code{\link{read.genotypes}}.
+#' @param pheno  the name of the data frame object  returned  from running \code{\link{read.phenotypes}}.
+#' @param alpha  the type 1 error rate where setting \code{alpha} to 0.05 say is a 5\% error rate.
+#' @param  error_checking a logical value. When \code{TRUE}, it performs checks of XXXXX of the calculations.  
+#'
+#' @details
+#' The \code{multiple_locus_am} function is an R/Rcpp implementation of whole-genome multi-locus association mapping. The method is a 
+#' multiple locus method that is a hybrid of whole-genome and multi-locus association mapping. Briefly, a multiple locus model
+#' is built iteatively, by fitting a whole-genome model at each step. It differs from whole-genome mapping methods because we
+#' get a parmonious set of marker loci that are in strongest association with a trait.  Also, it differs from multi-locus 
+#' association mapping methods because at each iteration of the model building process, we fit all snp loci 
+#' simultaneously, as opposed to fitting them one at a time. 
+#'
+#' NEEDS MORE
+#'
+#'
+#' @seealso \code{\link{read.genotypes}}, and \code{\link{read.phenotypes}}.
+#'
+#' @return
+#' something here .... 
+multiple_locus_am <- function(numcores=1,workingmemGb=8, bin_path=getwd(), geno=NULL,   pheno=NULL, alpha=0.05, error_checking=FALSE){
  ## Core function for performing whole genome association mapping with EMMA
  ## Args
  ## numcores        number of cores available for computation
@@ -1085,17 +1170,17 @@ check.inputs(numcores=numcores, workingmemGb=workingmemGb, bin_path=bin_path, al
 
 if(is.null(geno)){
   cat(" Error: The geno parameter must be set to the output from read.genotypes(). \n")
-  stop(" wgEMMA has terminated with errors. ")
+  stop(" multiple_locus_am has terminated with errors. ")
 } else {
   if(!is.list(geno)){
    cat(" Error: geno parameter must be a list object created from the output of read.genotypes(). \n")
-   stop(" wgEMMA has terminated with errors.")
+   stop(" multiple_locus_am has terminated with errors.")
   }  else {
     if(!file.exists(geno[["binfileM"]])){
       cat(" Error: the binary packed file ", geno[["binfileM"]]," could not be found. \n")
       cat("        This file is created by running read.genotypes(), saving its \n")
       cat("        contents to an object, and setting the geno parameter to this object. \n")
-      stop(" wgEMMA has terminated with errors.")
+      stop(" multiple_locus_am has terminated with errors.")
      }
   }
 }
@@ -1105,7 +1190,7 @@ if(is.null(pheno)){
    cat("        Set this parameter to the object that contains \n")
    cat("        the phenotypic data. This object should be of class \n")
    cat("        data.frame, matrix, or numeric. \n")
-   stop(" wgEMMA has terminated with errors.")
+   stop(" multiple_locus_am has terminated with errors.")
 }
 
 
@@ -1202,7 +1287,7 @@ if(is.null(pheno)){
 
 return(selected_loci)
 
-} ## end wgEMMA
+} ## end multiple_locus_am
 
 
 

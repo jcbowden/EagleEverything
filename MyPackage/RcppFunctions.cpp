@@ -23,27 +23,25 @@
 
 #include <RcppEigen.h>
 #include <omp.h>
-
-
 #include <iostream>
 #include <fstream>
 #include <istream>
 #include <vector>
 #include <bitset>
 #include <string>
-
-// #ifdef _OPENMP
-//#include <omp.h>
-//   [[Rcpp::plugins(openmp)]]
-// #endif
-
-
 using namespace std;
 using namespace Rcpp;
 using Eigen::MatrixXi;
 using Eigen::MatrixXd;  
 using Eigen::Lower;
 using Eigen::Map;   // maps rather than copies
+
+
+// #ifdef _OPENMP
+//#include <omp.h>
+//   [[Rcpp::plugins(openmp)]]
+// #endif
+
 
 const size_t bits_in_double = std::numeric_limits<long double>::digits;
 const size_t bits_in_ulong = std::numeric_limits<unsigned long int>::digits;
