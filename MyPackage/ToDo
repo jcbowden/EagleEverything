@@ -13,4 +13,7 @@
 5.  Will assume rows of markers match rows of phenoytpes but need to cheack 
     that the number of rows in the phenotype file is the same as the number 
     of rows in the genotype file. Do check in wmam. 
+6.  Add roxygen2 code for phenotypic data 
+7.  create genotypic.txt data object for package and include, along with roxygen2 code. 
+
 
