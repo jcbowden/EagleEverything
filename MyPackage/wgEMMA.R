@@ -418,6 +418,10 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
 #' \code{check.genofile} performs various checks on the marker genotype file.
 #' @param fnameIN  character vector containing the name of the marker genotype file
 #' @param dirPath  character vector contain the directory path to where the marker genotype file is located. 
+#' @param AA       integer value corresponding to the AA genotype in the marker genotype file. This must be specified. 
+#' @param AB       integer value corresponding to the AB genotype in the marker genotype file. This can be left unspecified 
+#'                  if there are no hets.
+#' @param BB       integer value corresponding to the BB genotype in the marker genotype file. This must be specified. 
 #' @param check_num_geno_in_row a logical value. When \code{TRUE}, the number of genotypes in each row is returned.
 #' @param check_genotypes a logical value. When \code{TRUE}, it checks that the marker genoyptes are either 0, 1, or 2. 
 #'
@@ -425,6 +429,9 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
 #'          will be \code{NULL} unless the \check_num_geno_in_row} parameter has been set to \code{TRUE}.
 #' @seealso \code{\link{read.genotypes}}
 check.genofile <- function(fnameIN=NULL, dirPath=getwd(), 
+                           AA=NULL,
+                           AB=NULL,
+                           BB=NULL,
                            check_num_geno_in_row=FALSE,
                            check_genotypes=FALSE)
 {
@@ -459,7 +466,7 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
   }
 
 
-  ## has deletion file name been provided
+  ## has genotype  file name been provided
   if(is.null(fnameIN))
       stop(" No name of the genotype file has been supplied.")
 
@@ -477,10 +484,26 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
   }  ## end if checkrownum
 
 
-  ## does the file contain 0,1,2 genotypes only (implemented in Rcpp for speed)
-  if(check_genotypes)
-      checkGenotypes(file_geno)
+  ## Has AA, AB, BB been assigned numeric values
+  if(is.null(AA) |  is.null(BB))
+  {
+     stop(" AA and BB must be assigned a numeric value \n")
+  }
 
+  if(!is.numeric(AA) | !is.numeric(BB))
+     stop(" AA and/or BB must be an integer value corresponding to the AA and/or BB genotype, respectively,  in the marker genotype file. ")
+  if(!is.null(AB))
+     if(!is.numeric(AB))
+       stop(" AB must be an integer value corresponding to the AB genotype in the marker genotype file. ")
+
+
+
+  ## does the file contain 0,1,2 genotypes only (implemented in Rcpp for speed)
+  if(check_genotypes){
+     if(is.null(AB))
+         AB <- 18923282  ## no hets so setting it to something weird
+     checkGenotypes(file_geno, AA, AB, BB)
+}
   return(res)
 }
 
@@ -953,17 +976,18 @@ read.phenotypes <- function(path=getwd() , file_phenotype = NULL, header=TRUE){
 
 
 
-create.bin.Mt <- function(file_genotype, bin_path, workingmemGb, dim_of_M){
+create.bin.Mt <- function(file_genotype, bin_path, AA, AB, BB, workingmemGb, dim_of_M){
  ## an Rcpp function to create the packed binary file of the genotype data Mt
  ## Args
  ## file_genotype    absolute path and file name of genotype file
  ## bin_path         path name for where binary files are to be stored. 
+ ## AA, AB, BB       numeric codes for associated genotypes in marker genotype file
  ## workingmemGb     available memory for converstion to packed binary
  ## dim_of_M             row, column dimensions of M.  
 
  binMtfile <- paste(bin_path, "Mt.bin", sep="") ## file name for binary packed Mt file.
 
- createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,  
+ createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,  AA = AA, AB = AB, BB = BB, 
                max_memory_in_Gbytes=workingmemGb,  dims = dim_of_M )
 
  cat(" A packed binary file called ", binMtfile, " has been created for the transform of the genotype data.\n")
@@ -973,17 +997,18 @@ create.bin.Mt <- function(file_genotype, bin_path, workingmemGb, dim_of_M){
 
 
 
-create.bin.M <- function(file_genotype, bin_path, workingmemGb, dim_of_M){
+create.bin.M <- function(file_genotype, bin_path, AA, AB, BB, workingmemGb, dim_of_M){
  ## an Rcpp function to create the packed binary file of the genotype data M
  ## Args
  ## file_genotype    absolute path and file name of genotype file
  ## bin_path         path name for where binary files are to be stored. 
+ ## AA, AB, BB       numeric codes for associated genotypes in marker genotype file
  ## workingmemGb     available memory for converstion to packed binary
  ## dim_of_M             row, column dimensions of M.  
 
  binMfile <- paste(bin_path, "M.bin", sep="") ## file name for binary packed Mt file.
 
- createM_rcpp(f_name = file_genotype, f_name_bin = binMfile,
+ createM_rcpp(f_name = file_genotype, f_name_bin = binMfile, AA = AA, AB = AB, BB = BB, 
                max_memory_in_Gbytes=workingmemGb,  dims = dim_of_M )
 
  cat(" A packed binary file called ", binMfile, " has been created for the genotype data.\n")
@@ -1000,6 +1025,9 @@ create.bin.M <- function(file_genotype, bin_path, workingmemGb, dim_of_M){
 #' \code{read.genotypes} reads in the genotypes from the marker genoytpe file.
 #' @param path  character vector containing the directory path to where the marker genotype file is located.
 #' @param bin_path  character vector containing the directory path to where the binary converted marker genotype files are to be located. 
+#' @param AA       integer value corresponding to the AA genotype in the marker genotype file. This must be specified. 
+#' @param AB       integer value corresponding to the AB genotype in the marker genotype file. This can be left unspecified  if there are no hets. 
+#' @param BB       integer value corresponding to the BB genotype in the marker genotype file. This must be specified. 
 #' @param file_genotype character vector containing the name of the marker genotype file.
 #' @param  check  a logical value. If \code{TRUE}, then \code{\link{check.genofile}} is run to check the marker genotype file
 #'         for errors. 
@@ -1030,7 +1058,7 @@ create.bin.M <- function(file_genotype, bin_path, workingmemGb, dim_of_M){
 #' the absolute path and file name of the binary file for the transpose of the marker genotype data, 
 #' and the number of rows and columns in the marker genotype file, respectively.
 #' @seealso \code{\link{read.genofile}}
-read.genotypes <- function(path=getwd(), bin_path=getwd(), file_genotype=NULL, check=FALSE, workingmemGb=8){
+read.genotypes <- function(path=getwd(), bin_path=getwd(), AA=NULL, AB=NULL, BB=NULL, file_genotype=NULL, check=FALSE, workingmemGb=8){
  ## an Rcpp based function to check for problems in reading the genotyope file 
  ## and to created binary packed M and Mt. 
 
@@ -1047,9 +1075,27 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), file_genotype=NULL, c
  ## check of parameters
  check.inputs(path=path, bin_path=bin_path, file_genotype=file_genotype, workingmemGb=workingmemGb)
 
+ ## checking that AA, AB, and BB have been specified. 
+ ## Has AA, AB, BB been assigned numeric values
+  if(is.null(AA) |  is.null(BB))
+  {
+     stop(" AA and BB must be assigned a numeric value \n")
+  }
+
+  if(!is.numeric(AA) | !is.numeric(BB))
+     stop(" AA and/or BB must be an integer value corresponding to the AA and/or BB genotype, respectively,  in the marker genotype file. ")
+  if(!is.null(AB))
+     if(!is.numeric(AB))
+       stop(" AB must be an integer value corresponding to the AB genotype in the marker genotype file. ")
+  ## if there are no hets. 
+  if(is.null(AB))
+     AB <- 18923282  ## no hets so setting it to something weird
+
+
+
  ## checking for a correct genotype file
  if(check)
-   check.genofile(fnameIN=file_genotype, dirPath=path, check_num_geno_in_row=TRUE, check_genotypes=TRUE)
+   check.genofile(fnameIN=file_genotype, dirPath=path, AA=AA, AB=AB, BB=BB, check_num_geno_in_row=TRUE, check_genotypes=TRUE)
 
  if(.Platform$OS.type == "unix") {
     genofile <- paste(path, "/", file_genotype, sep="")
@@ -1057,15 +1103,19 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), file_genotype=NULL, c
    genofile <- paste(path, "\\", file_genotype, sep="")
   }
 
+
+
+
+
   ## Rcpp function to get dimensions of ASCII genotype file
   dim_of_M <- getRowColumn(fname=genofile)
 
 
   ## Rcpp function to create binrary packed Mt file
-  create.bin.Mt(genofile, bin_path, workingmemGb, dim_of_M)
+  create.bin.Mt(genofile, bin_path, AA, AB, BB, workingmemGb, dim_of_M)
 
   ## Rcpp function to create binrary packed M file
-  create.bin.M (genofile, bin_path, workingmemGb, dim_of_M  )
+  create.bin.M (genofile, bin_path, AA, AB, BB, workingmemGb, dim_of_M  )
 
   
   if(.Platform$OS.type == "unix") {

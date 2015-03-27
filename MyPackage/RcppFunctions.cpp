@@ -83,7 +83,10 @@ void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove)
 
 // check genotypes in file are 0,1, & 2 only
 // [[Rcpp::export]]
-void  checkGenotypes(CharacterVector f_name)
+void  checkGenotypes(CharacterVector f_name,
+                     int AA,
+                     int AB,
+                     int BB)
 {
 std::string 
      fname = Rcpp::as<std::string>(f_name),
@@ -112,8 +115,10 @@ std::string
            linenum++;
            istringstream streamA(line);
            while(streamA >> genoval){
-             if(genoval !=0 & genoval !=1 & genoval != 2){
-               os << "\n\nERROR: File " << fname << " contains genotypes other than 0,1,2. For example genotype " << genoval << " has been found on line.  " << linenum << "\n\n";
+           //  if(genoval !=0 & genoval !=1 & genoval != 2){
+             if(genoval !=AA & genoval !=AB & genoval != BB){
+               os << "\n\nERROR: File " << fname << " contains genotypes other than " << AA << "," << 
+                        AB << ", and " << BB << " For example genotype " << genoval << " has been found on line.  " << linenum << "\n\n";
                Rcpp::stop(os.str() );
              }
            }
@@ -192,7 +197,10 @@ std::vector<long>   getRowColumn(std::string fname)
 // recode ascii as packed binary file
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-void  CreatePackedBinary(std::string fname, std::string binfname, std::vector<long> dims)
+void  CreatePackedBinary(std::string fname, std::string binfname, std::vector<long> dims,
+                         int AA, 
+                         int AB, 
+                         int BB)
 {
 int 
    indx_packed = 0,
@@ -255,16 +263,18 @@ while(getline(fileIN, line))
   indx_packed = 0;
    indx_packed_long_vec = 0;
   packed.reset();
-  
+ // Here, BB is coded into 2 when bit packed, 
+ //       AB is coded into 1, 
+ //       AA is coded into 0. 
   for(int i=0; i< dims[1] ; i++){
      streamA >> rowvec[i];
-     if(rowvec[i] == 2){
+     if(rowvec[i] == BB){
           packed[indx_packed*2+1] = 1;
           packed[indx_packed*2] = 0;
-     } else if (rowvec[i] == 1) {
+     } else if (rowvec[i] == AB) {
           packed[indx_packed*2+1] = 0;
           packed[indx_packed*2] = 1;
-     } else if (rowvec[i] == 0) {
+     } else if (rowvec[i] == AA) {
           packed[indx_packed*2+1] = 0;
           packed[indx_packed*2] = 0;
      } else {
@@ -482,6 +492,9 @@ for(int i=0;i < v.size(); i++)
 
 // [[Rcpp::export]]
 void  createMt_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
+                              int AA, 
+                              int AB, 
+                              int BB,
                               double  max_memory_in_Gbytes,  std::vector <long> dims )
 {
 
@@ -577,19 +590,21 @@ int
 
    for(int i=0; i < dims[1]; i++){
      streamA >> rowvec[i];
-  
-
-   if(rowvec[i] == 2){
+ 
+   // Here, BB is coded as 2 when bit packed,
+   //       AB is coded as 1, 
+   //       AA is coded as 0. 
+   if(rowvec[i] == BB){
       packed_block[i][indx_packed_across][indx_packed_within*2 + 1] = 1;
       packed_block[i][indx_packed_across][indx_packed_within*2 ] = 0;
-   } else if (rowvec[i] == 1) {
+   } else if (rowvec[i] == AB) {
       packed_block[i][indx_packed_across][indx_packed_within*2 + 1] = 0;
       packed_block[i][indx_packed_across][indx_packed_within*2 ] = 1;
-  } else if (rowvec[i] == 0) {
+  } else if (rowvec[i] == AA) {
       packed_block[i][indx_packed_across][indx_packed_within*2 + 1] = 0;
       packed_block[i][indx_packed_across][indx_packed_within*2 ] = 0;
   } else {
-      os << "Genotype file contains genotypes that are not 0,1, or 2. For example " << rowvec[i] << "\n\n";
+      os << "Genotype file contains genotypes that are not " << AA << "," << AB << ", or " << BB << " For example " << rowvec[i] << "\n\n";
       Rcpp::stop(os.str() );
   }
     // Rcpp::Rcout <<  i << " " << rowvec[i] << " " << indx_packed_across << " " << packed_block[i][indx_packed_across] << std::endl;
@@ -687,13 +702,13 @@ int
         //  if(counter==0)   Rcpp::Rcout << rowvec[i] << " " ;
           int iindx = i % n_of_cols_to_be_read; // converts it back to an 
                                                 // index between 0 and n_of_cols_to_be_read
-         if(rowvec[i] == 2){
+         if(rowvec[i] == BB){
             packed_block[iindx][indx_packed_across][indx_packed_within*2 + 1] = 1;
             packed_block[iindx][indx_packed_across][indx_packed_within*2 ] = 0;
-         } else if (rowvec[i] == 1) {
+         } else if (rowvec[i] == AB) {
             packed_block[iindx][indx_packed_across][indx_packed_within*2 + 1] = 0;
             packed_block[iindx][indx_packed_across][indx_packed_within*2 ] = 1;
-        } else if (rowvec[i] == 0) {
+        } else if (rowvec[i] == AA) {
             packed_block[iindx][indx_packed_across][indx_packed_within*2 + 1] = 0;
             packed_block[iindx][indx_packed_across][indx_packed_within*2 ] = 0;
         } else {
@@ -1074,6 +1089,9 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 // [[Rcpp::export]]
 void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
+                  int AA,
+                  int AB, 
+                  int BB,
                   double  max_memory_in_Gbytes,  std::vector <long> dims) 
 {
   // Rcpp function to create binary packed file of ASCII marker genotype file.
@@ -1132,8 +1150,12 @@ Rcpp::Rcout <<  " +-------------------------------------------------------------
 //-------------------------------------------
 // convert ascii file into packed binary file
 //-----------------------------------------
+// Here, we do not need to worry about the amount of memory because 
+// we are processing a line of the file at a time. This is not the case when 
+// creating a binary packed Mt because we have to read in blocks before we can 
+// transpose. 
 Rprintf( " Converting ascii file to packed binary file.\n " );
-CreatePackedBinary(fname, fnamebin, dims);
+CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB);
 
 }
 
