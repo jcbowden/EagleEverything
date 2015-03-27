@@ -6,11 +6,7 @@ Date: 2015-03-23
 Author: Andrew W. George
 Maintainer: Andrew W. George  <andrew.george@csiro.au>
 email: andrew.george@csiro.au
-Description: R/Rcpp package for performing multiple locus association mapping within a linear mixed model framework. 
-This package implements the whole-genome multi-locus association mapping (WMAM) method. Data are read in with 
-functions read.genotypes and read.phenotypes from ASCII space separated files. WMAM is performed with the function 
-multiple_locus_am. The package can handle data sets larger than the RAM memory. Also, by setting the num_core parameter in 
-multiple_locus_am,  calculations are distributed.
+Description: An R/Rcpp package for performing multiple locus association mapping within a linear mixed model framework.  This package implements the whole-genome multi-locus association mapping (WMAM) method. Data are read in with functions read.genotypes and read.phenotypes from ASCII space separated files. WMAM is performed with the function multiple_locus_am. The package can handle data sets larger than the RAM memory. Also, by setting the num_core parameter in multiple_locus_am,  calculations are distributed.
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.11.3),  RcppEigen, matrixcalc, Matrix
 LinkingTo: Rcpp , RcppEigen

@@ -15,6 +15,13 @@ echo   "library(Rcpp)" > ./tmp.R
 echo   "    " >> tmp.R  
 echo  " Rcpp.package.skeleton(\"WMAM\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
 echo  "    example_code=FALSE, code_files=\"wgEMMA.R\", ) " >> ./tmp.R
+echo  "  ## running roxygen2  " >> ./tmp.R
+echo  " library(roxygen2) " >> ./tmp.R
+echo  " setwd(\"./WMAM\")  " >> ./tmp.R
+echo  "  roxygenise() " >> ./tmp.R
+
+
+
 echo "  " >> tmp.R
 
 # run tmp.R in batch mode of R
@@ -49,7 +56,7 @@ echo "    " >> tmp1
 
 awk 'NR > 7' "RcppExports.cpp" > ./block2.tmp
 
-cat ./block1.tmp ./tmp1  ./block2.tmp  > ./RcppExports.cpp.new
+cat ./block1.tmp ./tmp1  ./block2.tmp  > ./RcppExports.cpp
 
 ## add raw data to package
 echo  " Adding raw data to package ... "
@@ -62,5 +69,10 @@ cp ./pheno.txt ./WMAM/inst/extdata/.
 cd $DIR
 
 cp ./pheno.txt ./WMAM/inst/extdata/.
+cp ./geno.txt ./WMAM/inst/extdata/.
+
+cd $DIR
+
+R CMD check WMAM
 
 

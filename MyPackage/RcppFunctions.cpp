@@ -81,15 +81,17 @@ void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove)
 
 
 
-// check genotypes in file are 0,1, & 2 only
+// check genotypes in file are correct numeric values AA, AB, BB
 // [[Rcpp::export]]
 void  checkGenotypes(CharacterVector f_name,
                      int AA,
                      int AB,
-                     int BB)
+                     int BB,
+                     bool csv)
 {
 std::string 
      fname = Rcpp::as<std::string>(f_name),
+     token,
      line;
  int 
     genoval=-1,
@@ -98,6 +100,9 @@ std::string
  ostringstream 
       os;
 
+ char 
+   sep = ' ';
+ if(csv) sep = ',';
 
 
  // open file and check for its existence. 
@@ -114,7 +119,10 @@ std::string
            Rprintf(".");
            linenum++;
            istringstream streamA(line);
-           while(streamA >> genoval){
+          //  while(streamA >> genoval){
+           // while(getline(streamA,  genoval, sep)){
+            while(getline(streamA,  token, sep)){
+                genoval = atoi(token.c_str());
            //  if(genoval !=0 & genoval !=1 & genoval != 2){
              if(genoval !=AA & genoval !=AB & genoval != BB){
                os << "\n\nERROR: File " << fname << " contains genotypes other than " << AA << "," << 
@@ -136,7 +144,8 @@ std::string
 //get number of rows and columns in genotype file
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // [[Rcpp::export]]
-std::vector<long>   getRowColumn(std::string fname)
+std::vector<long>   getRowColumn(std::string fname, 
+                                 bool csv)
 {
   // Purpose:  to open the ascii file where the genotypes are kept
   //           an error will be produced if the file cannot be found.
@@ -154,6 +163,11 @@ std::vector<long>   getRowColumn(std::string fname)
  std::vector<long> dimen(2)  ;  // dim[0] row number
                                // dim[1] col number 
 
+ char 
+    sep = ' ';
+ if(csv)
+     sep = ',';
+
  // open file and check for its existence. 
  std::ifstream fileIN(fname.c_str());
  if(!fileIN.good()) {
@@ -164,7 +178,7 @@ std::vector<long>   getRowColumn(std::string fname)
 
  // Determine number of rows in file
  while(fileIN.good()){
-      while(getline(fileIN, line)){
+      while(getline(fileIN, line )){
          dimen[0]++;
       }
  }
@@ -174,9 +188,13 @@ std::vector<long>   getRowColumn(std::string fname)
  fileIN.clear(); // returns to beginning of line
  fileIN.seekg(0, ios::beg);
 
- getline(fileIN, line);
+ getline(fileIN, line );
  istringstream streamA(line);
- while(streamA >> genoval){
+
+  string 
+    token ;
+
+ while(getline(streamA , token , sep)){
           dimen[1]++;
  }
  fileIN.close();
@@ -200,7 +218,8 @@ std::vector<long>   getRowColumn(std::string fname)
 void  CreatePackedBinary(std::string fname, std::string binfname, std::vector<long> dims,
                          int AA, 
                          int AB, 
-                         int BB)
+                         int BB,
+                         bool csv)
 {
 int 
    indx_packed = 0,
@@ -213,7 +232,13 @@ short
     rowvec[dims[1]]; // holds entire row worth of genotypes from ascii file
 
 std::string
+   token,
    line;
+
+char 
+   sep = ' ';
+if(csv) 
+   sep = ',';
 
 
  ostringstream 
@@ -257,7 +282,7 @@ std::ofstream fileOUT(binfname.c_str(), ios::binary );
 
 
 
-while(getline(fileIN, line))
+while(getline(fileIN, line ))
 {
   istringstream streamA(line);
   indx_packed = 0;
@@ -267,7 +292,10 @@ while(getline(fileIN, line))
  //       AB is coded into 1, 
  //       AA is coded into 0. 
   for(int i=0; i< dims[1] ; i++){
-     streamA >> rowvec[i];
+  //   streamA >> rowvec[i];
+     getline(streamA, token, sep);
+     rowvec[i] = atoi(token.c_str());
+ 
      if(rowvec[i] == BB){
           packed[indx_packed*2+1] = 1;
           packed[indx_packed*2] = 0;
@@ -495,10 +523,12 @@ void  createMt_rcpp(CharacterVector f_name, CharacterVector f_name_bin,
                               int AA, 
                               int AB, 
                               int BB,
-                              double  max_memory_in_Gbytes,  std::vector <long> dims )
+                              double  max_memory_in_Gbytes,  std::vector <long> dims,
+                              bool csv )
 {
 
 std::string
+   token, 
    line;
 
 const size_t bits_in_ulong = std::numeric_limits<unsigned long int>::digits;
@@ -517,6 +547,14 @@ std::string
 
 short 
   rowvec[dims[1]];
+
+char 
+   sep = ' ';
+
+if(csv) 
+    sep = ',' ;
+
+
 
 // Calculate number of packed longs ints needed for a single column of ASCII data
 long
@@ -580,7 +618,7 @@ int
 
  }
 
- while(getline(fileIN, line))
+ while(getline(fileIN, line ))
  {
 
    // read a line of data from ASCII file
@@ -589,8 +627,10 @@ int
 
 
    for(int i=0; i < dims[1]; i++){
-     streamA >> rowvec[i];
- 
+//     streamA >> rowvec[i];
+       getline(streamA, token, sep); 
+   rowvec[i] = atoi(token.c_str());
+
    // Here, BB is coded as 2 when bit packed,
    //       AB is coded as 1, 
    //       AA is coded as 0. 
@@ -686,7 +726,7 @@ int
     int counter = 0;
     Rcpp::Rcout << std::endl;
     Rcpp::Rcout << std::endl;
-    while(getline(fileIN, line))
+    while(getline(fileIN, line ))
     {
        
       // read a line of data from ASCII file
@@ -696,7 +736,9 @@ int
 
 
       for(int i=0; i < dims[1] ; i++){
-        streamA >> rowvec[i];
+       // streamA >> rowvec[i];
+       getline(streamA, token, sep);
+   rowvec[i] = atoi(token.c_str());
 
        if(i>= start_val & i <  end_val){
         //  if(counter==0)   Rcpp::Rcout << rowvec[i] << " " ;
@@ -1092,7 +1134,8 @@ void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin,
                   int AA,
                   int AB, 
                   int BB,
-                  double  max_memory_in_Gbytes,  std::vector <long> dims) 
+                  double  max_memory_in_Gbytes,  std::vector <long> dims,
+                  bool csv) 
 {
   // Rcpp function to create binary packed file of ASCII marker genotype file.
 
@@ -1155,7 +1198,7 @@ Rcpp::Rcout <<  " +-------------------------------------------------------------
 // creating a binary packed Mt because we have to read in blocks before we can 
 // transpose. 
 Rprintf( " Converting ascii file to packed binary file.\n " );
-CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB);
+CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB, csv);
 
 }
 
