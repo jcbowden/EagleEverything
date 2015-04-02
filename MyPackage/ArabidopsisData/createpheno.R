@@ -28,5 +28,5 @@ for(ii in uniq_phens){
 
 print(head(pheno_df))
 
-write.table(pheno_df, file="../pheno.txt", row.names=FALSE)
+write.table(pheno_df, file="./pheno.txt", row.names=FALSE)
 

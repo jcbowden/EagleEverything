@@ -134,7 +134,6 @@ std::string
  }
 
 
-
 }
 
 
@@ -202,9 +201,8 @@ std::vector<long>   getRowColumn(std::string fname,
  {
     os << "\n\nERROR:  There was a problem with reading the genotype file - possibly strange ASCII characters.\n\n";
     Rcpp::stop(os.str() );
- } else {
-     return dimen;
- }
+}
+return dimen;
 
 }
 
@@ -279,11 +277,17 @@ if(!fileIN.good()) {
 // open binary file that is to hold packed genotype data
 std::ofstream fileOUT(binfname.c_str(), ios::binary );
 
-
-
-
+Rcpp::Rcout << " " << std::endl;
+Rcpp::Rcout << " Reading Marker (Genotype) File  " << std::endl;
+Rcpp::Rcout << " " << std::endl;
+Rcpp::Rcout << " Loading file .";
+int counter = 0;
 while(getline(fileIN, line ))
 {
+  if (counter % 10 == 0)
+         Rcpp::Rcout << "." ;
+  counter++;
+
   istringstream streamA(line);
   indx_packed = 0;
    indx_packed_long_vec = 0;
@@ -293,6 +297,8 @@ while(getline(fileIN, line ))
  //       AA is coded into 0. 
   for(int i=0; i< dims[1] ; i++){
   //   streamA >> rowvec[i];
+
+
      getline(streamA, token, sep);
      rowvec[i] = atoi(token.c_str());
  
@@ -328,6 +334,11 @@ while(getline(fileIN, line ))
     // writing binary values to disk.
     fileOUT.write((char *)(&packed_long_vec[0]), packed_long_vec.size() * sizeof(unsigned long int));
   }
+  Rcpp::Rcout << "\n" << std::endl;
+
+
+
+
 
 
 // close files
@@ -1128,6 +1139,18 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 }
 
 
+void SplitFilename (const string& str)
+{
+  size_t found;
+  cout << "Splitting: " << str << endl;
+  found=str.find_last_of("/\\");
+  cout << " folder: " << str.substr(0,found) << endl;
+  cout << " file: " << str.substr(found+1) << endl;
+}
+
+
+
+
 
 // [[Rcpp::export]]
 void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
@@ -1138,6 +1161,9 @@ void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin,
                   bool csv) 
 {
   // Rcpp function to create binary packed file of ASCII marker genotype file.
+
+size_t found;
+
 
 
 std::string 
@@ -1165,30 +1191,6 @@ double
   memory_needed_in_Gb =  (dims[0] *  dims[1] *   bits_in_int)/( (double) 8000000000) ;
 
 
-//--------------------------------------
-// Summary of Genotype File
-//--------------------------------------
-
-Rcpp::Rcout <<  " +-------------------------------------------------------------------+ " << std::endl;
-Rcpp::Rcout <<  " |                  Summary of Genotype File                         | " << std::endl;
-Rcpp::Rcout <<  " |                                                                   | " << std::endl;
-Rcpp::Rcout <<  " | Number of rows (individuals) in file                " ;
-Rcpp::Rcout.width(13); 
-Rcpp::Rcout << right << dims[0] << " | " << std::endl;
-Rcpp::Rcout <<  " | Number of columns (markers) in file                 " ;
-Rcpp::Rcout.width(13);
-Rcpp::Rcout  << right << dims[1] << " | " << std::endl;
-Rcpp::Rcout <<  " | Amount of memory (in Gbytes) needed to                            | " << std::endl;
-Rcpp::Rcout <<  " |    load entire file                                 ";
-Rcpp::Rcout.precision(2);
-Rcpp::Rcout.width(10);
-Rcpp::Rcout  << right << memory_needed_in_Gb << " Gb | " << std::endl;
-Rcpp::Rcout <<  " | Maximum memory (in Gbytes) has been set to          ";
-Rcpp::Rcout.width(10);
-Rcpp::Rcout << right << max_memory_in_Gbytes << " Gb | " << std::endl; 
-Rcpp::Rcout <<  " |                                                                   | " << std::endl;
-Rcpp::Rcout <<  " +-------------------------------------------------------------------+ " << std::endl;
-
 
 //-------------------------------------------
 // convert ascii file into packed binary file
@@ -1197,8 +1199,27 @@ Rcpp::Rcout <<  " +-------------------------------------------------------------
 // we are processing a line of the file at a time. This is not the case when 
 // creating a binary packed Mt because we have to read in blocks before we can 
 // transpose. 
-Rprintf( " Converting ascii file to packed binary file.\n " );
 CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB, csv);
+
+
+//--------------------------------------
+// Summary of Genotype File
+//--------------------------------------
+
+Rcpp::Rcout <<  "\n\n                    SUMMARY OF GENOTYPE FILE  " << std::endl;
+found=fname.find_last_of("/\\");
+Rcpp::Rcout <<  " file location(path):         "  <<  fname.substr(0, found) << std::endl;
+Rcpp::Rcout <<  " file name:                    " << fname.substr(found+1) << std::endl;
+Rcpp::Rcout <<  " packed binary file location: " << fnamebin << std::endl;
+Rcpp::Rcout <<  " packed binary file name:     " << "M.bin"  << std::endl;
+Rcpp::Rcout <<  " number of rows:              "     << dims[0] << std::endl;
+Rcpp::Rcout <<  " number of columns:           "  << dims[1] << std::endl;
+Rcpp::Rcout.precision(2);
+Rcpp::Rcout <<  " file size (Gbytes)           "  << memory_needed_in_Gb << std::endl;
+Rcpp::Rcout <<  " max memory size (Gbytes)     " << std::endl;
+Rcpp::Rcout <<  "   set to :                   " << max_memory_in_Gbytes  << std::endl;
+Rcpp::Rcout << "\n\n" << std::endl;
+
 
 }
 

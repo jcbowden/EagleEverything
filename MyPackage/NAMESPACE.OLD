@@ -6,4 +6,5 @@ export(
    check.genofile,
    read.phenotypes,
    read.genotypes,
+   read.map,
    multiple_locus_am)

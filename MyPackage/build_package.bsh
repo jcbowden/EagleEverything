@@ -64,12 +64,12 @@ cd $DIR
 
 mkdir ./WMAM/inst
 mkdir ./WMAM/inst/extdata
-cp ./pheno.txt ./WMAM/inst/extdata/.
 
 cd $DIR
 
-cp ./pheno.txt ./WMAM/inst/extdata/.
-cp ./geno.txt ./WMAM/inst/extdata/.
+cp ./phenoexample.csv ./WMAM/inst/extdata/.
+cp ./genoexample.txt ./WMAM/inst/extdata/.
+cp ./mapexample.txt ./WMAM/inst/extdata/.
 
 cd $DIR
 

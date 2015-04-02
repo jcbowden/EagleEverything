@@ -2,10 +2,10 @@
 ## salloc --ntasks-per-node=1  --ntasks-per-node=6 --mem=20gb --time=30:0 srun --pty bash
 
 ## To DO
-## how to handle header in genotype file
-## how to handle missing genotypes - are these allowed? probably not. 
-## tidy up emma code
-## how to write the model matrix when pheno can contain an arbritary number of columns
+## 
+## read in M with rows as plants or  with rows as colums (as with  human data)
+## how to get dimension of M when it is a binary file
+
 
 ##-------------------------------------
 ##  EMMA code 
@@ -418,6 +418,10 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
 #' \code{check.genofile} performs various checks on the marker genotype file.
 #' @param fnameIN  character vector containing the name of the marker genotype file
 #' @param dirPath  character vector contain the directory path to where the marker genotype file is located. 
+#' @param columnwise a logical value. When \code{TRUE},  each row contains an individuals genotypes and each 
+#'           column contains a marker locus\' genotypes. When \code{FALSE}, each row contains a marker locus\'s
+#'           genotypes and each  column contains an individual\'s genotypes. 
+#'                    When \code{FALSE}, a row contains the data from a marker locus. 
 #' @param AA       integer value corresponding to the AA genotype in the marker genotype file. This must be specified. 
 #' @param AB       integer value corresponding to the AB genotype in the marker genotype file. This can be left unspecified 
 #'                  if there are no hets.
@@ -443,7 +447,8 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
 #' @return  a list is returned with elements \code{file_exists} and \code{num_genotypes_per_row}. \code{num_genotypes_per_row}
 #'          will be \code{NULL} unless the \code{check_num_geno_in_row} parameter has been set to \code{TRUE}.
 #' @seealso \code{\link{read.genotypes}}
-check.genofile <- function(fnameIN=NULL, dirPath=getwd(), 
+check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
+                           columnwise= TRUE, 
                            AA=NULL,
                            AB=NULL,
                            BB=NULL,
@@ -940,17 +945,34 @@ if(!is.null(file_phenotype))
 #' @param path  a character vector containing the absolute path for where the phenotype file is located.
 #' @param file_phenotype a character vector containgin the name of the phenotype file.
 #' @param header a logical value. When \code{TRUE}, the first row of the file contains the names of the columns. 
+#' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. 
 #' @details
-#' A space separated ASCIII file is assumed. This file is allowed to contain \code{NA} values (coded as \code{NA}). However, if
-#' \code{NA} values are contained in the covariates (or explanatory variables) and these covariates are being used by 
-#' \code{\link{multiple_locus_am}}, then an error will occur. \code{NA} values are allowed in the trait values.  
+#' Here, \code{read.phenotypes} reads in phenotypic data into the package. A space  separated
+#' ASCII file with column headings is assumed. A csv file can also be read if \code{csv} is set to \code{TRUE}, 
+#' Missing values are allowed and should be coded \code{NA}. However, if covariates contain 
+#' missing values, and these covariates are used by \code{\link{multiple_locus_am}}, then  
+#' \code{\link{multiple_locus_am}} will return an error.  \code{NA} values are allowed in the 
+#' trait values. See \code{\link{multiple_locus_am}} for details. 
 #' @seealso \code{\link{read.genotypes}}
 #' @return 
 #' a data frame is returned of the phenotypic data. If \code{header} is true, the 
 #' names of the columns will be as specified by the first row of the phenotypic file. If \code{header} is \code{FALSE}, 
 #' generic names are supplied by R in the form of V1, V2, etc.   
 #'
-read.phenotypes <- function(path=getwd() , file_phenotype = NULL, header=TRUE){
+#' @examples
+#' # Read in  example phenotypic data from ./inst/extdata/
+#' 
+#' # find the full location of the phenotypic data 
+#' complete.name <- system.file("extdata", "phenoexample.csv", package="WMAM")
+#'   
+#' # read in phenotypic data which is in csv format
+#' phenodata <- read.phenotypes(path=dirname(complete.name),  
+#'                              file_phenotype=basename(complete.name), 
+#'                              csv=TRUE) 
+#'                                
+#'  ## print a couple of lines of the data file
+#'  head(phenodata)
+read.phenotypes <- function(path=getwd() , file_phenotype = NULL, header=TRUE, csv=FALSE){
 
   check.inputs(path=path, file_phenotype=file_phenotype)
 
@@ -960,34 +982,91 @@ read.phenotypes <- function(path=getwd() , file_phenotype = NULL, header=TRUE){
    phenofile <- paste(path, "\\", file_phenotype, sep="")
   }
 
-  phenos <- read.table(phenofile, header=header)
+  if(csv) sep=","
+  phenos <- read.table(phenofile, header=header, sep=sep)
+cat("\n\n Reading Phenotype File \n\n")
+cat(" Loading file ....... \n\n")
+cat("                    SUMMARY OF PHENOTYPE FILE  \n")
+cat(" file location(path):         ",  dirname(phenofile), "\n")
+cat(" file name:                   ",  basename(phenofile), "\n")
+cat(" number of rows:              ", nrow(phenos), "\n")
+cat(" number of columns:           ", ncol(phenos), "\n")
+cat("                    Column classes  \n")
+for(ii in 1:ncol(phenos))
+  cat(c( sprintf("%20s   %15s", names(phenos)[ii], class(phenos[[ii]]) ), "\n"))
 
-  ## produce summary of phenotypic information 
-  cat("\n\n", sprintf("     Summary of contents of phenotypic file "), "\n")
-  cat(sprintf("  ---------------------------------------------------------- "), "\n")
-  cat(sprintf("  File name of phenotypic file is : %s", phenofile), "\n")
-  cat(sprintf("  File has been read in as a data frame"), "\n")
-  cat(sprintf("  Number of columns read: %20d", ncol(phenos)), "\n")
-  cat(sprintf("  Number of rows read:    %20d", nrow(phenos)), "\n")
-  if(header){
-    cnames <- paste(names(phenos), collapse="   ")
-    cat(sprintf("  Column names are :    %s", cnames), "\n")
-  }
-  cat(sprintf("  Column 1 is the response and is called %s", names(phenos)[1]), "\n")
-  if(ncol(phenos) > 1)
-  {
-     for(ii in 2:ncol(phenos))
-     {
-        cat(sprintf("  Column %d is an explanatory variable and is called   %s   and is of class %s ", ii, names(phenos)[ii], class(phenos[[ii]])), "\n")
-     } 
-  }
-  cat("\n", sprintf( " Warning!!!  If the classes of these explanatory variables is not correct, these will need to be changed by the user."), "\n\n")
+
+cat(" Warning!  If the column classes are incorrect, these will need to be changed by the user.")
 
   return(phenos)
 
 
 }
 
+
+
+
+
+
+
+#' @title Read map file
+#' @description Read in the marker map  data
+#' @param path  a character vector containing the absolute path for where the map file is located.
+#' @param file_map a character vector containing the name of the map file.
+#' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. 
+#' @details
+#' Here, \code{read.map} reads in map data into the package. A space  separated
+#' ASCII file with column headings is assumed. A csv file can also be read if \code{csv} is set to \code{TRUE}, 
+#' Missing values are not allowed. 
+#' 
+#' The order of the columns must be 
+#'   column 1:  marker name
+#'   column 2:  chromosome number
+#'   column 3:  map position 
+#'
+#' The order of the markers in this file must match the column order of the genotype file because 
+#' the genotype file does not contain marker names. 
+#' @seealso \code{\link{read.genotypes}}
+#' @return 
+#' a data frame is returned of the map data. 
+#'
+#' @examples
+#' # Read in  example map data from ./inst/extdata/
+#' 
+#' # find the full location of the map data 
+#' complete.name <- system.file("extdata", "mapexample.txt", package="WMAM")
+#'   
+#' # read in map data 
+#' mapdata <- read.map(path=dirname(complete.name),  
+#'                              file_map=basename(complete.name)) 
+#'                                
+read.map  <- function(path=getwd(), file_map = NULL, csv=FALSE)
+{
+ check.inputs(path=path, file_phenotype=file_map)
+
+  if(.Platform$OS.type == "unix") {
+    mapfile <- paste(path, "/", file_map, sep="")
+  } else {
+   mapfile <- paste(path, "\\", file_map, sep="")
+  }
+  sep=""
+  if(csv) sep=","
+  map <- read.table(mapfile, header=TRUE, sep=sep)
+cat("\n\n Reading Map File \n\n")
+cat(" Loading file ....... \n\n")
+cat("                    SUMMARY OF MAP FILE  \n")
+cat(" file location(path):         ",  dirname(mapfile), "\n")
+cat(" file name:                   ",  basename(mapfile), "\n")
+cat(" number of markers:           ", nrow(map), "\n")
+cat(" number of columns:           ", ncol(map), "\n")
+cat(" number of chromosomes:       ", length(unique(map[[2]])), "\n")
+cat(" first 10 markers of the map file ... \n")
+print(head(map, n=10))
+cat("\n\n")
+
+return(map)
+
+}
 
 
 
@@ -1006,7 +1085,6 @@ create.bin.Mt <- function(file_genotype, bin_path, AA, AB, BB, workingmemGb, dim
  createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,  AA = AA, AB = AB, BB = BB, 
                max_memory_in_Gbytes=workingmemGb,  dims = dim_of_M, csv=csv )
 
- cat(" A packed binary file called ", binMtfile, " has been created for the transform of the genotype data.\n")
 
 
 }
@@ -1027,7 +1105,6 @@ create.bin.M <- function(file_genotype, bin_path, AA, AB, BB, workingmemGb, dim_
  createM_rcpp(f_name = file_genotype, f_name_bin = binMfile, AA = AA, AB = AB, BB = BB, 
                max_memory_in_Gbytes=workingmemGb,  dims = dim_of_M , csv = csv)
 
- cat(" A packed binary file called ", binMfile, " has been created for the genotype data.\n")
 
 
 
@@ -1080,21 +1157,24 @@ create.bin.M <- function(file_genotype, bin_path, AA, AB, BB, workingmemGb, dim_
 #' and the number of rows and columns in the marker genotype file, respectively.
 #' 
 #' @examples
-#'   ## Read in the example Arabidopsis marker data from ./inst/extdata/.
-#'   ## This is a space separated ASCII file with the rows the plants and 
-#'   ## the columns the snp loci. Marker genotypes have been recorded as 0 and 1. 
-#'   complete.name <- system.file("extdata", "geno.txt", package="WMAM")
+#'   # find the full location of the genotype data. Data contained in ./inst/extdata/. 
+#'   complete.name <- system.file("extdata", "genoexample.txt", package="WMAM")
+#'
 #'   
-#'   ## read in the ASCII marker genotype data where 0 values are being treated as genotype AA 
-#'   ## and 1 values are being treated as genoytpe BB. There are no heterozygotes so AB is not specified. 
-#'   ## 3 Gbytes of memory has been specified. 
-#'   geno.list <- read.genotypes(path=dirname(complete.name), AA=0, BB=1, file_genotype=basename(complete.name), 
-#'                    workingmemGb=3) 
+#'   # read in the ASCII marker genotype data where 0 values are being treated as genotype AA 
+#'   # and 1 values are being treated as genoytpe BB. There are no heterozygotes so AB is not specified. 
+#'   # 3 Gbytes of memory has been specified. The file is space separated with the rows the plants
+#'   # and the columns the snp loci.
+#'   geno.list <- read.genotypes(path=dirname(complete.name), AA=0, BB=1, 
+#'                  file_genotype=basename(complete.name),  workingmemGb=2) 
+#'    
+#'
 #'   # geno.list is a list with elements binfileM, binfileMt, and dim_of_M
 #'   # which corresponds to the name of the binary packed file for the marker genotype data
 #'   # the name of the binary packed file for the transpose of the marker genotype data,
 #'   # and a vector containing the number of rows and columns in the marker gentoype file. 
 #'   (geno.list)
+#'
 #' @seealso \code{\link{check.genofile}}
 read.genotypes <- function(path=getwd(), bin_path=getwd(), AA=NULL, AB=NULL, BB=NULL, file_genotype=NULL, check=FALSE, workingmemGb=8, csv=FALSE){
  ## an Rcpp based function to check for problems in reading the genotyope file 
@@ -1142,6 +1222,12 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), AA=NULL, AB=NULL, BB=
    genofile <- paste(path, "\\", file_genotype, sep="")
   }
 
+
+ if(.Platform$OS.type == "unix") {
+    bin_path <- paste(bin_path, "/",  sep="")
+  } else {
+   bin_path <- paste(bin_path, "\\",  sep="")
+  }
 
 
 
@@ -1212,9 +1298,13 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, workingmemG
 #' @description Main  function for performing multiple locus association mapping via whole-genome multi-locus association mapping (WMAM)
 #' @param numcores a numeric value for the number of cores that are available for distributed computing. 
 #' @param workingmemGb a numeric value. It specifies the amount of memory (in Gigabytes) available for reading analysis. 
-#' @param bin_path  character vector containing the directory path to where the binary converted marker genotype files are located. 
-#' @param geno the name of the list object returned from running \code{\link{read.genotypes}}.
-#' @param pheno  the name of the data frame object  returned  from running \code{\link{read.phenotypes}}.
+#' @param colname.trait  the column name of the trait/response in the phenotypic data file. 
+#' &param colname.vars   a character vector containing the column names of 
+#'                        the explanatory/independent variables in the phenotypic data file.
+#' @param map   the (data frame) object obtained from running \code{\link{read.map}}. If not specifed, a generic map will 
+#'              be assumed. 
+#' @param pheno  the (data frame) object  obtained  from running \code{\link{read.phenotypes}}.
+#' @param geno   the (list) object obtained from running \code{\link{read.genotypes}}.
 #' @param alpha  the type 1 error rate where setting \code{alpha} to 0.05 say is a 5\% error rate.
 #' @param  error_checking a logical value. When \code{TRUE}, it performs checks of XXXXX of the calculations.  
 #'
@@ -1233,7 +1323,13 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, workingmemG
 #'
 #' @return
 #' something here .... 
-multiple_locus_am <- function(numcores=1,workingmemGb=8, bin_path=getwd(), geno=NULL,   pheno=NULL, alpha=0.05, error_checking=FALSE){
+multiple_locus_am <- function(numcores=1,workingmemGb=8, 
+                              colname.trait = NULL, 
+                              colname.vars  = NULL,
+                              map = NULL,
+                              pheno=NULL, 
+                              geno=NULL, 
+                              alpha=0.05, error_checking=FALSE){
  ## Core function for performing whole genome association mapping with EMMA
  ## Args
  ## numcores        number of cores available for computation
@@ -1254,34 +1350,50 @@ if(.Platform$OS.type == "unix") {
 }
 
 
-check.inputs(numcores=numcores, workingmemGb=workingmemGb, bin_path=bin_path, alpha=alpha)
+check.inputs(numcores=numcores, workingmemGb=workingmemGb, alpha=alpha)
 
-if(is.null(geno)){
-  cat(" Error: The geno parameter must be set to the output from read.genotypes(). \n")
-  stop(" multiple_locus_am has terminated with errors. ")
-} else {
-  if(!is.list(geno)){
-   cat(" Error: geno parameter must be a list object created from the output of read.genotypes(). \n")
-   stop(" multiple_locus_am has terminated with errors.")
-  }  else {
-    if(!file.exists(geno[["binfileM"]])){
-      cat(" Error: the binary packed file ", geno[["binfileM"]]," could not be found. \n")
-      cat("        This file is created by running read.genotypes(), saving its \n")
-      cat("        contents to an object, and setting the geno parameter to this object. \n")
-      stop(" multiple_locus_am has terminated with errors.")
-     }
-  }
+if(is.null(colname.trait)){
+   cat(" Error: the name of the column containing the trait data must be given.")
+   stop(" multiple_locus_am has terminated with errors. ")
 }
 
 if(is.null(pheno)){
    cat(" Error: the pheno parameter has not been set. \n")
    cat("        Set this parameter to the object that contains \n")
-   cat("        the phenotypic data. This object should be of class \n")
-   cat("        data.frame, matrix, or numeric. \n")
+   cat("        the phenotypic data. This object is the result of running  \n")
+   cat("        read.phenotypes. \n")
    stop(" multiple_locus_am has terminated with errors.")
 }
 
+if(is.null(geno)){
+   cat(" Error: the geno parameter has not been set. \n")
+   cat("        Set this parameter to the object that contains \n")
+   cat("        the phenotypic data. This object is the result of running  \n")
+   cat("        read.genotypes. \n")
+   stop(" multiple_locus_am has terminated with errors.")
+}
 
+## checking list structure of geno
+if(!is.list(geno)){
+  cat(" Error: the geno object is not a list object. \n")
+  cat("       The geno object is obtained from running read.genotypes.\n")
+  stop(" multiple_locus_am has terminated with errors.")
+}
+
+nms <- names(geno)
+indx <- match(nms, c("binfileM", "binfileMt", "dim_of_M"))
+if(is.na(indx)){
+  cat(" Error: there is a problem with the list structure of the geno object. \n")
+  cat("        It should contain the elements binfileM, binfileMt, and dim_of_M. \n")
+  stop(" multiple_locus_am has terminated with errors.")
+}
+
+
+if(is.null(map)){
+    cat("\n\n  Warning: no map object has been specified. A generic map \n")
+    cat("          will be assumed.                                \n\n")
+    map <- data.frame(Mrk= paste("M", 1:geno[["dim_of_M"]]), Chrm=1, Pos=1:geno[["dim_of_M"]])
+}
 
    continue <- TRUE
    selected_loci <- NA
