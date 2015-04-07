@@ -68,7 +68,8 @@ mkdir ./WMAM/inst/extdata
 cd $DIR
 
 cp ./phenoexample.csv ./WMAM/inst/extdata/.
-cp ./genoexample.txt ./WMAM/inst/extdata/.
+cp ./genoexampleRwise.txt ./WMAM/inst/extdata/.
+cp ./genoexampleCwise.txt ./WMAM/inst/extdata/.
 cp ./mapexample.txt ./WMAM/inst/extdata/.
 
 cd $DIR

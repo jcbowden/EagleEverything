@@ -20,7 +20,7 @@
 //     2. max memory size in bytes
 
 
-
+// [[Rcpp::depends(RcppEigen)]]
 #include <RcppEigen.h>
 #include <omp.h>
 #include <iostream>
@@ -217,7 +217,8 @@ void  CreatePackedBinary(std::string fname, std::string binfname, std::vector<lo
                          int AA, 
                          int AB, 
                          int BB,
-                         bool csv)
+                         bool csv, 
+                         bool verbose)
 {
 int 
    indx_packed = 0,
@@ -276,16 +277,19 @@ if(!fileIN.good()) {
 
 // open binary file that is to hold packed genotype data
 std::ofstream fileOUT(binfname.c_str(), ios::binary );
-
-Rcpp::Rcout << " " << std::endl;
-Rcpp::Rcout << " Reading Marker (Genotype) File  " << std::endl;
-Rcpp::Rcout << " " << std::endl;
-Rcpp::Rcout << " Loading file .";
+ if (verbose){
+ Rcpp::Rcout << " " << std::endl;
+ Rcpp::Rcout << " Reading Marker (Genotype) File  " << std::endl;
+ Rcpp::Rcout << " " << std::endl;
+ Rcpp::Rcout << " Loading file .";
+ }
 int counter = 0;
 while(getline(fileIN, line ))
 {
-  if (counter % 10 == 0)
+  if (verbose){
+     if (counter % 10 == 0)
          Rcpp::Rcout << "." ;
+  }
   counter++;
 
   istringstream streamA(line);
@@ -334,7 +338,7 @@ while(getline(fileIN, line ))
     // writing binary values to disk.
     fileOUT.write((char *)(&packed_long_vec[0]), packed_long_vec.size() * sizeof(unsigned long int));
   }
-  Rcpp::Rcout << "\n" << std::endl;
+  if (verbose) Rcpp::Rcout << "\n" << std::endl;
 
 
 
@@ -401,7 +405,6 @@ fileBIN.read((char*)&v[0] , size_in_bytes_of_block );  // reads a block of bytes
 
 // Convert integers into bitsets
 packed.reset(); //to initialize bitset
-Rprintf(" Beginning conversion of binary data into an integer matrix... \n");
 for(int i=0;i < v.size(); i++)
 {
   std::bitset <bits_in_ulong> packed(v[i]);
@@ -477,7 +480,6 @@ fileBIN.read((char*)&v[0] , size );  // reads a block of bytes of size.
 
 // Convert integers into bitsets
 packed.reset(); //to initialize bitset
-Rprintf( " Beginning conversion of binary data into an integer matrix." );
 for(int i=0;i < v.size(); i++)
 {
   std::bitset <bits_in_ulong> packed(v[i]);
@@ -535,7 +537,8 @@ void  createMt_rcpp(CharacterVector f_name, CharacterVector f_name_bin,
                               int AB, 
                               int BB,
                               double  max_memory_in_Gbytes,  std::vector <long> dims,
-                              bool csv )
+                              bool csv,
+                              bool verbose )
 {
 
 std::string
@@ -684,22 +687,23 @@ int
 //  Situation 2 
 //  Block approach needed due to lack of memory
 
- Rcpp::Rcout << " A block transpose is being performed due to lack of memory.  "  << std::endl;
- Rcpp::Rcout << " Memory parameter workingmemGb is set to " << max_memory_in_Gbytes << "Gbytes" << std::endl;
- Rcpp::Rcout << " If possible, increase workingmemGb parameter. " << std::endl;
-
+if (verbose){
+     Rcpp::Rcout << " A block transpose is being performed due to lack of memory.  "  << std::endl;
+     Rcpp::Rcout << " Memory parameter workingmemGb is set to " << max_memory_in_Gbytes << "Gbytes" << std::endl;
+     Rcpp::Rcout << " If possible, increase workingmemGb parameter. " << std::endl;
+ }
   // Calculate number of blocks needed
   int n_blocks = dims[1]/n_of_cols_to_be_read;
   if (dims[1] % n_of_cols_to_be_read != 0)
       n_blocks++;
 
-     Rcpp::Rcout  << " Block Tranpose of ASCII genotype file beginning ... " << std::endl;
+    if (verbose)  Rcpp::Rcout  << " Block Tranpose of ASCII genotype file beginning ... " << std::endl;
 
   // Block read and transpose - requires n_blocks passes through the 
   // ASCII input file which could be slow if file is large and memory low
    for(int b=0; b < n_blocks; b++){
   //for(int b=1; b < 2; b++){
-     Rcpp::Rcout << " Processing block ... " << b << " of a total number of blocks of " << n_blocks << std::endl;
+     if (verbose) Rcpp::Rcout << " Processing block ... " << b << " of a total number of blocks of " << n_blocks << std::endl;
 
 
      // want packed-block object that is a matrix of bitset values. 
@@ -735,8 +739,10 @@ int
       Rcpp::stop(os.str() );
      }
     int counter = 0;
-    Rcpp::Rcout << std::endl;
-    Rcpp::Rcout << std::endl;
+    if (verbose) {
+       Rcpp::Rcout << std::endl;
+       Rcpp::Rcout << std::endl;
+    }
     while(getline(fileIN, line ))
     {
        
@@ -833,7 +839,8 @@ MatrixXd calculate_reduced_a_rcpp ( CharacterVector f_name_bin, double varG,
                                            Map<MatrixXd>  y,
                                            double max_memory_in_Gbytes,  
                                            std::vector <long> dims,
-                                           Rcpp::NumericVector  selected_loci)
+                                           Rcpp::NumericVector  selected_loci,
+                                           bool verbose)
 {
   // function to calculate the BLUPs for the dimension reduced model. 
   // It is being performed in Rcpp because it makes use of Mt. 
@@ -876,20 +883,15 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
           Mt.row(selected_loci(ii)).setZero();
    }
 
+
    Mt = ReadBlock(fnamebin, 0, dims[0], dims[1]);
    ar  =    varG * Mt.cast<double>() *  P   * y ;
 
-   Rcpp::Rcout << "testing ... " << std::endl;
-   Rcpp::Rcout << ar.rows() << std::endl;
-   Rcpp::Rcout << ar.cols() << std::endl;
-   Rcpp::Rcout << "ar(0,0) = " << ar(0,0) << std::endl;
-   Rcpp::Rcout << "ar(1,0) = " << ar(1,0) << std::endl;
-   Rcpp::Rcout << "ar(2,0) = " << ar(2,0) << std::endl;
 
 } else {
 
       // calculation being processed in block form
-      Rprintf(" Increasing maxmemGb would improve performance... \n");
+      Rprintf(" Note:  Increasing workingmemGb would improve performance... \n");
 
       // calculate the maximum number of rows in Mt that can be contained in the
       // block multiplication. This involves a bit of algrebra but it is comes to the following
@@ -903,11 +905,11 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
 
-
+      if (verbose){
       Rprintf(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
       Rprintf(" Block multiplication necessary. \n");
       Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
-
+      } 
       for(int i=0; i < num_blocks; i++){
          long start_row1 = i * num_rows_in_block;
          long num_rows_in_block1 = num_rows_in_block;
@@ -950,7 +952,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
               counter++;
          }
 
-        Rcpp::Rcout << "block done ... " << std::endl;
+       if (verbose)  Rcpp::Rcout << "block done ... " << std::endl;
       } // end for int
 
 
@@ -985,7 +987,8 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,
                                     Map<MatrixXd> dim_reduced_vara,
                                     double  max_memory_in_Gbytes,  
                                     std::vector <long> dims,
-                                    Eigen::VectorXd  a  )
+                                    Eigen::VectorXd  a,
+                                    bool verbose  )
 {
 // Purpose: to calculate the untransformed BLUP (a) values from the 
 //          dimension reduced BLUP value estimates. 
@@ -1011,14 +1014,12 @@ const size_t bits_in_double = std::numeric_limits<double>::digits;
 
 
    // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt))
-Rcpp::Rcout << ( dims[0]   ) << std::endl;
-Rcpp::Rcout << ( dims[1]   ) << std::endl;
-Rcpp::Rcout << ((dims[1] * bits_in_double/(8.0 * 1000000000))) << std::endl;
 double mem_bytes_needed =   ( dims[0]   +  dims[1]   + dims[1] + dims[1] + dims[1] ) *  (dims[1] * bits_in_double/(8.0 * 1000000000));
 
-
-Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
-Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
+if (verbose){
+   Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
+   Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
+}
 
 if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
@@ -1036,12 +1037,10 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
    }
 
    // calculate untransformed BLUP values
-   Rprintf(" calculating raw a values ... \n");
    ans =    Mt.cast<double>() *  inv_MMt_sqrt  * a ;
 
 
    // calculate untransformed variances of BLUP values
-   Rprintf(" calculating raw var(a) values ... \n");
    Eigen::MatrixXd
       var_ans_tmp;
 
@@ -1069,11 +1068,11 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
 
-
+      if (verbose){
       Rprintf(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
       Rprintf(" Block multiplication necessary. \n");
       Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
-
+      } 
       for(int i=0; i < num_blocks; i++){
          long start_row1 = i * num_rows_in_block;
          long num_rows_in_block1 = num_rows_in_block;
@@ -1125,7 +1124,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
               counter++;
          }
 
-        Rcpp::Rcout << "block done ... " << std::endl;
+       if (verbose)  Rcpp::Rcout << "block done ... " << std::endl;
       } // end for int
 
 
@@ -1139,14 +1138,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 }
 
 
-void SplitFilename (const string& str)
-{
-  size_t found;
-  cout << "Splitting: " << str << endl;
-  found=str.find_last_of("/\\");
-  cout << " folder: " << str.substr(0,found) << endl;
-  cout << " file: " << str.substr(found+1) << endl;
-}
 
 
 
@@ -1158,7 +1149,8 @@ void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin,
                   int AB, 
                   int BB,
                   double  max_memory_in_Gbytes,  std::vector <long> dims,
-                  bool csv) 
+                  bool csv, 
+                  bool verbose) 
 {
   // Rcpp function to create binary packed file of ASCII marker genotype file.
 
@@ -1199,7 +1191,7 @@ double
 // we are processing a line of the file at a time. This is not the case when 
 // creating a binary packed Mt because we have to read in blocks before we can 
 // transpose. 
-CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB, csv);
+CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB, csv, verbose);
 
 
 //--------------------------------------
@@ -1295,7 +1287,8 @@ return(column_of_genos);
 // [[Rcpp::export]]
 Eigen::MatrixXi  calculateMMt_rcpp(CharacterVector f_name_bin, 
                                    double  max_memory_in_Gbytes, int num_cores,
-                                   Rcpp::NumericVector  selected_loci , std::vector<long> dims)
+                                   Rcpp::NumericVector  selected_loci , std::vector<long> dims, 
+                                   bool verbose)
 {
 // set multiple cores
 Eigen::initParallel();
@@ -1341,7 +1334,6 @@ double
 //-------------------------
 // Perform MMt calculation
 //-------------------------
-Rprintf( " Performing MMt calculation ... \n" );
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
    genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
@@ -1360,7 +1352,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 //         genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
 
 //        // Efficient calculation of MMt
-//       if(!R_IsNA(selected_loci(0) )){
+//       if(!R_IsNA(selected_loci(0)(0) )){
 //       // setting columns to 0
 //       for(int ii=0; ii < selected_loci.size() ; ii++)
 //          genoMat.col(selected_loci(ii)).setZero();
@@ -1383,7 +1375,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               long num_rows_in_block1 = num_rows_in_block;
               if ((start_row1 + num_rows_in_block1) > dims[0])
                      num_rows_in_block1 = dims[0] - start_row1;
-              Rcpp::Rcout << num_rows_in_block1 << " num rows in block 1 " << std::endl;
+            //  Rcpp::Rcout << num_rows_in_block1 << " num rows in block 1 " << std::endl;
 
               Eigen::MatrixXi    genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
               Eigen::MatrixXi    MMtsub(MatrixXi(num_rows_in_block1, num_rows_in_block1).setZero());
@@ -1393,9 +1385,9 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
              for(int ii=0; ii < selected_loci.size() ; ii++)
                 genoMat_block1.col(selected_loci(ii)).setZero();
              }
-              Rcpp::Rcout << "  Block 1  "  << std::endl;
-              Rcpp::Rcout << genoMat_block1.rows() << std::endl;
-              Rcpp::Rcout << genoMat_block1.cols() << std::endl;
+             // Rcpp::Rcout << "  Block 1  "  << std::endl;
+             // Rcpp::Rcout << genoMat_block1.rows() << std::endl;
+             // Rcpp::Rcout << genoMat_block1.cols() << std::endl;
 
               MMtsub = genoMat_block1 * genoMat_block1.transpose(); 
 
@@ -1417,9 +1409,9 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
                    for(int jj=0; jj < selected_loci.size() ; jj++)
                       genoMat_block2.col(selected_loci(jj)).setZero();
                    }
-              Rcpp::Rcout << " Block 2 " << std::endl;
-              Rcpp::Rcout << genoMat_block2.rows() << std::endl;
-              Rcpp::Rcout << genoMat_block2.cols() << std::endl;
+            //  Rcpp::Rcout << " Block 2 " << std::endl;
+            //  Rcpp::Rcout << genoMat_block2.rows() << std::endl;
+            //  Rcpp::Rcout << genoMat_block2.cols() << std::endl;
                    MMtsub = genoMat_block1 * genoMat_block2.transpose(); 
                    //          i,        j,     num rows,              num cols
                    MMt.block(start_row1, start_row2, num_rows_in_block1, num_rows_in_block2) = MMtsub;
