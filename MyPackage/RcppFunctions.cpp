@@ -29,6 +29,7 @@
 #include <vector>
 #include <bitset>
 #include <string>
+#include <algorithm>  //std::find
 using namespace std;
 using namespace Rcpp;
 using Eigen::MatrixXi;
@@ -47,31 +48,6 @@ const size_t bits_in_double = std::numeric_limits<long double>::digits;
 const size_t bits_in_ulong = std::numeric_limits<unsigned long int>::digits;
 const size_t bits_in_int = std::numeric_limits<unsigned int>::digits;
 
-
-
-// internal function to remove a row from a dynamic matrix
-void removeRow(MatrixXd& matrix, unsigned int rowToRemove)
-{
-    unsigned int numRows = matrix.rows()-1;
-    unsigned int numCols = matrix.cols();
-
-    if( rowToRemove < numRows )
-        matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+1,0,numRows-rowToRemove,numCols);
-
-    matrix.conservativeResize(numRows,numCols);
-}
-
-// internal function to remove a column from a dynamic matrix
-void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove)
-{
-    unsigned int numRows = matrix.rows();
-    unsigned int numCols = matrix.cols()-1;
-
-    if( colToRemove < numCols )
-        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
-
-    matrix.conservativeResize(numRows,numCols);
-}
 
 
 
@@ -858,6 +834,9 @@ std::string
 Eigen::MatrixXd
       ar(dims[1],1);  // column vector
 
+ostringstream
+      os;
+
 
 
 const size_t bits_in_double = std::numeric_limits<double>::digits;
@@ -896,6 +875,19 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       // calculate the maximum number of rows in Mt that can be contained in the
       // block multiplication. This involves a bit of algrebra but it is comes to the following
       int num_rows_in_block = (max_memory_in_Gbytes /  ( bits_in_double/(8.0 * 1000000000)) - dims[0] * dims[0] - dims[0])/dims[0] ;
+
+    if (num_rows_in_block < 0){
+        Rcpp::Rcout << std::endl;
+        Rcpp::Rcout << std::endl;
+        Rcpp::Rcout << "Error:  workingmemGb is set to " << max_memory_in_Gbytes << std::endl;
+        Rcpp::Rcout << "        Cannot even read in a single row of data into memory." << std::endl;
+        Rcpp::Rcout << "        Please increase workingmemGb for this data set." << std::endl;
+        Rcpp::Rcout << std::endl;
+        Rcpp::Rcout << std::endl;
+        os << " multiple_locus_am has terminated with errors\n" << std::endl;
+         Rcpp::stop(os.str() );
+
+      }
 
 
       // blockwise multiplication
@@ -967,9 +959,30 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 
 
+// internal function to remove a row from a dynamic matrix
+void removeRow(MatrixXi& matrix, unsigned int rowToRemove)
+{
+    unsigned int numRows = matrix.rows()-1;
+    unsigned int numCols = matrix.cols();
+
+    if( rowToRemove < numRows )
+        matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+1,0,numRows-rowToRemove,numCols);
+
+    matrix.conservativeResize(numRows,numCols);
+}
 
 
 
+void removeColumn(Eigen::MatrixXi& matrix, unsigned int colToRemove)
+{
+    unsigned int numRows = matrix.rows();
+    unsigned int numCols = matrix.cols()-1;
+
+    if( colToRemove < numCols )
+        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
+
+    matrix.conservativeResize(numRows,numCols);
+}
 
 
 
@@ -988,7 +1001,8 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,
                                     double  max_memory_in_Gbytes,  
                                     std::vector <long> dims,
                                     Eigen::VectorXd  a,
-                                    bool verbose  )
+                                    bool verbose,
+                                    Rcpp::NumericVector indxNA  )
 {
 // Purpose: to calculate the untransformed BLUP (a) values from the 
 //          dimension reduced BLUP value estimates. 
@@ -998,6 +1012,15 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,
 //          be converted into a douple precision matrix which has a large memory cost.  
 // Note:
 //      1. dims is the row, column dimension of the Mt matrix
+//      2. when indxNA not NA, then need to adjust dimenions of Mt by removing cols.
+
+
+Rcpp::Rcout << "in heer " << std::endl;
+
+
+ostringstream
+      os;
+
 
 
 
@@ -1014,7 +1037,7 @@ const size_t bits_in_double = std::numeric_limits<double>::digits;
 
 
    // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt))
-double mem_bytes_needed =   ( dims[0]   +  dims[1]   + dims[1] + dims[1] + dims[1] ) *  (dims[1] * bits_in_double/(8.0 * 1000000000));
+double mem_bytes_needed =   ( dims[0]   +  2*dims[1]   + 1 ) *  (dims[1] * bits_in_double/(8.0 * 1000000000));
 
 if (verbose){
    Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
@@ -1030,6 +1053,19 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
    Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
 
+  // removing columns that correspond to individuals with no 
+  // trait data
+//   if(!R_IsNA(indxNA(0))){
+  Rcpp::Rcout << "-------------------------------------------" << endl;
+  Rcpp::Rcout << indxNA.size()  << endl;
+   if(indxNA.size()!=0){
+     for (int ii=0; ii < indxNA.size(); ii++){
+        removeColumn(Mt, indxNA(ii) );
+     }
+  }
+
+
+
    if(!R_IsNA(selected_loci(0))){
    // setting columns to 0
    for(int ii=0; ii < selected_loci.size() ; ii++)
@@ -1038,7 +1074,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
    // calculate untransformed BLUP values
    ans =    Mt.cast<double>() *  inv_MMt_sqrt  * a ;
-
 
    // calculate untransformed variances of BLUP values
    Eigen::MatrixXd
@@ -1059,6 +1094,19 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       // block multiplication. This involves a bit of algrebra but it is comes to the following
       int num_rows_in_block =  max_memory_in_Gbytes / ( dims[1] * bits_in_double/(8.0 * 1000000000)) - dims[1] - 1 ;
 
+      if (num_rows_in_block < 0){
+        Rcpp::Rcout << std::endl;
+        Rcpp::Rcout << std::endl;
+        Rcpp::Rcout << "Error:  workingmemGb is set to " << max_memory_in_Gbytes << std::endl;
+        Rcpp::Rcout << "        Cannot even read in a single row of data into memory." << std::endl;
+        Rcpp::Rcout << "        Please increase workingmemGb for this data set." << std::endl;
+        Rcpp::Rcout << std::endl;
+        Rcpp::Rcout << std::endl;
+        os << " multiple_locus_am has terminated with errors\n" << std::endl;
+         Rcpp::stop(os.str() );
+
+      }
+
 
 
       // blockwise multiplication
@@ -1067,7 +1115,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       int num_blocks = dims[0]/num_rows_in_block;
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
-
       if (verbose){
       Rprintf(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
       Rprintf(" Block multiplication necessary. \n");
@@ -1083,6 +1130,17 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
                   Mt;
 
          Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+
+         // removing columns that correspond to individuals with no 
+         // trait data
+       //  if(!R_IsNA(indxNA(0))){
+  Rcpp::Rcout << "-------------------------------------------" << endl;
+  Rcpp::Rcout << indxNA.size()  << endl;
+         if(indxNA.size() != 0 ){
+               for (int ii=0; ii < indxNA.size(); ii++){
+                     removeColumn(Mt, indxNA(ii) );
+               }
+          }
 
          Eigen::MatrixXd
              vt,
@@ -1220,10 +1278,23 @@ Rcpp::Rcout << "\n\n" << std::endl;
 
 // [[Rcpp::export]]
 Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_bin, double  max_memory_in_Gbytes, 
-                                    int selected_locus, std::vector<long> dims)
+                                    int selected_locus, std::vector<long> dims,
+                                   Rcpp::NumericVector indxNA)
 {
   std::string
      fnamebin = Rcpp::as<std::string>(f_name_bin);
+
+  int 
+     nind;
+
+  nind = dims[0];
+  // if (!R_IsNA(indxNA(0)))
+  Rcpp::Rcout << "-------------------------------------------" << endl;
+  Rcpp::Rcout << indxNA.size()  << endl;
+  if (indxNA.size() != 0 )
+    nind = dims[0] - indxNA.size();
+
+
 
 //-----------------------------------
 // Calculate amount of memory needed
@@ -1233,17 +1304,32 @@ double
 
 
 Eigen::VectorXi
-   column_of_genos(dims[0]);
+   column_of_genos(nind);
 
 
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
    Eigen::MatrixXi genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
-   column_of_genos = genoMat.col(selected_locus);
 
+    // removing rows that correspond to individuals with no 
+  // trait data
+  // if(!R_IsNA(indxNA(0))){
+  Rcpp::Rcout << "-------------------------------------------" << endl;
+  Rcpp::Rcout << indxNA.size()  << endl;
+  if(indxNA.size() != 0){
+     for (int ii=0; ii < indxNA.size(); ii++){
+        removeRow(genoMat, indxNA(ii) );
+     }
+  }
+
+
+   column_of_genos = genoMat.col(selected_locus);
+   
+   Rcpp::Rcout << " col of genos " << column_of_genos.size() << endl;
 
 
 }  else {
+
     long num_rows_in_block = (max_memory_in_Gbytes  * (double) 8000000000 )/(bits_in_int * dims[1]);
 
          int num_blocks = dims[0]/num_rows_in_block;
@@ -1260,13 +1346,41 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
               Eigen::MatrixXi    genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
 
-              int blockj=0;
+              // removing rows that correspond to individuals with no 
+              // trait data
+              int start = start_row1;
+              int finish = start_row1 + num_rows_in_block1;
+              // if(!R_IsNA(indxNA(0))){
+  Rcpp::Rcout << "-------------------------------------------" << endl;
+  Rcpp::Rcout << indxNA.size()  << endl;
+              if(indxNA.size() != 0 ){
+                 for (int ii=0; ii < indxNA.size(); ii++){
+                   if(indxNA(ii) >= start & indxNA(ii) <= finish)
+                        removeRow(genoMat_block1, indxNA(ii) );
+                 }
+              }
+
+
+              // dealing with assigning column_of_genos when some values 
+              // may be missing due to having been removed. 
+              int colindx = start_row1;
               for(int j=start_row1; j< start_row1+num_rows_in_block1 ; j++){
-                  column_of_genos(j) = genoMat_block1.col(selected_locus)(blockj);
-                  blockj++;
+                 bool found = 0;
+                 for(int ii = 0; ii < indxNA.size() ; ii++){
+                   if(indxNA[ii] == j){
+                          found=1;
+                   }
+                 }
+                 if (!found){ 
+                    // j not in indxNA
+                   column_of_genos(colindx) = genoMat_block1.col(selected_locus)(j-start_row1);
+                   colindx++;
+                }
+
               } // end for j
-              
+
           } // end for  i
+
 
 
 } // end if max_memory

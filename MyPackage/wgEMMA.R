@@ -422,7 +422,7 @@ if(!is.list(geno)){
 }
 
 nms <- names(geno)
-indx <- match(nms, c("binfileM", "binfileMt", "dim_of_bin_M"))
+indx <- match(nms, c("binfileM", "binfileMt", "dim_of_bin_M", "columnwise"))
 if(any(is.na(indx))){
   cat(" Error: there is a problem with the list structure of the geno object. \n")
   cat("        It should contain the elements binfileM, binfileMt, and dim_of_bin_M. \n")
@@ -481,6 +481,26 @@ if(is.null(map)){
     cat("       value between 0 to 1.0, where values of 0.01 or 0.05 are typical.\n")
     stop(" multiple_locus_am has terminated with errors.")
  }
+
+ ## check that geno and pheno contain the same number of individuals
+ if(nrow(pheno) !=  geno[["dim_of_bin_M"]][1])
+ {
+   cat("Error: the number of individuals specified in the phenotypic file is ", nrow(pheno),  "\n")
+   cat("       the number of individuals specified in the genotypic file is ", geno[["dim_of_bin_M"]][1], "\n")
+   cat("       The number of individuals should be the same in the two files.\n")
+   stop(" multiple_locus_am has terminated with errors.")
+ }
+
+ ## check that map and geno contain the same number of snp
+ if(nrow(map) != geno[["dim_of_bin_M"]][2])
+ {
+   cat("Error: the number of marker loci in the map file is ", nrow(map), "\n")
+   cat("       The number of marker loci in the genotypic file is ", geno[["dim_of_bin_M"]][2], "\n")
+   cat("       The number of marker loci in the two files should be the same. \n")
+   stop(" multiple_locus_am has terminated with errors.")
+ }
+
+
 
   return(NULL)
 
@@ -651,6 +671,7 @@ calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, di
   #------------------------------------------
   # bin file about to be overwritten
   #------------------------------------------
+
 
   if(!file.exists(geno)){
     cat(" Error: The binary packed file ", geno, " cannot be found.\n")
@@ -888,7 +909,8 @@ return(ar)
 calculate_a_and_vara <- function(bin_path=getwd(), maxmemGb=8, dims=NULL,
                          selectedloci = NA,
                          invMMtsqrt=NULL, transformed_a=NULL, transformed_vara=NULL,
-                         verbose = FALSE)
+                         verbose = FALSE,
+                         indxNA = NULL)
 {
  ## an Rcpp function to take dimension reduced a (BLUP) values 
  ## and transform them into the original a (BLUP) values and their variances 
@@ -926,7 +948,8 @@ if(.Platform$OS.type == "unix") {
                     inv_MMt_sqrt=invMMtsqrt,  
                     dim_reduced_vara = transformed_vara,
                     a = transformed_a, 
-                    verbose = verbose)
+                    verbose = verbose,
+                    indxNA = indxNA)
 
 }
 
@@ -1094,17 +1117,17 @@ read.phenotypes <- function(path=getwd() , file_phenotype = NULL, header=TRUE, c
   phenos <- read.table(phenofile, header=header, sep=sep)
 cat("\n\n Reading Phenotype File \n\n")
 cat(" Loading file ....... \n\n")
-cat("                    SUMMARY OF PHENOTYPE FILE  \n")
+cat("               SUMMARY OF PHENOTYPE FILE  \n")
 cat(" file location(path):         ",  dirname(phenofile), "\n")
 cat(" file name:                   ",  basename(phenofile), "\n")
 cat(" number of rows:              ", nrow(phenos), "\n")
 cat(" number of columns:           ", ncol(phenos), "\n")
-cat("                    Column classes  \n")
+cat("\n                    Column classes  \n")
 for(ii in 1:ncol(phenos))
   cat(c( sprintf("%20s   %15s", names(phenos)[ii], class(phenos[[ii]]) ), "\n"))
 
 
-cat(" Warning!  If the column classes are incorrect, these will need to be changed by the user.")
+cat("\n Warning: if the column classes are incorrect, these will need to be changed by the user.\n\n\n")
 
   return(phenos)
 
@@ -1320,10 +1343,11 @@ create.bin.M <- function(file_genotype, bin_path, columnwise, AA, AB, BB, workin
 #' genotype file is too large for the available memory, then it converted, chunk-wise,  into a single binary packed file.  
 #' The consequences of reading the marker genotype file chunk- or block-wise is a longer processing time. 
 #'
-#' @return  a list is returned with elements \code{binfileM} , \code{binfileMt}, and \code{dim_of_bin_M}. 
-#' which is the absolute path and file name of the binrary file for the marker genotype data, 
+#' @return  a list is returned with elements \code{binfileM} , \code{binfileMt}, \code{dim_of_bin_M}, and \code{columnwise}. 
+#' which is the absolute path and file name of the binary file for the marker genotype data, 
 #' the absolute path and file name of the binary file for the transpose of the marker genotype data, 
-#' and the number of rows and columns in the binary M genotype file, respectively.
+#' the number of rows and columns in the binary M genotype file, and if the 
+#' marker data has been stored column-wise or row-wise, respectively.
 #' 
 #' @examples
 #'   # find the full location of the genotype data that has been 
@@ -1430,7 +1454,9 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
   }
 
 
-  return(list("binfileM"=binfileM, "binfileMt"=binfileMt, "dim_of_bin_M" = dim_of_bin_M) )
+  return(list("binfileM"=binfileM, "binfileMt"=binfileMt, 
+               "dim_of_bin_M" = dim_of_bin_M,
+              "columnwise"=columnwise) )
 
 
 }
@@ -1438,7 +1464,9 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
 
 
 
-extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8, dim_of_bin_M=NULL )
+extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8, 
+                          dim_of_bin_M=NULL, 
+                          indxNA = NA )
   {
     ## Rcpp function to extra a column of genotypes from a  binary packed file of M
 
@@ -1449,7 +1477,8 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8, dim_of_bin_
     }
     selected_locus <- colnum - 1  ## to be consistent with C++'s indexing starting from 0
     geno <- extract_geno_rcpp(f_name_bin=binfileM, max_memory_in_Gbytes = workingmemGb, 
-                              selected_locus=selected_locus, dims=dim_of_bin_M)
+                              selected_locus=selected_locus, dims=dim_of_bin_M,
+                              indxNA = indxNA)
 
     return(geno)
 
@@ -1457,14 +1486,19 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8, dim_of_bin_
 
 
 
-constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, workingmemGb=8, dim_of_bin_M=NULL)
+constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, 
+                       workingmemGb=8, dim_of_bin_M=NULL,
+                       indxNA = NA)
   {
     ## R function to construct the design matrix X
     ## Args
     ##   currentX    current model matrix
     ##   loci        the marker loci to be included as fixed QTL effects (additive model)
+    ##   indxNA      those individuals that should be removed due to missing phenotypes
 
-   genodat <- extract_geno(bin_path=bin_path, colnum=loci_indx, workingmemGb=workingmemGb, dim_of_bin_M=dim_of_bin_M)
+   genodat <- extract_geno(bin_path=bin_path, colnum=loci_indx, 
+                           workingmemGb=workingmemGb, dim_of_bin_M=dim_of_bin_M,
+                           indxNA = indxNA)
 
    newX <- cbind(currentX, genodat)
    
@@ -1473,26 +1507,59 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, workingmemG
   }
 
 
-#' @title multiple locus association mapping for genome-wide association studies
-#' @description Main  function for performing multiple locus association mapping via whole-genome multi-locus association mapping (WMAM)
+#' @title multiple locus association mapping 
+#' @description \code{multiple_locus_am} is used to perform multiple locus 
+#' association mapping via whole-genome multi-locus association mapping (WMAM)
 #' @param numcores a numeric value for the number of cores that are available for distributed computing. 
 #' @param workingmemGb a numeric value. It specifies the amount of memory (in Gigabytes) available for reading analysis. 
-#' @param colname.trait  the column name of the trait/response in the phenotypic data file. 
+#' @param colname.trait  the name of the column in the phenotypic data file that contains the trait data. The name is case sensitive. 
 #' @param colname.feffects   a character vector containing the column names of 
-#'                        the explanatory/independent variables in the phenotypic data file.
+#'                        the explanatory/independent variables in the phenotypic data file. If
+#'                        not specified, only an overall mean will be fitted.
 #' @param map   the (data frame) object obtained from running \code{\link{read.map}}. If not specifed, a generic map will 
 #'              be assumed. 
 #' @param pheno  the (data frame) object  obtained  from running \code{\link{read.phenotypes}}.
 #' @param geno   the (list) object obtained from running \code{\link{read.genotypes}}.
 #' @param alpha  the type 1 error rate where setting \code{alpha} to 0.05 say is a 5\% error rate.
-#' @param  error_checking a logical value. When \code{TRUE}, it performs checks of XXXXX of the calculations.  
+#' @param  error_checking a logical value. When \code{TRUE}, 
+#' the numericial stability of the dimension reduction is checked. That is, individuals 
+#' with near identical marker genotypes can cause numerical issues, and are reported 
+#' when \code{error_checking} has been set to \code{TRUE}. 
 #' @param  verbose      a logical value. When \code{TRUE}, extra output is returned 
 #'  to the screen for monitoring progress. 
 #'
 #' @details
-#' The \code{multiple_locus_am} function is an R/Rcpp implementation of whole-genome multi-locus association mapping. The method is a 
-#' multiple locus method that is a hybrid of whole-genome and multi-locus association mapping. Briefly, a multiple locus model
-#' is built iteatively, by fitting a whole-genome model at each step. It differs from whole-genome mapping methods because we
+#' The steps to running \code{multiple_locus_am} are as follows:
+#' \itemize{
+#' \item{Step 1:}{ Read in  genotypic information. Use \code{\link{read.genotypes}} to read in the marker data.}
+#' \item{Step 2:}{ Read in phenotypic information.  Use \code{\link{read.phenotypes}} to read in the phenotypic data.}
+#' \item{Step 3:}{ Read in map information. Use \code{\link{read.map}} to read in 
+#'  the marker map. Omit this step if marker map is unknown. A generic map will be created.}
+#' \item{Step 4:}{ Perform WGAM analysis. Use \code{multiple_locus_am} to identify multiple 
+#' significant marker-trait associations, simultaneously.}  
+#' }
+#'
+#' The genotypic file must not contain missing genotypes.
+#'
+#' The phenotypic file can contain missing information, coded as \code{NA}, but only 
+#' in the trait data. The fixed effects data (i.e. the covariates and/or factors)
+#' cannot contain any missing data.  The phenotypic file is allowed to contain multiple traits
+#' and fixed effects.  
+#'  
+#' The trait data and fixed effects data are  specified by setting \code{colname.trait} 
+#'  and \code{colname.feffects}, respectively. \code{colname.trait} can only contain a single
+#'  character string for the trait name.  \code{colname.feffects} can be a character vector 
+#'  if multiple fixed effects are to be included in the linear mixed model. Whether the 
+#'  fixed effects are treated as a covariate or factor is dependent upon the class of 
+#'  the associated data columns in the data frame obtained from \code{\link{read.phenotypes}}. 
+#'
+#'    STILL BEING WRITTEN .... 
+#' The \code{multiple_locus_am} function is an R/Rcpp implementation of whole-genome 
+#' multi-locus association mapping. The method is a 
+#' multiple locus method that is a hybrid of whole-genome and multi-locus association mapping. 
+#' Briefly, a multiple locus model
+#' is built iteatively, by fitting a whole-genome model at each step. It differs from 
+#' whole-genome mapping methods because we
 #' get a parmonious set of marker loci that are in strongest association with a trait.  Also, it differs from multi-locus 
 #' association mapping methods because at each iteration of the model building process, we fit all snp loci 
 #' simultaneously, as opposed to fitting them one at a time. 
@@ -1534,7 +1601,7 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, workingmemG
 #'                            colname.feffects = c("cov1","cov2", "fac"),
 #'                            map = map.df,
 #'                            pheno = phenodf,
-#'                            geno = geno.list, verbose=FALSE)
+#'                            geno = geno.list, verbose=TRUE, workingmemGb=4)
 #'
 #'
 #'
@@ -1571,6 +1638,18 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
    ## assign trait 
    trait <-  pheno[[colname.trait]]
 
+   ## check for NA's in trait
+   indxNA <- which(is.na(trait))
+   if(length(indxNA)==0){
+          indxNA <- vector("numeric", 0)
+   } else {
+     ## place in reverse order
+     indxNA <- sort(indxNA, decreasing = TRUE) 
+     if(any(is.na(indxNA))){
+       cat("Error:  (internal).  indxNA contains NA values. \n")
+       stop(" multiple_locus_am has terminated with errors. ")
+     }
+   }
    ## assign model matrix X
    if(is.null(colname.feffects))
    {  ## trait + intercept being fitted only
@@ -1582,11 +1661,13 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
      mf <- as.formula(mf)
      currentX <- model.matrix(mf, data=pheno)
    } 
-
-
+  if(length(indxNA)>0){
+    trait <- trait[-indxNA]
+    currentX <- currentX[-indxNA,]
+  }
  cat("\n\n\n\n")
- cat("                         Multiple Locus Association Mapping via WGAM\n")
- cat("                                       Version 1.0 \n\n")
+ cat("            Multiple Locus Association Mapping via WGAM\n")
+ cat("                       Version 1.0 \n\n")
  
 
   itnum <- 1
@@ -1594,17 +1675,24 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
        ## Calculate MMt and its inverse
        cat(" Performing iteration ... ", itnum, "\n")
        if (verbose) 
-               cat(" Performing dimension reduction step: calculating M %*% t(M) \n")
+        cat(" Performing dimension reduction step: calculating M %*% t(M) \n")
+        print(workingmemGb)
+
        MMt <- calculateMMt(geno=geno[["binfileM"]], workingmemGb=workingmemGb, numcores=numcores, 
-                        dim_of_bin_M = geno[["dim_of_bin_M"]], selected_loci=selected_loci, verbose = verbose )
+                           dim_of_bin_M = geno[["dim_of_bin_M"]], 
+                           selected_loci=selected_loci, verbose = verbose) 
+      if(length(indxNA)> 0 )
+        MMt <- MMt[-indxNA, -indxNA]
+                    
       invMMt <- solve(MMt)
 
       ## perform likelihood ratio test for variance component Var_g
       if (verbose)
-             cat(" Performing likelihood ratio test for presence of significant  marker-trait associations.")
+             cat(" Performing likelihood ratio test for presence of significant marker-trait associations.\n")
+
+
       res_base <- emma.REMLE(y=trait, X= currentX , K=diag(nrow(MMt)) )
       res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
-      res_full
 
       ts <- 2 * ( res_full$REML -  res_base$REML )  ## test statistic
 
@@ -1618,15 +1706,15 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
         cat(" Test statistic value is ", ts, "\n")
         cat(" Significance threshold for 1 df chi-squared test is ", critical_value, "\n")
         if(ts > critical_value)
-          cat(" Test significant. Significant marker-trait association present... \n")
+          cat(" Significant marker-trait association present... \n")
 
      }
      if(ts < critical_value){
         continue <- FALSE
-        cat(" No more marker-trait associations found .... \n\n\n")
-        cat("\n\n                           Final Model  \n")
+        cat(" No marker-trait associations found .... \n\n\n")
+        cat("\n\n                           FINAL MODEL  \n")
         cat(" --------------------------------------------------------------------  \n")
-        if (length(selected_loci) == 1 & is.na(selected_loci))
+        if (length(selected_loci) == 1 & any(is.na(selected_loci)))
         {
           cat(" No significant marker-trait associations have been found. \n\n")
         }  else {
@@ -1635,6 +1723,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
            for(ii in selected_loci)
                   cat(sprintf("%15s     %10s        %10f        %9i \n", 
                       map[[1]][ii], map[[2]][ii], map[[3]][ii], ii))
+        cat(" --------------------------------------------------------------------  \n")
            cat("\n\n")
         }
     
@@ -1654,7 +1743,9 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
          if (verbose)
             cat(" Calculating BLUPs for dimension reduced model. \n")
       
-         hat_a <- calculate_reduced_a(varG=res_full$vg, P=P, MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], y=trait, verbose = verbose)  
+         hat_a <- calculate_reduced_a(varG=res_full$vg, P=P, 
+                       MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
+                       y=trait, verbose = verbose)  
 
         if (verbose) 
              cat(" Calculating variance of BLUPs for dimension reduced model. \n")
@@ -1665,15 +1756,22 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
         if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
         bin_path <- dirname(geno[["binfileM"]])
-        a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, dims=geno[["dim_of_bin_M"]],
-                         selectedloci = selected_loci,
-                         invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]], transformed_a=hat_a, transformed_vara=var_hat_a)
+    #    if(is.null(indxNA)) 
+    #           indxNA <- NA  ## need this for Rcpp code
+        a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, 
+                                            dims=geno[["dim_of_bin_M"]],
+                                            selectedloci = selected_loci,
+                                            invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
+                                            transformed_a=hat_a, 
+                                            transformed_vara=var_hat_a,
+                                            indxNA = indxNA,
+                                            verbose=verbose)
   
         ## outlier test statistic
         if (verbose)
            cat(" Calculating outlier test statistics. \n")
         tsq <- a_and_vara[["a"]]**2/a_and_vara[["vara"]]
-        indx <- which(tsq == max(tsq))   ## index of largest test statistic. However, need to account for other loci 
+        indx <- which(tsq == max(tsq, na.rm=TRUE))   ## index of largest test statistic. However, need to account for other loci 
                                          ## already having been removed from M which affects the indexing
 
         ## taking first found qtl
@@ -1681,22 +1779,25 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
 
         orig_indx <- seq(1, geno[["dim_of_bin_M"]][2])  ## 1:ncols
         new_selected_locus <- orig_indx[indx]
-        if(is.na(selected_loci)  & length(selected_loci)==1){
+        if(any(is.na(selected_loci))  & length(selected_loci)==1){
             selected_loci <- new_selected_locus
         } else {
             selected_loci <- c(selected_loci, new_selected_locus)
         }
       
-cat("\n\n")
+cat(" Significant marker-trait association found ... \n")
+cat(" Results after iteration ", itnum, "\n")
 cat(sprintf("%15s     %10s        %10s        %10s \n", "Mrk Name", "Chrm", "Map Pos", "Col Number"))
 for(ii in selected_loci)
    cat(sprintf("%15s     %10s        %10f        %9i \n", map[[1]][ii], map[[2]][ii], map[[3]][ii], ii))
-cat("\n\n")
+cat("\n")
 
 
 
-        currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus, bin_path = bin_path, 
-                                      dim_of_bin_M=geno[["dim_of_bin_M"]]) 
+        currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus, 
+                               bin_path = bin_path, 
+                               dim_of_bin_M=geno[["dim_of_bin_M"]],
+                               indxNA = indxNA) 
      }  ## if ts < critical_value
 
      itnum <- itnum + 1
