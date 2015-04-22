@@ -38,10 +38,10 @@ using Eigen::Lower;
 using Eigen::Map;   // maps rather than copies
 
 
-// #ifdef _OPENMP
-//#include <omp.h>
+#ifdef _OPENMP
+#include <omp.h>
 //   [[Rcpp::plugins(openmp)]]
-// #endif
+#endif
 
 
 const size_t bits_in_double = std::numeric_limits<long double>::digits;
@@ -332,7 +332,7 @@ fileOUT.close();
 Eigen::MatrixXi  ReadBlock(std::string binfname, 
                            int start_row,
                            int numcols,
-                           int numrows_in_block) 
+                           int numrows_in_block)
 
 {
  // reads in packed data from binary file of longs
@@ -392,7 +392,7 @@ for(int i=0;i < v.size(); i++)
      //if(igeno>1)
      //     igeno = -1;
      // it's igeno - 1 so that 0,1,2 map onto -1, 0, 1
-     M(rowi, coli) = (double) igeno - 1; // converted to double but okay, its safe because igeno always small 
+      M(rowi, coli) = (double) igeno - 1; // converted to double but okay, its safe because igeno always small 
      coli++;
      if(coli == numcols)
      {
@@ -543,6 +543,12 @@ char
 
 if(csv) 
     sep = ',' ;
+
+
+
+Rcpp::Rcout << " in here " << endl;
+Rcpp::Rcout << dims[1]  << endl;
+
 
 
 
@@ -852,8 +858,8 @@ Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
 if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
 
-  Eigen::MatrixXi
-                  Mt;
+   Eigen::MatrixXi
+                   Mt;
 
 
   if(!R_IsNA(selected_loci(0))){
@@ -910,8 +916,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
           Eigen::MatrixXi
                   Mt;
-
-         Mt = ReadBlock(fnamebin, start_row1, dims[0], num_rows_in_block1) ;
+          Mt = ReadBlock(fnamebin, start_row1, dims[0], num_rows_in_block1) ;
 
          Eigen::MatrixXd
              ar_tmp;
@@ -1015,7 +1020,6 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,
 //      2. when indxNA not NA, then need to adjust dimenions of Mt by removing cols.
 
 
-Rcpp::Rcout << "in heer " << std::endl;
 
 
 ostringstream
@@ -1048,10 +1052,10 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
 
 
-   Eigen::MatrixXi
-                  Mt;
+    Eigen::MatrixXi
+                   Mt;
 
-   Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
+    Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
 
   // removing columns that correspond to individuals with no 
   // trait data
@@ -1126,10 +1130,10 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
          if ((start_row1 + num_rows_in_block1) > dims[0])
             num_rows_in_block1 = dims[0] - start_row1;
 
-          Eigen::MatrixXi
-                  Mt;
+           Eigen::MatrixXi
+                   Mt;
 
-         Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+          Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
 
          // removing columns that correspond to individuals with no 
          // trait data
@@ -1309,7 +1313,7 @@ Eigen::VectorXi
 
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
-   Eigen::MatrixXi genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
+    Eigen::MatrixXi genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
 
     // removing rows that correspond to individuals with no 
   // trait data
@@ -1344,7 +1348,9 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
                      num_rows_in_block1 = dims[0] - start_row1;
               Rcpp::Rcout << num_rows_in_block1 << " num rows in block 1 " << std::endl;
 
-              Eigen::MatrixXi    genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
+              Eigen::MatrixXi    
+                genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
+
 
               // removing rows that correspond to individuals with no 
               // trait data
@@ -1393,8 +1399,24 @@ return(column_of_genos);
 
 
 
+// [[Rcpp::export]]
+Eigen::MatrixXd  mult_rcpp(Map<MatrixXd> S,  Map<MatrixXd> K)
+{
+
+  // test code to see if a matrix multiplication in Eigen is faster than R but it
+  // isn't
+  Rcpp::Rcout << "in here " << endl;
+  Eigen::MatrixXd 
+        resMat = S * K * S;
+
+  Rcpp::Rcout << "out of here " << endl;
+
+  return resMat ;
 
 
+}
+
+//Eigen::MatrixXd  solve_rcpp( Map<MatrixXd>   Amat)
 
 
 
@@ -1405,10 +1427,11 @@ Eigen::MatrixXi  calculateMMt_rcpp(CharacterVector f_name_bin,
                                    bool verbose)
 {
 // set multiple cores
+Rcpp::Rcout << " ###################################### "  << Eigen::nbThreads() << endl;
 Eigen::initParallel();
 omp_set_num_threads(num_cores);
 Eigen::setNbThreads(num_cores);
-
+Rcpp::Rcout << " ###################################### "  << Eigen::nbThreads() << endl;
 
 
 std::string 
@@ -1450,14 +1473,20 @@ double
 //-------------------------
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
-   genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
+    genoMat = ReadBlock(fnamebin,  0, dims[1], dims[0] );
 
    if(!R_IsNA(selected_loci(0))){
      // setting columns to 0
      for(int ii=0; ii < selected_loci.size() ; ii++)
        genoMat.col(selected_loci(ii)).setZero();
    }
+
+   Rcpp::Rcout << " beginning MMt "  << std::endl;
+   Rcpp::Rcout <<  num_cores << std::endl;
+
    MMt = genoMat * genoMat.transpose(); 
+
+   Rcpp::Rcout << " end MMt ... " << std::endl;
 
 } else {
     // based on user defined memory. Doing MMt via blockwise multiplication
@@ -1491,8 +1520,12 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
                      num_rows_in_block1 = dims[0] - start_row1;
             //  Rcpp::Rcout << num_rows_in_block1 << " num rows in block 1 " << std::endl;
 
-              Eigen::MatrixXi    genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
-              Eigen::MatrixXi    MMtsub(MatrixXi(num_rows_in_block1, num_rows_in_block1).setZero());
+               Eigen::MatrixXi    
+                    genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
+
+
+              Eigen::MatrixXi    
+                   MMtsub(MatrixXi(num_rows_in_block1, num_rows_in_block1).setZero());
 
              if(!R_IsNA(selected_loci(0) )){
              // setting columns to 0
@@ -1514,7 +1547,12 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
                    long num_rows_in_block2 = num_rows_in_block;
                    if ((start_row2 + num_rows_in_block2) > dims[0])
                           num_rows_in_block2 = dims[0] - start_row2;
-                    Eigen::MatrixXi    genoMat_block2 ( ReadBlock(fnamebin,  start_row2, dims[1], num_rows_in_block2)) ;
+
+                    Eigen::MatrixXi    
+                       genoMat_block2 ( ReadBlock(fnamebin,  start_row2, dims[1], num_rows_in_block2)) ;
+
+
+
 
                    Eigen::MatrixXi    MMtsub(MatrixXi(num_rows_in_block1, num_rows_in_block2).setZero());
 

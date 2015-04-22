@@ -220,6 +220,7 @@ emma.eigen.R.wo.Z <-  function (K, X)
     n <- nrow(X)
     q <- ncol(X)
     S <- diag(n) - X %*% solve(crossprod(X, X)) %*% t(X)
+
     eig <- eigen(S %*% (K + diag(1, n)) %*% S, symmetric = TRUE)
     stopifnot(!is.complex(eig$values))
     return(list(values = eig$values[1:(n - q)] - 1, vectors = eig$vectors[, 
@@ -521,10 +522,10 @@ if(is.null(map)){
 ##    nvidia-smi -l 3
 
 
-##library('Rcpp')
-##library('RcppEigen')
-##library('matrixcalc')
-##library('Matrix')
+##  library('Rcpp')
+##  library('RcppEigen')
+##  library('matrixcalc')
+##  library('Matrix')
 
 ##---------------------------
 ## Rcpp Function Declarion
@@ -653,9 +654,12 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
   return(res)
 }
 
-
-
-
+#newmatrixmul <- function(S=NULL, K=NULL)
+#{
+#  XX <- mult_rcpp(S=S, K=K)
+#
+#  return(XX)
+#}
 
 
 calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE)
@@ -682,6 +686,7 @@ calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, di
   MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
                                max_memory_in_Gbytes=workingmemGb, num_cores=numcores, 
                                dims= dim_of_bin_M, verbose = verbose)
+  gc()
   return(MMt)
 
 }  ## end function
@@ -1239,7 +1244,8 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
     binMfile <- paste(bin_path, "M.bin", sep="") ## file name for binary packed Mt file.
 
     createMt_rcpp(f_name = file_genotype, f_name_bin = binMfile,  AA = AA, AB = AB, BB = BB,
-                  max_memory_in_Gbytes=workingmemGb,  dims = dim_of_bin_M, csv=csv,
+                  max_memory_in_Gbytes=workingmemGb,  
+                  dims = c(dim_of_bin_M[2], dim_of_bin_M[1]), csv=csv,
                   verbose = verbose )
  }
 
@@ -1247,46 +1253,6 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 
 }
 
-create.bin.Mt <- function(file_genotype, bin_path, columnwise, AA, AB, BB, workingmemGb, dim_of_bin_M, csv){
- ## an Rcpp function to create the packed binary file of the genotype data Mt
- ## Args
- ## file_genotype    absolute path and file name of genotype file
- ## bin_path         path name for where binary files are to be stored. 
- ## AA, AB, BB       numeric codes for associated genotypes in marker genotype file
- ## workingmemGb     available memory for converstion to packed binary
- ## dim_of_bin_M             row, column dimensions of M.  
-
- binMtfile <- paste(bin_path, "Mt.bin", sep="") ## file name for binary packed Mt file.
-
- createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,  AA = AA, AB = AB, BB = BB, 
-               max_memory_in_Gbytes=workingmemGb,  dims = dim_of_bin_M, csv=csv, 
-               verbose = verbose  )
-
- return(NULL)
-
-}
-
-
-
-create.bin.M <- function(file_genotype, bin_path, columnwise, AA, AB, BB, workingmemGb, dim_of_bin_M, csv){
- ## an Rcpp function to create the packed binary file of the genotype data M
- ## Args
- ## file_genotype    absolute path and file name of genotype file
- ## bin_path         path name for where binary files are to be stored. 
- ## AA, AB, BB       numeric codes for associated genotypes in marker genotype file
- ## workingmemGb     available memory for converstion to packed binary
- ## dim_of_bin_M             row, column dimensions of M.  
-
- binMfile <- paste(bin_path, "M.bin", sep="") ## file name for binary packed Mt file.
-
- createM_rcpp(f_name = file_genotype, f_name_bin = binMfile, AA = AA, AB = AB, BB = BB, 
-               max_memory_in_Gbytes=workingmemGb,  dims = dim_of_bin_M , csv = csv, 
-               verbose = verbose )
-
- return(NULL)
-
-
-}
 
 
 
@@ -1638,18 +1604,47 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
    ## assign trait 
    trait <-  pheno[[colname.trait]]
 
-   ## check for NA's in trait
-   indxNA <- which(is.na(trait))
-   if(length(indxNA)==0){
+
+   check.for.NA.in.trait <- function(trait=NULL)
+   {
+     ## internal function for multiple_locus_am 
+     ## to return the positions of NA in a trait
+
+       ## check for NA's in trait
+        indxNA <- which(is.na(trait))
+        if(length(indxNA)==0){
           indxNA <- vector("numeric", 0)
-   } else {
-     ## place in reverse order
-     indxNA <- sort(indxNA, decreasing = TRUE) 
-     if(any(is.na(indxNA))){
-       cat("Error:  (internal).  indxNA contains NA values. \n")
-       stop(" multiple_locus_am has terminated with errors. ")
-     }
-   }
+        } else {
+          ## place in reverse order
+          indxNA <- sort(indxNA, decreasing = TRUE)
+          if(any(is.na(indxNA))){
+            cat("Error:  (internal).  indxNA contains NA values. \n")
+            stop(" multiple_locus_am has terminated with errors. ")
+          }
+        }
+
+      return(indxNA)
+   } 
+
+   ## check for NA's in trait
+   indxNA <- check.for.NA.in.trait(trait=trait)
+
+
+
+#   indxNA <- which(is.na(trait))
+#   if(length(indxNA)==0){
+#          indxNA <- vector("numeric", 0)
+#   } else {
+#     ## place in reverse order
+#     indxNA <- sort(indxNA, decreasing = TRUE) 
+#     if(any(is.na(indxNA))){
+#       cat("Error:  (internal).  indxNA contains NA values. \n")
+#       stop(" multiple_locus_am has terminated with errors. ")
+#     }
+#   }
+
+
+
    ## assign model matrix X
    if(is.null(colname.feffects))
    {  ## trait + intercept being fitted only
@@ -1681,10 +1676,13 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
        MMt <- calculateMMt(geno=geno[["binfileM"]], workingmemGb=workingmemGb, numcores=numcores, 
                            dim_of_bin_M = geno[["dim_of_bin_M"]], 
                            selected_loci=selected_loci, verbose = verbose) 
+      gc()
       if(length(indxNA)> 0 )
         MMt <- MMt[-indxNA, -indxNA]
-                    
-      invMMt <- solve(MMt)
+                   
+      
+      invMMt <- chol2inv(chol(MMt))
+      gc()
 
       ## perform likelihood ratio test for variance component Var_g
       if (verbose)
@@ -1805,9 +1803,14 @@ cat("\n")
   }  ## end while continue
 
 
+if (length(selected_loci) > 0){
+  sigres <- data.frame("Mrk"=map[[1]][selected_loci], "Chr"=map[[2]][selected_loci], "Pos"=map[[3]][selected_loci], "Indx"=selected_loci)
+}
 
 
-return(selected_loci)
+
+
+return( sigres )
 
 } ## end multiple_locus_am
 
