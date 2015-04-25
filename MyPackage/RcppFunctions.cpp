@@ -1424,7 +1424,8 @@ Eigen::MatrixXd  mult_rcpp(Map<MatrixXd> S,  Map<MatrixXd> K)
 Eigen::MatrixXi  calculateMMt_rcpp(CharacterVector f_name_bin, 
                                    double  max_memory_in_Gbytes, int num_cores,
                                    Rcpp::NumericVector  selected_loci , std::vector<long> dims, 
-                                   bool verbose)
+                                   bool verbose, 
+                                   Function tcrossprod)
 {
 // set multiple cores
 Rcpp::Rcout << " ###################################### "  << Eigen::nbThreads() << endl;
@@ -1451,9 +1452,10 @@ std::string
 
 
 MatrixXi 
-    MMt(MatrixXi(dims[0], dims[0]).setZero()),
     genoMat;
+  //  MMt(MatrixXi(dims[0], dims[0]).setZero());
 
+Rcpp::IntegerMatrix  MMt(dims[0], dims[0]);
 
 
 
@@ -1461,8 +1463,19 @@ MatrixXi
 //-----------------------------------
 // Calculate amount of memory needed
 //-----------------------------------
+// Memory required for 
+// MMt   dims[0] * dims[0] *  bits_in_int
+// genoMat  dims[0] * dims[1] * bits_in_int
+// genoMat transpose dims[0] * dims[1] * bits_in_int
+// 
+// Block update
+//
+// MMt   dims[0] * dims[0] *  bits_in_int
+// genoMat  num_rows_in_block * dims[1] * bits_in_int
+// genoMat transpose num_rows_in_block * dims[1] * bits_in_int
+
 double 
-  memory_needed_in_Gb =  (dims[0] *  dims[1] *   bits_in_int)/( (double) 8000000000) ;
+  memory_needed_in_Gb =  (dims[0]*dims[0]* bits_in_int + 2*(dims[0] *  dims[1] *   bits_in_int))/( (double) 8000000000) ;
 
 
 
@@ -1484,13 +1497,15 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    Rcpp::Rcout << " beginning MMt "  << std::endl;
    Rcpp::Rcout <<  num_cores << std::endl;
 
-   MMt = genoMat * genoMat.transpose(); 
+   // MMt = genoMat * genoMat.transpose(); 
+    MMt = tcrossprod(genoMat);
 
    Rcpp::Rcout << " end MMt ... " << std::endl;
 
 } else {
     // based on user defined memory. Doing MMt via blockwise multiplication
-    long num_rows_in_block = (max_memory_in_Gbytes  * (double) 8000000000 )/(bits_in_int * dims[1]);
+    // long num_rows_in_block = (max_memory_in_Gbytes  * (double) 8000000000 )/(bits_in_int * dims[1]);
+    long num_rows_in_block = (max_memory_in_Gbytes  * (double) 8000000000 - dims[0] * dims[0] * bits_in_int)/( 2* bits_in_int * dims[1]);
 //    if(num_rows_in_block > dims[0]){
 //         genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
 

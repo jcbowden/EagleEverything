@@ -662,7 +662,7 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
 #}
 
 
-calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE)
+calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE, tcrossprod=tcrossprod)
 {
  ## R interface to Rcpp code to calculate M %*% t(M)
  ## Args
@@ -685,7 +685,8 @@ calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, di
 
   MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
                                max_memory_in_Gbytes=workingmemGb, num_cores=numcores, 
-                               dims= dim_of_bin_M, verbose = verbose)
+                               dims= dim_of_bin_M, verbose = verbose, 
+                              tcrossprod=tcrossprod)
   gc()
   return(MMt)
 
