@@ -865,7 +865,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
   if(!R_IsNA(selected_loci(0))){
    // setting columns to 0
    for(int ii=0; ii < selected_loci.size() ; ii++)
-          Mt.row(selected_loci(ii)).setZero();
+          Mt.row(selected_loci(ii) ).setZero();
    }
 
 
@@ -1021,7 +1021,6 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,
 
 
 
-
 ostringstream
       os;
 
@@ -1060,8 +1059,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
   // removing columns that correspond to individuals with no 
   // trait data
 //   if(!R_IsNA(indxNA(0))){
-  Rcpp::Rcout << "-------------------------------------------" << endl;
-  Rcpp::Rcout << indxNA.size()  << endl;
    if(indxNA.size()!=0){
      for (int ii=0; ii < indxNA.size(); ii++){
         removeColumn(Mt, indxNA(ii) );
@@ -1138,8 +1135,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
          // removing columns that correspond to individuals with no 
          // trait data
        //  if(!R_IsNA(indxNA(0))){
-  Rcpp::Rcout << "-------------------------------------------" << endl;
-  Rcpp::Rcout << indxNA.size()  << endl;
          if(indxNA.size() != 0 ){
                for (int ii=0; ii < indxNA.size(); ii++){
                      removeColumn(Mt, indxNA(ii) );
@@ -1281,8 +1276,10 @@ Rcpp::Rcout << "\n\n" << std::endl;
 
 
 // [[Rcpp::export]]
-Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_bin, double  max_memory_in_Gbytes, 
-                                    int selected_locus, std::vector<long> dims,
+Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_bin, 
+                                   double  max_memory_in_Gbytes, 
+                                    int selected_locus, 
+                                    std::vector<long> dims,
                                    Rcpp::NumericVector indxNA)
 {
   std::string
@@ -1317,19 +1314,15 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
     // removing rows that correspond to individuals with no 
   // trait data
-  // if(!R_IsNA(indxNA(0))){
-  Rcpp::Rcout << "-------------------------------------------" << endl;
-  Rcpp::Rcout << indxNA.size()  << endl;
-  if(indxNA.size() != 0){
-     for (int ii=0; ii < indxNA.size(); ii++){
-        removeRow(genoMat, indxNA(ii) );
+  if(!R_IsNA(indxNA(0))){
+     if(indxNA.size() != 0){
+        for (int ii=0; ii < indxNA.size(); ii++){
+           removeRow(genoMat, indxNA(ii) ); } 
      }
   }
 
-
    column_of_genos = genoMat.col(selected_locus);
    
-   Rcpp::Rcout << " col of genos " << column_of_genos.size() << endl;
 
 
 }  else {
@@ -1357,8 +1350,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               int start = start_row1;
               int finish = start_row1 + num_rows_in_block1;
               // if(!R_IsNA(indxNA(0))){
-  Rcpp::Rcout << "-------------------------------------------" << endl;
-  Rcpp::Rcout << indxNA.size()  << endl;
               if(indxNA.size() != 0 ){
                  for (int ii=0; ii < indxNA.size(); ii++){
                    if(indxNA(ii) >= start & indxNA(ii) <= finish)
@@ -1424,8 +1415,7 @@ Eigen::MatrixXd  mult_rcpp(Map<MatrixXd> S,  Map<MatrixXd> K)
 Eigen::MatrixXi  calculateMMt_rcpp(CharacterVector f_name_bin, 
                                    double  max_memory_in_Gbytes, int num_cores,
                                    Rcpp::NumericVector  selected_loci , std::vector<long> dims, 
-                                   bool verbose, 
-                                   Function tcrossprod)
+                                   bool verbose) 
 {
 // set multiple cores
 Rcpp::Rcout << " ###################################### "  << Eigen::nbThreads() << endl;
@@ -1452,10 +1442,9 @@ std::string
 
 
 MatrixXi 
-    genoMat;
-  //  MMt(MatrixXi(dims[0], dims[0]).setZero());
+    genoMat,
+    MMt(MatrixXi(dims[0], dims[0]).setZero());
 
-Rcpp::IntegerMatrix  MMt(dims[0], dims[0]);
 
 
 
@@ -1490,15 +1479,19 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
    if(!R_IsNA(selected_loci(0))){
      // setting columns to 0
-     for(int ii=0; ii < selected_loci.size() ; ii++)
-       genoMat.col(selected_loci(ii)).setZero();
+     for(int ii=0; ii < selected_loci.size() ; ii++) 
+       genoMat.col(selected_loci(ii)).setZero(); 
    }
+
 
    Rcpp::Rcout << " beginning MMt "  << std::endl;
    Rcpp::Rcout <<  num_cores << std::endl;
 
-   // MMt = genoMat * genoMat.transpose(); 
-    MMt = tcrossprod(genoMat);
+
+
+     MMt = genoMat * genoMat.transpose(); 
+
+
 
    Rcpp::Rcout << " end MMt ... " << std::endl;
 

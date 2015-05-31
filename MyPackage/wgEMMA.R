@@ -219,9 +219,13 @@ emma.eigen.R.wo.Z <-  function (K, X)
 {
     n <- nrow(X)
     q <- ncol(X)
-    S <- diag(n) - X %*% solve(crossprod(X, X)) %*% t(X)
+    dn <- diag(n)
+    S <- dn - X %*% solve(crossprod(X, X)) %*% t(X)
+    gc()
 
-    eig <- eigen(S %*% (K + diag(1, n)) %*% S, symmetric = TRUE)
+    eig <- eigen(S %*% (K + dn) %*% S, symmetric = TRUE)
+
+
     stopifnot(!is.complex(eig$values))
     return(list(values = eig$values[1:(n - q)] - 1, vectors = eig$vectors[, 
         1:(n - q)]))
@@ -384,6 +388,26 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
 }
 
 
+   check.for.NA.in.trait <- function(trait=NULL)
+   {
+     ## internal function for multiple_locus_am 
+     ## to return the positions of NA in a trait
+
+       ## check for NA's in trait
+        indxNA <- which(is.na(trait))
+        if(length(indxNA)==0){
+          indxNA <- vector("numeric", 0)
+        } else {
+          ## place in reverse order
+          indxNA <- sort(indxNA, decreasing = TRUE)
+          if(any(is.na(indxNA))){
+            cat("Error:  (internal).  indxNA contains NA values. \n")
+            stop(" multiple_locus_am has terminated with errors. ")
+          }
+        }
+
+      return(indxNA)
+   } 
 
 
 check.inputs.mlam <- function (numcores, workingmemGb, colname.trait, colname.feffects, map, pheno, 
@@ -433,7 +457,7 @@ if(any(is.na(indx))){
 if(is.null(map)){
     cat("\n\n  Warning: no map object has been specified. A generic map \n")
     cat("          will be assumed.                                \n\n")
-    map <- data.frame(Mrk= paste("M", 1:geno[["dim_of_bin_M"]]), Chrm=1, Pos=1:geno[["dim_of_bin_M"]])
+    map <- data.frame(Mrk= paste("M", 1:geno[["dim_of_bin_M"]][2]), Chrm=1, Pos=1:geno[["dim_of_bin_M"]][2])
 }
 
  ## checks for colname.trait
@@ -662,7 +686,7 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
 #}
 
 
-calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE, tcrossprod=tcrossprod)
+calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE)
 {
  ## R interface to Rcpp code to calculate M %*% t(M)
  ## Args
@@ -682,12 +706,10 @@ calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, di
     stop(" calculateMMt has terminated with errors.") 
    }
 
-
+  if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
   MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
                                max_memory_in_Gbytes=workingmemGb, num_cores=numcores, 
-                               dims= dim_of_bin_M, verbose = verbose, 
-                              tcrossprod=tcrossprod)
-  gc()
+                               dims= dim_of_bin_M, verbose = verbose) 
   return(MMt)
 
 }  ## end function
@@ -894,6 +916,7 @@ if(.Platform$OS.type == "unix") {
 
   ycolmat <- matrix(data=y, ncol=1)  ## makes it easier when dealing with this in Rcpp
   fnamebin <- paste(bin_path, "Mt.bin", sep="")
+  if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
   ar <- calculate_reduced_a_rcpp(f_name_bin = fnamebin, varG=varG, P=P, y=ycolmat, max_memory_in_Gbytes=workingmemGb, 
                                  dims=dim_of_bin_M , selected_loci = selected_loci , 
                                  verbose = verbose )
@@ -949,10 +972,15 @@ if(.Platform$OS.type == "unix") {
   }
 
   dimsMt <- c(dims[2], dims[1]) 
-  calculate_a_and_vara_rcpp(f_name_bin=file_bin,max_memory_in_Gbytes=maxmemGb, dims=dimsMt, 
+ 
+  if(!any(is.na(selectedloci))) selectedloci <- selectedloci-1
+  cat(" SELECTED LOCI .... ", selectedloci, "\n")
+  calculate_a_and_vara_rcpp(f_name_bin=file_bin,
                     selected_loci = selectedloci,
                     inv_MMt_sqrt=invMMtsqrt,  
                     dim_reduced_vara = transformed_vara,
+                    max_memory_in_Gbytes=maxmemGb, 
+                    dims=dimsMt, 
                     a = transformed_a, 
                     verbose = verbose,
                     indxNA = indxNA)
@@ -1118,7 +1146,7 @@ read.phenotypes <- function(path=getwd() , file_phenotype = NULL, header=TRUE, c
   } else {
    phenofile <- paste(path, "\\", file_phenotype, sep="")
   }
-
+  sep <- ""
   if(csv) sep=","
   phenos <- read.table(phenofile, header=header, sep=sep)
 cat("\n\n Reading Phenotype File \n\n")
@@ -1443,6 +1471,9 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8,
      binfileM <- paste(bin_path, "\\", "M.bin", sep="")
     }
     selected_locus <- colnum - 1  ## to be consistent with C++'s indexing starting from 0
+    if(!any(is.na(indxNA))) indxNA <- indxNA - 1
+
+
     geno <- extract_geno_rcpp(f_name_bin=binfileM, max_memory_in_Gbytes = workingmemGb, 
                               selected_locus=selected_locus, dims=dim_of_bin_M,
                               indxNA = indxNA)
@@ -1462,11 +1493,10 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL,
     ##   currentX    current model matrix
     ##   loci        the marker loci to be included as fixed QTL effects (additive model)
     ##   indxNA      those individuals that should be removed due to missing phenotypes
-
+   if(length(indxNA)==0)  indxNA <- NA
    genodat <- extract_geno(bin_path=bin_path, colnum=loci_indx, 
                            workingmemGb=workingmemGb, dim_of_bin_M=dim_of_bin_M,
                            indxNA = indxNA)
-
    newX <- cbind(currentX, genodat)
    
    return(newX)
@@ -1605,83 +1635,96 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
    ## assign trait 
    trait <-  pheno[[colname.trait]]
 
-
-   check.for.NA.in.trait <- function(trait=NULL)
-   {
-     ## internal function for multiple_locus_am 
-     ## to return the positions of NA in a trait
-
-       ## check for NA's in trait
-        indxNA <- which(is.na(trait))
-        if(length(indxNA)==0){
-          indxNA <- vector("numeric", 0)
-        } else {
-          ## place in reverse order
-          indxNA <- sort(indxNA, decreasing = TRUE)
-          if(any(is.na(indxNA))){
-            cat("Error:  (internal).  indxNA contains NA values. \n")
-            stop(" multiple_locus_am has terminated with errors. ")
-          }
-        }
-
-      return(indxNA)
-   } 
-
    ## check for NA's in trait
    indxNA <- check.for.NA.in.trait(trait=trait)
 
 
-
-#   indxNA <- which(is.na(trait))
-#   if(length(indxNA)==0){
-#          indxNA <- vector("numeric", 0)
-#   } else {
-#     ## place in reverse order
-#     indxNA <- sort(indxNA, decreasing = TRUE) 
-#     if(any(is.na(indxNA))){
-#       cat("Error:  (internal).  indxNA contains NA values. \n")
-#       stop(" multiple_locus_am has terminated with errors. ")
-#     }
-#   }
+#   ## if check_for_duplicates
+#   if(check_for_duplicates){
+#       MMt <- calculateMMt(geno=geno[["binfileM"]], 
+#                           workingmemGb=workingmemGb, numcores=numcores, 
+#                           dim_of_bin_M = geno[["dim_of_bin_M"]], 
+#                           selected_loci=selected_loci, verbose = verbose) 
+#    indx <- which(duplicated(MMt))
+#    if(length(indx) > 0){
+#       cat(" WARNING: there are  samples with the same genotype.  \n")
+#       cat("          These samples are being removed from the analysis. \n")
+#       cat(indx, "\n")
+#
+#       indxNA <- c(indxNA, indx)
+#    }
+#  }
+#
+#   print(indxNA)
 
 
 
    ## assign model matrix X
    if(is.null(colname.feffects))
    {  ## trait + intercept being fitted only
-      currentX <- matrix(data=1, nrow=nrow(pheno), ncol=1)
+      if(length(indxNA) > 0){
+         currentX <- matrix(data=1, nrow=nrow(pheno[-indxNA,]), ncol=1)
+
+      } else {
+        currentX <- matrix(data=1, nrow=nrow(pheno), ncol=1)
+      }
    } else {
       ## trait + fixed effects being fitted. 
-     mf <- paste(colname.feffects, collapse=" + ")
-     mf <- paste(" ~ ", mf, sep="")
-     mf <- as.formula(mf)
-     currentX <- model.matrix(mf, data=pheno)
+     if(length(indxNA)==0)
+     {
+        mf <- paste(colname.feffects, collapse=" + ")
+        mf <- paste(" ~ ", mf, sep="")
+        mf <- as.formula(mf)
+        currentX <- model.matrix(mf, data=pheno)
+     }  else {
+        # there is an issue with creating currentX when it includes
+        # factors that have some of their levels removed. 
+        ph <- pheno[-indxNA,]
+        for(ii in colname.feffects){
+           if(is.factor(ph[,ii])){
+              ph[,ii] <- as.factor(as.character(ph[,ii]))
+           }
+        }  ## for    
+        mf <- paste(colname.feffects, collapse=" + ")
+        mf <- paste(" ~ ", mf, sep="")
+        mf <- as.formula(mf)
+        currentX <- model.matrix(mf, data=ph)
+     } ## if else (length(indxNA)==0)
    } 
+ print(dim(currentX))
+
   if(length(indxNA)>0){
     trait <- trait[-indxNA]
-    currentX <- currentX[-indxNA,]
   }
+  if(!is.matrix(currentX))
+        currentX <- matrix(data=currentX, ncol=1)
+
+
+
+
  cat("\n\n\n\n")
  cat("            Multiple Locus Association Mapping via WGAM\n")
  cat("                       Version 1.0 \n\n")
- 
 
   itnum <- 1
-  while(continue){
+#  while(continue){
+   for(ii in 1:15){
        ## Calculate MMt and its inverse
        cat(" Performing iteration ... ", itnum, "\n")
        if (verbose) 
         cat(" Performing dimension reduction step: calculating M %*% t(M) \n")
         print(workingmemGb)
 
-       MMt <- calculateMMt(geno=geno[["binfileM"]], workingmemGb=workingmemGb, numcores=numcores, 
+       MMt <- calculateMMt(geno=geno[["binfileM"]], workingmemGb=workingmemGb, 
+                           numcores=numcores, 
                            dim_of_bin_M = geno[["dim_of_bin_M"]], 
                            selected_loci=selected_loci, verbose = verbose) 
       gc()
       if(length(indxNA)> 0 )
         MMt <- MMt[-indxNA, -indxNA]
-                   
-      
+
+      ## Trick for dealing with singular MMt due to colinearity
+      MMt <- MMt/max(MMt) + diag(0.01, nrow(MMt)) 
       invMMt <- chol2inv(chol(MMt))
       gc()
 
@@ -1689,12 +1732,18 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
       if (verbose)
              cat(" Performing likelihood ratio test for presence of significant marker-trait associations.\n")
 
-
-      res_base <- emma.REMLE(y=trait, X= currentX , K=diag(nrow(MMt)) )
+      print(length(trait))
+      print(dim(currentX))
+      print("in here")
+      res_base <- emma.REMLE(y=trait, X= currentX , K=diag(nrow(MMt)), llim=-100,ulim=100 )
       res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
 
-      ts <- 2 * ( res_full$REML -  res_base$REML )  ## test statistic
+      print(c(" dim of current X ", dim(currentX)))
 
+
+
+      ts <- 2 * ( res_full$REML -  res_base$REML )  ## test statistic
+      cat(" Test statistic value is ", ts, "\n")
       critical_value <- qchisq(1-(2*alpha) , df=1)     ## significance threshold for a mixture of 
                                                        ## chisq distributions of the form 
                                                        ## 0.5 \Chisq_0 + 0.5 \Chisq_1. Here, 
@@ -1757,6 +1806,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
         bin_path <- dirname(geno[["binfileM"]])
     #    if(is.null(indxNA)) 
     #           indxNA <- NA  ## need this for Rcpp code
+        cat( " selected loci size going into a_and_vara ", selected_loci, " \n")
         a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, 
                                             dims=geno[["dim_of_bin_M"]],
                                             selectedloci = selected_loci,
@@ -1800,7 +1850,8 @@ cat("\n")
      }  ## if ts < critical_value
 
      itnum <- itnum + 1
-
+    
+ 
   }  ## end while continue
 
 
