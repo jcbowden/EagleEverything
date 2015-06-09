@@ -1639,24 +1639,6 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
    indxNA <- check.for.NA.in.trait(trait=trait)
 
 
-#   ## if check_for_duplicates
-#   if(check_for_duplicates){
-#       MMt <- calculateMMt(geno=geno[["binfileM"]], 
-#                           workingmemGb=workingmemGb, numcores=numcores, 
-#                           dim_of_bin_M = geno[["dim_of_bin_M"]], 
-#                           selected_loci=selected_loci, verbose = verbose) 
-#    indx <- which(duplicated(MMt))
-#    if(length(indx) > 0){
-#       cat(" WARNING: there are  samples with the same genotype.  \n")
-#       cat("          These samples are being removed from the analysis. \n")
-#       cat(indx, "\n")
-#
-#       indxNA <- c(indxNA, indx)
-#    }
-#  }
-#
-#   print(indxNA)
-
 
 
    ## assign model matrix X
@@ -1714,6 +1696,9 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
        if (verbose) 
         cat(" Performing dimension reduction step: calculating M %*% t(M) \n")
         print(workingmemGb)
+
+       
+
 
        MMt <- calculateMMt(geno=geno[["binfileM"]], workingmemGb=workingmemGb, 
                            numcores=numcores, 
@@ -1868,7 +1853,16 @@ return( sigres )
 
 
 
+## testing magma calculation
 
+
+magma_test <- function(mat)
+{
+   ans <- magma_test_rcpp(X_ = mat)
+   return(ans)
+
+
+}
 
 
 

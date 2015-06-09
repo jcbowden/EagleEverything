@@ -3,6 +3,7 @@ importFrom(Rcpp, evalCpp)
 import(RcppEigen, matrixcalc, Matrix)
 
 export(
+   magma_test,
    check.genofile,
    read.phenotypes,
    read.genotypes,
