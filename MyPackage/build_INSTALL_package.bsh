@@ -19,7 +19,8 @@ rm -rf ./WMAM  ./WMAM.Rcheck
 echo   "library(Rcpp)" > ./tmp.R
 echo   "    " >> tmp.R  
 echo  " Rcpp.package.skeleton(\"WMAM\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
-echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"svd_magma.R\", \"MAGMA.R\" ) ) " >> ./tmp.R
+## echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"svd_magma.R\", \"MAGMA.R\" ) ) " >> ./tmp.R
+ echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\"  ) ) " >> ./tmp.R
 echo  "  ## running roxygen2  " >> ./tmp.R
 echo  " library(roxygen2) " >> ./tmp.R
 echo  " setwd(\"./WMAM\")  " >> ./tmp.R
@@ -51,9 +52,9 @@ echo " #include <istream> " >> ./tmp1
 echo " #include <vector> " >> ./tmp1
 echo " #include <bitset> " >> ./tmp1
 echo " #include <string> " >> ./tmp1
-echo " #include <Rinternals.h>"  >> ./tmp1
-echo " #include \"Rcpp.h\" "  >> ./tmp1
-echo " #include <magma.h> "  >> ./tmp1
+##echo " #include <Rinternals.h>"  >> ./tmp1
+##echo " #include \"Rcpp.h\" "  >> ./tmp1
+##echo " #include <magma.h> "  >> ./tmp1
 
 
 
@@ -95,10 +96,10 @@ cd $DIR
 ## User needs to set CUDA_HOME
 ##                   R_HOME
 ##                   MAGMA_HOME
-echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./WMAM/src/Makevars
-#echo "PKG_LIBS=-fopenmp"  >> ./WMAM/src/Makevars
-echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./WMAM/src/Makevars
-#echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./WMAM/src/Makevars
+## echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./WMAM/src/Makevars
+echo "PKG_LIBS=-fopenmp"  >> ./WMAM/src/Makevars
+##  echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./WMAM/src/Makevars
+echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./WMAM/src/Makevars
 
 
 

@@ -1689,8 +1689,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
  cat("                       Version 1.0 \n\n")
 
   itnum <- 1
-#  while(continue){
-   for(ii in 1:15){
+  while(continue){
        ## Calculate MMt and its inverse
        cat(" Performing iteration ... ", itnum, "\n")
        if (verbose) 
@@ -1720,8 +1719,8 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
       print(length(trait))
       print(dim(currentX))
       print("in here")
-      res_base <- emma.REMLE(y=trait, X= currentX , K=diag(nrow(MMt)), llim=-100,ulim=100 )
-      res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
+      res_base <- emma.MLE(y=trait, X= currentX , K=diag(nrow(MMt)), llim=-100,ulim=100 )
+      res_full <- emma.MLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
 
       print(c(" dim of current X ", dim(currentX)))
 
@@ -1853,16 +1852,6 @@ return( sigres )
 
 
 
-## testing magma calculation
-
-
-magma_test <- function(mat)
-{
-   ans <- magma_test_rcpp(X_ = mat)
-   return(ans)
-
-
-}
 
 
 

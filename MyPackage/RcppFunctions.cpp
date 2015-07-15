@@ -30,7 +30,7 @@
 #include <vector>
 #include <bitset>
 #include <string>
-#include <magma.h>
+//    #include <magma.h>
 
 
 
@@ -1391,97 +1391,6 @@ return(column_of_genos);
 
 }
 
-// [[Rcpp::export]]
-SEXP Ma_svd_rcpp(SEXP X_)
-{
-
-
-   // Input
-    NumericMatrix X(X_);
-
-    // Initialize magma and cublas
-    magma_init();
-
-    // Declare variables 
-    int info, lwork, n_rows = X.nrow(), n_cols = X.ncol(), min_mn = min(n_rows, n_cols);
-    double tmp[1];
-    NumericVector scale(min_mn);
-    NumericVector work;
-
-    // Query workspace size
-    
-    magma_dgeqrf(n_rows, n_cols, &(X[0]), n_rows, &(scale[0]), &(work[0]), -1, &info); 
-    lwork = work[0];
-    NumericVector work(lwork);
-
-    // Run QR decomposition
-    magma_dgeqrf(n_rows, n_cols, &(X[0]), n_rows, &(scale[0]), &(work[0]), lwork, &info);
-
-    // Scale factor result    
-    for(int ii = 1; ii < n_rows; ii++)
-    {
-        for(int jj = 0; jj < n_cols; jj++)
-        {
-            if(ii > jj) { X[ii + jj * n_rows] *= scale[jj]; }
-        }
-    }
-
-    // Shutdown magma and cublas    
-    magma_finalize();
-    //cublasShutdown();
-
-    // Output  
-    return wrap(X);
-
-
-
-}
-
-
-
-
-
-
-// [[Rcpp::export]]
-NumericMatrix  magma_test_rcpp(SEXP X_)
-{
-
-   NumericMatrix X(X_);
-
-  // Initialize magma and cublas
-    magma_init();
-
-
-   // Declare variables 
-    int info, lwork, n_rows = X.nrow(), n_cols = X.ncol(), min_mn = min(n_rows, n_cols);
-    double tmp[1];
-    NumericVector scale(min_mn);
-    NumericVector work(lwork);
-
-    // Query workspace size
-    magma_dgeqrf(n_rows, n_cols, &(X[0]), n_rows, &(scale[0]), &(work[0]), -1, &info); 
-    lwork = work[0];
-    Rcout << lwork << endl;
-    // Run QR decomposition
-    magma_dgeqrf(n_rows, n_cols, &(X[0]), n_rows, &(scale[0]), &(work[0]), lwork, &info);
-
-    // Scale factor result    
-//    for(int ii = 1; ii < n_rows; ii++)
-//    {
-//        for(int jj = 0; jj < n_cols; jj++)
-//        {
-//            if(ii > jj) { X[ii + jj * n_rows] *= scale[jj]; }
-//        }
-//    }
-
-    // Shutdown magma and cublas    
-//    magma_finalize();
-
- return wrap(X);
-}
-
-
-
 
 // [[Rcpp::export]]
 Eigen::MatrixXd  mult_rcpp(Map<MatrixXd> S,  Map<MatrixXd> K)
@@ -1500,7 +1409,6 @@ Eigen::MatrixXd  mult_rcpp(Map<MatrixXd> S,  Map<MatrixXd> K)
 
 }
 
-//Eigen::MatrixXd  solve_rcpp( Map<MatrixXd>   Amat)
 
 
 
