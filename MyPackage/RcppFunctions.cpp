@@ -551,8 +551,6 @@ if(csv)
 
 
 
-Rcpp::Rcout << " in here " << endl;
-Rcpp::Rcout << dims[1]  << endl;
 
 
 
@@ -1398,11 +1396,9 @@ Eigen::MatrixXd  mult_rcpp(Map<MatrixXd> S,  Map<MatrixXd> K)
 
   // test code to see if a matrix multiplication in Eigen is faster than R but it
   // isn't
-  Rcpp::Rcout << "in here " << endl;
   Eigen::MatrixXd 
         resMat = S * K * S;
 
-  Rcpp::Rcout << "out of here " << endl;
 
   return resMat ;
 
@@ -1485,8 +1481,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    }
 
 
-   Rcpp::Rcout << " beginning MMt "  << std::endl;
-   Rcpp::Rcout <<  num_cores << std::endl;
 
 
 
@@ -1494,7 +1488,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
 
 
-   Rcpp::Rcout << " end MMt ... " << std::endl;
 
 } else {
     // based on user defined memory. Doing MMt via blockwise multiplication

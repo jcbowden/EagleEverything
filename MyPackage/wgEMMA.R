@@ -974,7 +974,6 @@ if(.Platform$OS.type == "unix") {
   dimsMt <- c(dims[2], dims[1]) 
  
   if(!any(is.na(selectedloci))) selectedloci <- selectedloci-1
-  cat(" SELECTED LOCI .... ", selectedloci, "\n")
   calculate_a_and_vara_rcpp(f_name_bin=file_bin,
                     selected_loci = selectedloci,
                     inv_MMt_sqrt=invMMtsqrt,  
@@ -1486,7 +1485,7 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8,
 
 constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, 
                        workingmemGb=8, dim_of_bin_M=NULL,
-                       indxNA = NA)
+                       indxNA = NA, map=NULL)
   {
     ## R function to construct the design matrix X
     ## Args
@@ -1498,7 +1497,7 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL,
                            workingmemGb=workingmemGb, dim_of_bin_M=dim_of_bin_M,
                            indxNA = indxNA)
    newX <- cbind(currentX, genodat)
-   
+   colnames(newX) <- c(colnames(currentX), as.character(map$Mrk[loci_indx])) ## adding col names to new X  
    return(newX)
 
   }
@@ -1524,6 +1523,8 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL,
 #' when \code{error_checking} has been set to \code{TRUE}. 
 #' @param  verbose      a logical value. When \code{TRUE}, extra output is returned 
 #'  to the screen for monitoring progress. 
+#' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
+#' qtl that are to be included in the model. 
 #'
 #' @details
 #' The steps to running \code{multiple_locus_am} are as follows:
@@ -1611,7 +1612,8 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
                               pheno=NULL, 
                               geno=NULL, 
                               alpha=0.05, error_checking=FALSE, 
-                              verbose=FALSE){
+                              verbose=FALSE,
+                              maxit=20){
  ## Core function for performing whole genome association mapping with EMMA
  ## Args
  ## numcores        number of cores available for computation
@@ -1623,7 +1625,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
  ##                 has not been created. If it is a character string, then it is the file location of the binary packed files. 
  ## alpha           significance level at which to perform the likelihood ratio test
  ## error_checking  when true, it performs some checks of the calculations
-
+ ## maxit           maximum number of qtl to include in the model
 
    ## check parameter inputs
    check.inputs.mlam(numcores, workingmemGb, colname.trait, colname.feffects, 
@@ -1688,7 +1690,10 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
  cat("            Multiple Locus Association Mapping via WGAM\n")
  cat("                       Version 1.0 \n\n")
 
-  itnum <- 1
+  BIC <- list()
+  extBIC <- list()
+  extBIC[[1]] <- 1e10 ##  just so it always goes beyond the first null model
+  itnum <- 2
   while(continue){
        ## Calculate MMt and its inverse
        cat(" Performing iteration ... ", itnum, "\n")
@@ -1708,7 +1713,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
         MMt <- MMt[-indxNA, -indxNA]
 
       ## Trick for dealing with singular MMt due to colinearity
-      MMt <- MMt/max(MMt) + diag(0.01, nrow(MMt)) 
+      MMt <- MMt/max(MMt) + diag(0.05, nrow(MMt)) 
       invMMt <- chol2inv(chol(MMt))
       gc()
 
@@ -1719,40 +1724,37 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
       print(length(trait))
       print(dim(currentX))
       print("in here")
-      res_base <- emma.MLE(y=trait, X= currentX , K=diag(nrow(MMt)), llim=-100,ulim=100 )
-      res_full <- emma.MLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
+      #res_base <- emma.REMLE(y=trait, X= currentX , K=diag(nrow(MMt)), llim=-100,ulim=100 )
+      res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
+      if(itnum==2){
+         best_vg <- res_full$vg
+         best_ve <- res_full$ve
+      }
 
-      print(c(" dim of current X ", dim(currentX)))
+      ### AWG  23/07  extBIC stoppage rule
+      res_p <- emma.MLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
+      BIC[[itnum]] <- -2 * res_p$ML + (ncol(currentX)+1) * log(length(trait))  ## fixed effects + variance component
+
+      extBIC[[itnum]] <- BIC[[itnum]] + 2 * lchoose(geno$dim_of_bin_M[2], ncol(currentX) - 1)  
+
+      print(BIC[[itnum]])
+      print(extBIC[[itnum]])
 
 
-
-      ts <- 2 * ( res_full$REML -  res_base$REML )  ## test statistic
-      cat(" Test statistic value is ", ts, "\n")
-      critical_value <- qchisq(1-(2*alpha) , df=1)     ## significance threshold for a mixture of 
-                                                       ## chisq distributions of the form 
-                                                       ## 0.5 \Chisq_0 + 0.5 \Chisq_1. Here, 
-                                                       ## the critical value is found by taking twice
-                                                       ## the alpha value under a chi-square distribution with 
-                                                       ## 1 degree of freedom. 
-     if(verbose){
-        cat(" Test statistic value is ", ts, "\n")
-        cat(" Significance threshold for 1 df chi-squared test is ", critical_value, "\n")
-        if(ts > critical_value)
-          cat(" Significant marker-trait association present... \n")
-
-     }
-     if(ts < critical_value){
+     if(extBIC[[itnum]] > extBIC[[itnum-1]]){
         continue <- FALSE
         cat(" No marker-trait associations found .... \n\n\n")
         cat("\n\n                           FINAL MODEL  \n")
         cat(" --------------------------------------------------------------------  \n")
-        if (length(selected_loci) == 1 & any(is.na(selected_loci)))
+        if (length(selected_loci[-length(selected_loci)]) == 1 & any(is.na(selected_loci)))
         {
           cat(" No significant marker-trait associations have been found. \n\n")
         }  else {
           cat(sprintf("%15s     %10s        %10s        %10s \n", 
                     "Mrk Name", "Chrm", "Map Pos", "Col Number"))
-           for(ii in selected_loci)
+          ## its [-length()] because extBIC doesnt caouse the loop to stop until it has 
+          ## gone one beyond the best model.
+           for(ii in selected_loci[-length(selected_loci)])
                   cat(sprintf("%15s     %10s        %10f        %9i \n", 
                       map[[1]][ii], map[[2]][ii], map[[3]][ii], ii))
         cat(" --------------------------------------------------------------------  \n")
@@ -1761,35 +1763,38 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
     
      } else {  ## QTL present
         if(verbose) cat(" Calculating H matrix. \n")
-        H <- calculateH(MMt=MMt, varE=res_full$ve, varG=res_full$vg)
+        ## H <- calculateH(MMt=MMt, varE=res_full$ve, varG=res_full$vg)
+        H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg)
         if(verbose) cat(" Calculating P matrix. \n")
         P <- calculateP(H=H, X=currentX)
         if (verbose)
               cat(" Calculating  square root of M %*% t(M) and it's inverse. \n")
         MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, numcores=numcores )
+        ## MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=old, checkres=error_checking, numcores=numcores )
 
-    #    hat_a <- calculate_reduced_a(varG=res_full$vg, bin_path=bin_path, P=P, y=trait, 
-    #                                 workingmemGb=workingmemGb, dim_of_bin_M=geno[["dim_of_bin_M"]], 
-    #                                 selected_loci=selected_loci)
-         ## hat_a <- calculate_reduced_a(varG=res_full$vg, P=P, MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], y=trait)
          if (verbose)
             cat(" Calculating BLUPs for dimension reduced model. \n")
       
-         hat_a <- calculate_reduced_a(varG=res_full$vg, P=P, 
+       #  hat_a <- calculate_reduced_a(varG=res_full$vg, P=P, 
+       #               MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
+       #                y=trait, verbose = verbose)  
+
+         hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
                        y=trait, verbose = verbose)  
 
         if (verbose) 
              cat(" Calculating variance of BLUPs for dimension reduced model. \n")
-        var_hat_a    <- calculate_reduced_vara(X=currentX, varE=res_full$ve, varG=res_full$vg, invMMt=invMMt, 
+        #var_hat_a    <- calculate_reduced_vara(X=currentX, varE=res_full$ve, varG=res_full$vg, invMMt=invMMt, 
+        #                                    MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
+        #        verbose = verbose)
+        var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
                                             MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
                 verbose = verbose)
    
         if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
         bin_path <- dirname(geno[["binfileM"]])
-    #    if(is.null(indxNA)) 
-    #           indxNA <- NA  ## need this for Rcpp code
         cat( " selected loci size going into a_and_vara ", selected_loci, " \n")
         a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, 
                                             dims=geno[["dim_of_bin_M"]],
@@ -1830,19 +1835,25 @@ cat("\n")
         currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus, 
                                bin_path = bin_path, 
                                dim_of_bin_M=geno[["dim_of_bin_M"]],
-                               indxNA = indxNA) 
+                               indxNA = indxNA, 
+                               map=map) 
      }  ## if ts < critical_value
 
      itnum <- itnum + 1
-    
+     if(itnum > maxit)
+         continue <- FALSE 
  
   }  ## end while continue
 
 
-if (length(selected_loci) > 0){
-  sigres <- data.frame("Mrk"=map[[1]][selected_loci], "Chr"=map[[2]][selected_loci], "Pos"=map[[3]][selected_loci], "Indx"=selected_loci)
+if (length(selected_loci) > 1){
+  sigres <- data.frame("Mrk"=map[[1]][selected_loci[-length(selected_loci)]], 
+                       "Chr"=map[[2]][selected_loci[-length(selected_loci)]], 
+                       "Pos"=map[[3]][selected_loci[-length(selected_loci)]], 
+                       "Indx"=selected_loci[-length(selected_loci)])
+} else {
+   sigres <- NA
 }
-
 
 
 
@@ -1850,6 +1861,37 @@ return( sigres )
 
 } ## end multiple_locus_am
 
+
+
+
+
+#data
+#       column 1 - id
+#       column 2:m markers 
+#       markers must be 0, 1, 2 for homozygous, heterozygous and other homozygous
+#Returns G matrix in the following form: col1 = row, col2 = col, col3=Genomic relationship, col4=pedigree relationship
+GenomicRel = function(option,data){
+  options(warn=-1)
+  library(MASS)
+  library(GeneticsPed)
+  if(option==1){
+    M1=data
+    M= M1[,2:ncol(M1)]-1
+    p1=round((apply(M,2,sum)+nrow(M))/(nrow(M)*2),3)
+    p=2*(p1-.5)
+    P = matrix(p,byrow=T,nrow=nrow(M),ncol=ncol(M))
+    Z = as.matrix(M-P)
+
+    b=1-p1
+    c=p1*b
+    d=2*(sum(c))
+
+    ZZt = Z %*% t(Z)
+    G = (ZZt/d)
+    #invG=solve(G)
+  }
+return(G)
+}
 
 
 
