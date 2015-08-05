@@ -1293,8 +1293,6 @@ Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_bin,
 
   nind = dims[0];
   // if (!R_IsNA(indxNA(0)))
-  Rcpp::Rcout << "-------------------------------------------" << endl;
-  Rcpp::Rcout << indxNA.size()  << endl;
   if (indxNA.size() != 0 )
     nind = dims[0] - indxNA.size();
 
@@ -1415,11 +1413,10 @@ Eigen::MatrixXi  calculateMMt_rcpp(CharacterVector f_name_bin,
                                    bool verbose) 
 {
 // set multiple cores
-Rcpp::Rcout << " ###################################### "  << Eigen::nbThreads() << endl;
 Eigen::initParallel();
 omp_set_num_threads(num_cores);
 Eigen::setNbThreads(num_cores);
-Rcpp::Rcout << " ###################################### "  << Eigen::nbThreads() << endl;
+Rcpp::Rcout << " Number of cores being used for calculation is .. "  << Eigen::nbThreads() << endl;
 
 
 std::string 

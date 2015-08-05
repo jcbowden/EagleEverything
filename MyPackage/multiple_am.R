@@ -1,10 +1,19 @@
-.form_results <- function(selected_loci, map)
+.form_results <- function(trait, selected_loci, map, colname.trait, colname.feffects, bin_path, indxNA,
+                           numcores, workingmemGb, verbose)
 {
   if (length(selected_loci) > 1){
-     sigres <- data.frame("Mrk"=map[[1]][selected_loci[-length(selected_loci)]], 
-                          "Chr"=map[[2]][selected_loci[-length(selected_loci)]], 
-                          "Pos"=map[[3]][selected_loci[-length(selected_loci)]], 
-                          "Indx"=selected_loci[-length(selected_loci)])
+     sigres <- list(trait=trait, 
+                    colname.trait = colname.trait, 
+                    colname.feffects = colname.feffects,
+                    bin_path = bin_path,
+                    indxNA = indxNA,
+                    Mrk=map[[1]][selected_loci[-length(selected_loci)]], 
+                    Chr=map[[2]][selected_loci[-length(selected_loci)]], 
+                    Pos=map[[3]][selected_loci[-length(selected_loci)]], 
+                    Indx=selected_loci[-length(selected_loci)],
+                    numcores=numcores,
+                    workingmemGb=workingmemGb,
+                    verbose=verbose)
   } else {
       sigres <- NA
   }
@@ -20,9 +29,9 @@
 }
 
 
-  .build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, colname.feffects=NULL, verbose=FALSE  )
-  {
-   ## internal fuction: use only in multiple_locus_am function
+.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, colname.feffects=NULL, verbose=FALSE  )
+{
+   ## internal fuction: use only in multiple_locus_am function and summaryam function
    ## build design matrix given character vector colname.feffects of column names
 
    ## assign model matrix X
@@ -71,7 +80,7 @@ if(!is.matrix(Xmat))
 
 .calcMMt <- function(geno, workingmemGb, numcores, selected_loci, verbose, indxNA)
   {
-    ## internal function: used only in multilocus_loci_am
+    ## internal function: used only in multilocus_loci_am and summaryam
     ## values passed by environments
     MMt <- calculateMMt(geno=geno[["binfileM"]], workingmemGb=workingmemGb, 
                            numcores=numcores, 
@@ -122,6 +131,8 @@ if(!is.matrix(Xmat))
 
      if (length(selected_loci[-length(selected_loci)]) == 1 & any(is.na(selected_loci)))
      {
+         ## its -length() because while(continue) doesn't stop until it has gone 1 beyond
+         ## the best set of selected_loci. 
           cat(" No significant marker-trait associations have been found. \n\n")
      }  else {
           cat(sprintf("%15s     %10s        %10s        %10s \n", 
@@ -410,7 +421,7 @@ currentX <- do.call(.build_design_matrix, Args)
   }  ## end while continue
 
 
-  sigres <- .form_results(selected_loci, map)   
+  sigres <- .form_results(trait, selected_loci, map, colname.trait, colname.feffects, dirname(geno[["binfileM"]]), indxNA, numcores, workingmemGb, verbose)   
 
 
 

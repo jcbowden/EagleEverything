@@ -20,7 +20,7 @@ echo   "library(Rcpp)" > ./tmp.R
 echo   "    " >> tmp.R  
 echo  " Rcpp.package.skeleton(\"WMAM\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
 ## echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"svd_magma.R\", \"MAGMA.R\" ) ) " >> ./tmp.R
- echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"multiple_am.R\"  ) ) " >> ./tmp.R
+ echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"multiple_am.R\", \"summary_am.R\"   ) ) " >> ./tmp.R
 echo  "  ## running roxygen2  " >> ./tmp.R
 echo  " library(roxygen2) " >> ./tmp.R
 echo  " setwd(\"./WMAM\")  " >> ./tmp.R

@@ -7,4 +7,5 @@ export(
    read.phenotypes,
    read.genotypes,
    read.map,
-   multiple_locus_am)
+   multiple_locus_am,
+   summarymlam)
