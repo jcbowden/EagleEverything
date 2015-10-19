@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## bash script to build WMAM package 
+## bash script to build MWAM package 
 
 DIR="/home/geo047/gitHUB_WMAM/MyPackage/"
 
@@ -11,19 +11,19 @@ cd $DIR
 echo " run SETUP Magma ............................................................"
 
 
-## removing WMAM and WMAM.Rcheck
-echo " Removing WMAM and WMAM.Rcheck"
-rm -rf ./WMAM  ./WMAM.Rcheck
+## removing MWAM and MWAM.Rcheck
+echo " Removing MWAM and MWAM.Rcheck"
+rm -rf ./MWAM  ./MWAM.Rcheck
 
 ## create and run Rcpp.package.skeleton
 echo   "library(Rcpp)" > ./tmp.R
 echo   "    " >> tmp.R  
-echo  " Rcpp.package.skeleton(\"WMAM\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
+echo  " Rcpp.package.skeleton(\"MWAM\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
 ## echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"svd_magma.R\", \"MAGMA.R\" ) ) " >> ./tmp.R
  echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"multiple_am.R\", \"summary_am.R\"   ) ) " >> ./tmp.R
 echo  "  ## running roxygen2  " >> ./tmp.R
 echo  " library(roxygen2) " >> ./tmp.R
-echo  " setwd(\"./WMAM\")  " >> ./tmp.R
+echo  " setwd(\"./MWAM\")  " >> ./tmp.R
 echo  "  roxygenise() " >> ./tmp.R
 
 
@@ -36,12 +36,12 @@ R CMD BATCH ./tmp.R
 
 
 ## Replace generated NAMESPACE and DESCRIPTION with correct versions
-cp ./NAMESPACE.OLD ./WMAM/NAMESPACE
-cp ./DESCRIPTION.OLD ./WMAM/DESCRIPTION
+cp ./NAMESPACE.OLD ./MWAM/NAMESPACE
+cp ./DESCRIPTION.OLD ./MWAM/DESCRIPTION
 
-## Modify ./WMAM/src/RcppExports.cpp
+## Modify ./MWAM/src/RcppExports.cpp
 
- cd $DIR/WMAM/src
+ cd $DIR/MWAM/src
  awk 'NR>=1&&NR<=3' "RcppExports.cpp" > ./block1.tmp
 
 echo "#include <RcppEigen.h> " > ./tmp1
@@ -76,35 +76,35 @@ cat ./block1.tmp ./tmp1  ./block2.tmp  > ./RcppExports.cpp
 echo  " Adding raw data to package ... "
 cd $DIR
 
-mkdir ./WMAM/inst
-mkdir ./WMAM/inst/extdata
+mkdir ./MWAM/inst
+mkdir ./MWAM/inst/extdata
 
 cd $DIR
 
-cp ./phenoexample.csv ./WMAM/inst/extdata/.
-cp ./genoexampleRwise.txt ./WMAM/inst/extdata/.
-cp ./genoexampleCwise.txt ./WMAM/inst/extdata/.
-cp ./mapexample.txt ./WMAM/inst/extdata/.
+cp ./phenoexample.csv ./MWAM/inst/extdata/.
+cp ./genoexampleRwise.txt ./MWAM/inst/extdata/.
+cp ./genoexampleCwise.txt ./MWAM/inst/extdata/.
+cp ./mapexample.txt ./MWAM/inst/extdata/.
 
 cd $DIR
 
 ## add own Makevars to src with openmp compiler options
-## echo "PKG_CPPFLAGS=-fopenmp "  > ./WMAM/src/Makevars
+## echo "PKG_CPPFLAGS=-fopenmp "  > ./MWAM/src/Makevars
 ## -----------------------------------------------
 ## Note
 ## ------------------------------------------------
 ## User needs to set CUDA_HOME
 ##                   R_HOME
 ##                   MAGMA_HOME
-## echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./WMAM/src/Makevars
-echo "PKG_LIBS=-fopenmp"  >> ./WMAM/src/Makevars
-##  echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./WMAM/src/Makevars
-echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./WMAM/src/Makevars
+## echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./MWAM/src/Makevars
+echo "PKG_LIBS=-fopenmp"  >> ./MWAM/src/Makevars
+##  echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./MWAM/src/Makevars
+echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./MWAM/src/Makevars
 
 
 
-R CMD check WMAM
+R CMD check MWAM
 
-R CMD INSTALL WMAM -l ~/RLibs
+R CMD INSTALL MWAM -l ~/RLibs
 
 

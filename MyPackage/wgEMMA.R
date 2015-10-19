@@ -1127,7 +1127,7 @@ if(!is.null(file_phenotype))
 #' # Read in  example phenotypic data from ./inst/extdata/
 #' 
 #' # find the full location of the phenotypic data 
-#' complete.name <- system.file("extdata", "phenoexample.csv", package="WMAM")
+#' complete.name <- system.file("extdata", "phenoexample.csv", package="MWAM")
 #'   
 #' # read in phenotypic data which is in csv format
 #' phenodata <- read.phenotypes(path=dirname(complete.name),  
@@ -1198,7 +1198,7 @@ cat("\n Warning: if the column classes are incorrect, these will need to be chan
 #' # Read in  example map data from ./inst/extdata/
 #' 
 #' # find the full location of the map data 
-#' complete.name <- system.file("extdata", "mapexample.txt", package="WMAM")
+#' complete.name <- system.file("extdata", "mapexample.txt", package="MWAM")
 #'   
 #' # read in map data 
 #' mapdata <- read.map(path=dirname(complete.name),  
@@ -1346,11 +1346,11 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' @examples
 #'   # find the full location of the genotype data that has been 
 #'   # organized with marker data in columns. Data contained in ./inst/extdata/. 
-#'   complete.name.Cwise <- system.file("extdata", "genoexampleCwise.txt", package="WMAM")
+#'   complete.name.Cwise <- system.file("extdata", "genoexampleCwise.txt", package="MWAM")
 #'
 #'   # find the full location of the genotype data that has been
 #'   # organized with marker data in rows. Data contained in ./inst/extdata/.
-#'   complete.name.Rwise <- system.file("extdata", "genoexampleRwise.txt", package="WMAM")
+#'   complete.name.Rwise <- system.file("extdata", "genoexampleRwise.txt", package="MWAM")
 #'
 #'   
 #'   # read in the ASCII marker genotype data where 0 values are being treated as genotype AA 

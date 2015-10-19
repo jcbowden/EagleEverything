@@ -1,4 +1,4 @@
-useDynLib(WMAM)
+useDynLib(MWAM)
 importFrom(Rcpp, evalCpp)
 import(RcppEigen, matrixcalc, Matrix)
 

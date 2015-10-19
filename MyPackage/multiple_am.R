@@ -43,6 +43,7 @@
       } else {
         Xmat <- matrix(data=1, nrow=nrow(pheno), ncol=1)
       }
+      colnames(Xmat) <- "intercept"
    } else {
       ## trait + fixed effects being fitted. 
      if(length(indxNA)==0)
@@ -212,7 +213,7 @@ if(!is.matrix(Xmat))
 
 #' @title multiple locus association mapping 
 #' @description \code{multiple_locus_am} is used to perform multiple locus 
-#' association mapping via whole-genome multi-locus association mapping (WMAM)
+#' association mapping via multi-locus whole-genome  association mapping (MWAM)
 #' @param numcores a numeric value for the number of cores that are available for distributed computing. 
 #' @param workingmemGb a numeric value. It specifies the amount of memory (in Gigabytes) available for reading analysis. 
 #' @param colname.trait  the name of the column in the phenotypic data file that contains the trait data. The name is case sensitive. 
@@ -259,8 +260,8 @@ if(!is.matrix(Xmat))
 #'  the associated data columns in the data frame obtained from \code{\link{read.phenotypes}}. 
 #'
 #'    STILL BEING WRITTEN .... 
-#' The \code{multiple_locus_am} function is an R/Rcpp implementation of whole-genome 
-#' multi-locus association mapping. The method is a 
+#' The \code{multiple_locus_am} function is an R/Rcpp implementation of multi-locus whole-genome 
+#'  association mapping. The method is a 
 #' multiple locus method that is a hybrid of whole-genome and multi-locus association mapping. 
 #' Briefly, a multiple locus model
 #' is built iteatively, by fitting a whole-genome model at each step. It differs from 
@@ -279,7 +280,7 @@ if(!is.matrix(Xmat))
 #' @examples
 #'   # READ MAP INFORMATION
 #'   map.file.loc <- system.file("extdata", "mapexample.txt", 
-#'                                    package="WMAM")
+#'                                    package="MWAM")
 #'   map.df <- read.map(path=dirname(map.file.loc),  
 #'                       file_map=basename(map.file.loc)) 
 #'
@@ -288,14 +289,14 @@ if(!is.matrix(Xmat))
 #'   #  0,1 genotypes
 #'   #  column wise marker data
 #'   gen.file.loc <- system.file("extdata", "genoexampleCwise.txt", 
-#'                                      package="WMAM")
+#'                                      package="MWAM")
 #'   geno.list <- read.genotypes(path=dirname(gen.file.loc), 
 #'                               columnwise=TRUE, AA=0, BB=1, 
 #'                               file_genotype=basename(gen.file.loc),  
 #'                               workingmemGb=4) 
 #'  
 #'   # READ PHENOTYPIC INFORMATION
-#' phen.file.loc <- system.file("extdata", "phenoexample.csv", package="WMAM")
+#' phen.file.loc <- system.file("extdata", "phenoexample.csv", package="MWAM")
 #'   
 #' phenodf <- read.phenotypes(path=dirname(phen.file.loc),  
 #'                              file_phenotype=basename(phen.file.loc), 
