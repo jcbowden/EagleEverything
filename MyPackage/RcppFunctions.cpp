@@ -333,7 +333,6 @@ fileOUT.close();
 
 }
 
-
 Eigen::MatrixXi  ReadBlock(std::string binfname, 
                            int start_row,
                            int numcols,
@@ -407,7 +406,6 @@ for(int i=0;i < v.size(); i++)
      }
   }
 }
-
 
  return M;
 
@@ -646,7 +644,6 @@ int
       os << "Genotype file contains genotypes that are not " << AA << "," << AB << ", or " << BB << " For example " << rowvec[i] << "\n\n";
       Rcpp::stop(os.str() );
   }
-    // Rcpp::Rcout <<  i << " " << rowvec[i] << " " << indx_packed_across << " " << packed_block[i][indx_packed_across] << std::endl;
   }  // end for int i
 
 
@@ -798,17 +795,6 @@ if (verbose){
 // close files
 fileOUTbin.close();
 
-//
-//
-// // Returning transpose of matrix to R as a check
-// MatrixXi
-//   genoMat;
-//
-//  genoMat = ReadBlock(fnamebin, 0, dims[0], dims[1]);
-// // genoMat = ReadBlock(fnamebin, 0, dims[0], 17857);
-// 
-//   Rcpp::Rcout << genoMat(0, 0) << " " << genoMat(1, 0) << " " << genoMat(2, 0) << std::endl;
-//   return genoMat;
 }
 
 
@@ -1010,7 +996,7 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,
                                     std::vector <long> dims,
                                     Eigen::VectorXd  a,
                                     bool verbose,
-                                    Rcpp::NumericVector indxNA  )
+                                    Rcpp::NumericVector indxNA)
 {
 // Purpose: to calculate the untransformed BLUP (a) values from the 
 //          dimension reduced BLUP value estimates. 
@@ -1027,19 +1013,25 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,
 ostringstream
       os;
 
-
-
-
 std::string
      fnamebin = Rcpp::as<std::string>(f_name_bin);
 
 
 Eigen::MatrixXd
-      ans(dims[0],1),
-      var_ans(dims[0],1);
+      ans(dims[0],1);
 
+Eigen::MatrixXd
+      AWGans(dims[0],1);
+
+
+
+
+Eigen::MatrixXd
+    var_ans = Eigen::MatrixXd(dims[0],1);
 
 const size_t bits_in_double = std::numeric_limits<double>::digits;
+const size_t bits_in_integer = std::numeric_limits<int>::digits;
+
 
 
    // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt))
@@ -1050,6 +1042,10 @@ if (verbose){
    Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
 }
 
+
+
+
+
 if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
 
@@ -1057,11 +1053,12 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
     Eigen::MatrixXi
                    Mt;
 
+    Rprintf(" Begin reading Mt \n");
     Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
 
   // removing columns that correspond to individuals with no 
   // trait data
-//   if(!R_IsNA(indxNA(0))){
+//   if(!R_IsNA(indxNA(0)))
    if(indxNA.size()!=0){
      for (int ii=0; ii < indxNA.size(); ii++){
         removeColumn(Mt, indxNA(ii) );
@@ -1072,25 +1069,58 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
    if(!R_IsNA(selected_loci(0))){
    // setting columns to 0
-   for(int ii=0; ii < selected_loci.size() ; ii++)
-          Mt.row(selected_loci(ii)).setZero();
+   for(int ii=0; ii < selected_loci.size() ; ii++){
+           Mt.row(selected_loci(ii)).setZero();
+    }
    }
 
    // calculate untransformed BLUP values
-   ans =    Mt.cast<double>() *  inv_MMt_sqrt  * a ;
-
-   // calculate untransformed variances of BLUP values
+   Rprintf(" convert Mt into Mtd \n");
    Eigen::MatrixXd
-      var_ans_tmp;
+           Mtd = Mt.cast<double>();
+   Rprintf(" conversion completed. Check memory usage \n");
 
-   var_ans_tmp =  Mt.cast<double>() *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
 
-   for(int i=0; i< dims[0]; i++){
-         var_ans(i,0) =   var_ans_tmp.row(i)   * ((Mt.row(i)).transpose()).cast<double>() ;
-    }
+   Mt.resize(0,0);
+
+//   AWGans =    Mtd *  inv_MMt_sqrt  * a ;
+//   AWGans =    Mt.cast<double>() *  inv_MMt_sqrt  * a ;
+
+   Eigen::MatrixXd  ans_part1 = inv_MMt_sqrt * a;
+   ans =   Mtd  * ans_part1; 
+
+
+
+
+
+
+    ans_part1.resize(0,0);  // erase matrix
+   //  ans =    Mt *  inv_MMt_sqrt  * a ;
+   Rprintf(" finished untransfomred BLUP values \n");
+
+
+
+  // calculate untransformed variances of BLUP values
+  Eigen::MatrixXd
+         var_ans_tmp;
+  
+  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
+  var_ans_tmp.noalias() =  Mtd *  var_ans_tmp_part1;
+  
+  var_ans_tmp_part1.resize(0,0);  // erase matrix 
+
+  for(int i=0; i< dims[0]; i++){
+           var_ans(i,0) =   var_ans_tmp.row(i)   * (Mtd.row(i)).transpose() ;
+  }
 
 
 } else {
+    //  -----------------------------------------
+    //       BLOCK WISE UPDATE
+    //  -----------------------------------------
+
+
+
       // calculation being processed in block form
       Rprintf(" Increasing maxmemGb would improve performance... \n");
 
@@ -1132,65 +1162,75 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
            Eigen::MatrixXi
                    Mt;
+           Eigen::MatrixXd
+                   Mtd;
 
           Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+          Mtd = Mt.cast<double>(); 
+          Mt.resize(0,0);
 
          // removing columns that correspond to individuals with no 
          // trait data
-       //  if(!R_IsNA(indxNA(0))){
+         //  if(!R_IsNA(indxNA(0)))
          if(indxNA.size() != 0 ){
                for (int ii=0; ii < indxNA.size(); ii++){
                      removeColumn(Mt, indxNA(ii) );
                }
           }
 
-         Eigen::MatrixXd
+          // vara calculation in block form
+
+
+            Eigen::MatrixXd
              vt,
-             ans_tmp,
-             var_ans_tmp(num_rows_in_block1,1);
+             ans_tmp;
 
-         if(!R_IsNA(selected_loci(0))){
-         // setting columns (or row when Mt) to 0
-            for(int ii=0; ii < selected_loci.size() ; ii++)
-            {
-            // since we are now dealing with Mt, and blocking on columns, 
-            // because columns are rows in Mt, then we have to be careful
-            // that we do not select loci outside the block bounds. Also 
-            // the values have to be adjusted based on the block number
-                if(selected_loci(ii) >= start_row1 & selected_loci(ii) < start_row1 + num_rows_in_block1 )
-                {   // selected loci index is in block 
-                int block_selected_loci = selected_loci(ii) - start_row1;
-                Mt.row(block_selected_loci).setZero();
-                }
-             }   
-         }
-
-         ans_tmp  =  Mt.cast<double>() *  inv_MMt_sqrt  * a ;
-
-          
-
-         vt =  Mt.cast<double>() *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
-         for(int j=0; j < num_rows_in_block1; j++)
-              var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()).cast<double>() ;
+          Eigen::MatrixXd   var_ans_tmp(num_rows_in_block1,1);
 
 
+            if(!R_IsNA(selected_loci(0))){
+            // setting columns (or row when Mt) to 0
+               for(int ii=0; ii < selected_loci.size() ; ii++)
+               {
+               // since we are now dealing with Mt, and blocking on columns, 
+               // because columns are rows in Mt, then we have to be careful
+               // that we do not select loci outside the block bounds. Also 
+               // the values have to be adjusted based on the block number
+                   if(selected_loci(ii) >= start_row1 & selected_loci(ii) < start_row1 + num_rows_in_block1 )
+                   {   // selected loci index is in block 
+                   int block_selected_loci = selected_loci(ii) - start_row1;
+                   Mtd.row(block_selected_loci).setZero();
+                   }
+                }   
+            }
+
+            ans_tmp  =  Mtd *  inv_MMt_sqrt  * a ;
 
 
-         // assign block vector results to final vector (ans) of results
-         int  counter = 0;
-         for(int j=start_row1; j < start_row1 + num_rows_in_block1; j++){
-              ans(j,0) = ans_tmp(counter,0);
-              var_ans(j,0) = var_ans_tmp(counter,0);
-              counter++;
-         }
+            // variance calculation
+            vt.noalias() =  Mtd *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
+            for(int j=0; j < num_rows_in_block1; j++)
+                      var_ans_tmp(j,0)  =   vt.row(j)  * ((Mtd.row(j)).transpose()).cast<double>() ;
 
-       if (verbose)  Rcpp::Rcout << "block done ... " << std::endl;
+            // assign block vector results to final vector (ans) of results
+            int  counter = 0;
+            for(int j=start_row1; j < start_row1 + num_rows_in_block1; j++){
+                 ans(j,0) = ans_tmp(counter,0);
+                 var_ans(j,0) = var_ans_tmp(counter,0);
+                 counter++;
+            }
+
+             if (verbose)  Rcpp::Rcout << "block done ... " << std::endl;
+
+
       } // end for int
 
 
 
-}
+}  //  end if block update
 
+
+  Rprintf(" Returning list object ... \n");
   return Rcpp::List::create(Rcpp::Named("a")=ans,
                             Rcpp::Named("vara") = var_ans);
 
@@ -1292,11 +1332,14 @@ Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_bin,
      nind;
 
   nind = dims[0];
+
+
+
   // if (!R_IsNA(indxNA(0)))
   if (indxNA.size() != 0 )
     nind = dims[0] - indxNA.size();
 
-
+Rcout << "NIND " << nind << endl;
 
 //-----------------------------------
 // Calculate amount of memory needed
@@ -1309,25 +1352,24 @@ Eigen::VectorXi
    column_of_genos(nind);
 
 
+
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
+   Rcout << "In here " << endl;
     Eigen::MatrixXi genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
 
     // removing rows that correspond to individuals with no 
   // trait data
-  if(!R_IsNA(indxNA(0))){
-     if(indxNA.size() != 0){
-        for (int ii=0; ii < indxNA.size(); ii++){
+  if(indxNA.size() != 0){
+     for (int ii=0; ii < indxNA.size(); ii++){
            removeRow(genoMat, indxNA(ii) ); } 
-     }
   }
-
    column_of_genos = genoMat.col(selected_locus);
    
 
 
 }  else {
-
+   Rcout << " In else part of if statement " << endl;
     long num_rows_in_block = (max_memory_in_Gbytes  * (double) 8000000000 )/(bits_in_int * dims[1]);
 
          int num_blocks = dims[0]/num_rows_in_block;
@@ -1339,12 +1381,10 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               long start_row1 = i * num_rows_in_block;
               long num_rows_in_block1 = num_rows_in_block;
               if ((start_row1 + num_rows_in_block1) > dims[0])
-                     num_rows_in_block1 = dims[0] - start_row1;
-              Rcpp::Rcout << num_rows_in_block1 << " num rows in block 1 " << std::endl;
+                     num_rows_in_block1 = dims[0] - start_row1  ;
 
               Eigen::MatrixXi    
                 genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
-
 
               // removing rows that correspond to individuals with no 
               // trait data
@@ -1371,6 +1411,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
                  }
                  if (!found){ 
                     // j not in indxNA
+                    Rcpp::Rcout << "colindx " << colindx << endl;
                    column_of_genos(colindx) = genoMat_block1.col(selected_locus)(j-start_row1);
                    colindx++;
                 }
@@ -1378,7 +1419,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               } // end for j
 
           } // end for  i
-
 
 
 } // end if max_memory
@@ -1584,40 +1624,10 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 }  // end outer if else
 
 
-// Now working out square root of MMt via SVD
-// Rprintf( " Performing SVD...\n " );
-//  Eigen::MatrixXf Ohm (dims[0], dims[0]);
-//  Eigen::MatrixXf L (dims[0], dims[0]);
-
-// #pragma omp parallel 
-// { 
- // Eigen::JacobiSVD<Eigen::MatrixXf,Eigen::NoQRPreconditioner> svd(MMt.cast<float>(), Eigen::ComputeThinU | Eigen::ComputeThinV);
-// Ohm  = svd.singularValues().asDiagonal();
-// Rcpp::Rcout << svd.singularValues() << std::endl;
-// }
-
-
-
-
-// Rcpp::Rcout << " Writing subset of results " << std::endl;
-// for(int i=0; i < 2; i++)
-// {
-//  for(int j=0; j < dims[0] ; j++){
-//   Rcpp::Rcout <<  MMt(i,j) << " "  ;
-//  }
-// Rcpp::Rcout << std::endl;
-//}
 
   return MMt;
 
-//  return Rcpp::List::create(Rcpp::Named("nummrks")=dims[1],
-//                           Rcpp::Named("MMt") = MMt);
-
-
-
 }
-
-
 
 
 

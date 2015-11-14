@@ -413,12 +413,9 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
 check.inputs.mlam <- function (numcores, workingmemGb, colname.trait, colname.feffects, map, pheno, 
                   geno, alpha)
 {
-  ## input check for multiple_locus_am
-  
-  check.inputs(numcores=numcores, workingmemGb=workingmemGb, alpha=alpha)
 
 if(is.null(colname.trait)){
-   cat(" Error: the name of the column containing the trait data must be given.")
+   cat(" Error: the name of the column containing the trait data must be given. \n")
    stop(" multiple_locus_am has terminated with errors. ")
 }
 
@@ -556,7 +553,9 @@ if(is.null(map)){
 ##---------------------------
 
 ## This builds a dll for the function
-## sourceCpp("RcppFunctions.cpp", rebuild=TRUE, verbose=TRUE)
+## sourceCpp("/home/geo047/gitHUB_WMAM/MyPackage/RcppFunctions.cpp", rebuild=TRUE, verbose=TRUE)
+## source("/home/geo047/gitHUB_WMAM/MyPackage/wgEMMA.R")
+## source("/home/geo047/gitHUB_WMAM/MyPackage/multiple_am.R")
 
 
 ##-------------------------------
@@ -830,8 +829,7 @@ calculateP  <- function(H=NULL, X=NULL)
    if(nrow(H) != nrow(X))
       stop(" The number of rows in H and X are not the same.")
 
-
-   Hinv <- solve(H)
+ Hinv <- chol2inv(chol(H))
    P <- Hinv - Hinv %*% X %*% solve( t(X) %*% Hinv %*% X )  %*% t(X) %*% Hinv
 
 
@@ -917,7 +915,8 @@ if(.Platform$OS.type == "unix") {
   ycolmat <- matrix(data=y, ncol=1)  ## makes it easier when dealing with this in Rcpp
   fnamebin <- paste(bin_path, "Mt.bin", sep="")
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
-  ar <- calculate_reduced_a_rcpp(f_name_bin = fnamebin, varG=varG, P=P, y=ycolmat, max_memory_in_Gbytes=workingmemGb, 
+  ar <- calculate_reduced_a_rcpp(f_name_bin = fnamebin, varG=varG, P=P, 
+                                 y=ycolmat, max_memory_in_Gbytes=workingmemGb, 
                                  dims=dim_of_bin_M , selected_loci = selected_loci , 
                                  verbose = verbose )
 
@@ -972,6 +971,7 @@ if(.Platform$OS.type == "unix") {
   }
 
   dimsMt <- c(dims[2], dims[1]) 
+
  
   if(!any(is.na(selectedloci))) selectedloci <- selectedloci-1
   calculate_a_and_vara_rcpp(f_name_bin=file_bin,
@@ -982,7 +982,7 @@ if(.Platform$OS.type == "unix") {
                     dims=dimsMt, 
                     a = transformed_a, 
                     verbose = verbose,
-                    indxNA = indxNA)
+                    indxNA = indxNA) 
 
 }
 
@@ -1031,7 +1031,10 @@ calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MM
 
 
 check.inputs <- function(numcores=NULL, workingmemGb=NULL, path=NULL, 
-                         bin_path=NULL, file_genotype=NULL, file_phenotype=NULL, alpha=NULL){
+                         bin_path=NULL, file_genotype=NULL, 
+                         file_phenotype=NULL, alpha=NULL)
+{
+
 
 
 if(!is.null(alpha))
@@ -1460,7 +1463,8 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
 
 extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8, 
                           dim_of_bin_M=NULL, 
-                          indxNA = NA )
+                          selected_locus=NA,
+                          indxNA = NULL )
   {
     ## Rcpp function to extra a column of genotypes from a  binary packed file of M
 
@@ -1470,8 +1474,8 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8,
      binfileM <- paste(bin_path, "\\", "M.bin", sep="")
     }
     selected_locus <- colnum - 1  ## to be consistent with C++'s indexing starting from 0
-    if(!any(is.na(indxNA))) indxNA <- indxNA - 1
-
+    ## AWG if(!any(is.na(indxNA))) indxNA <- indxNA - 1
+    if (!(length(indxNA)==0)) indxNA <- indxNA - 1
 
     geno <- extract_geno_rcpp(f_name_bin=binfileM, max_memory_in_Gbytes = workingmemGb, 
                               selected_locus=selected_locus, dims=dim_of_bin_M,
@@ -1485,19 +1489,18 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8,
 
 constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, 
                        workingmemGb=8, dim_of_bin_M=NULL,
-                       indxNA = NA, map=NULL)
+                       indxNA = NULL , map=NULL)
   {
     ## R function to construct the design matrix X
     ## Args
     ##   currentX    current model matrix
     ##   loci        the marker loci to be included as fixed QTL effects (additive model)
     ##   indxNA      those individuals that should be removed due to missing phenotypes
-   if(length(indxNA)==0)  indxNA <- NA
    genodat <- extract_geno(bin_path=bin_path, colnum=loci_indx, 
                            workingmemGb=workingmemGb, dim_of_bin_M=dim_of_bin_M,
                            indxNA = indxNA)
    newX <- cbind(currentX, genodat)
-   colnames(newX) <- c(colnames(currentX), as.character(map$Mrk[loci_indx])) ## adding col names to new X  
+   colnames(newX) <- c(colnames(currentX), as.character(map[[1]][loci_indx])) ## adding col names to new X  
    return(newX)
 
   }

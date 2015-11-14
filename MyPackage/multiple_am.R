@@ -1,7 +1,8 @@
 .form_results <- function(trait, selected_loci, map, colname.trait, colname.feffects, bin_path, indxNA,
-                           numcores, workingmemGb, verbose)
+                           numcores, workingmemGb, verbose, herit, stopping_rule)
 {
   if (length(selected_loci) > 1){
+     if(stopping_rule=="BIC"){
      sigres <- list(trait=trait, 
                     colname.trait = colname.trait, 
                     colname.feffects = colname.feffects,
@@ -13,7 +14,28 @@
                     Indx=selected_loci[-length(selected_loci)],
                     numcores=numcores,
                     workingmemGb=workingmemGb,
-                    verbose=verbose)
+                    verbose=verbose,
+                    herit=herit[selected_loci[-length(selected_loci)]])
+      } else {
+      sigres <- list(trait=trait,
+                    colname.trait = colname.trait, 
+                    colname.feffects = colname.feffects,
+                    bin_path = bin_path,
+                    indxNA = indxNA,
+                    Mrk=map[[1]][selected_loci], 
+                    Chr=map[[2]][selected_loci], 
+                    Pos=map[[3]][selected_loci], 
+                    Indx=selected_loci,
+                    numcores=numcores,
+                    workingmemGb=workingmemGb,
+                    verbose=verbose,
+                    herit=herit)
+
+
+
+
+
+     } ## end inner if
   } else {
       sigres <- NA
   }
@@ -127,41 +149,60 @@ if(!is.matrix(Xmat))
    cat(" --------------------------------------------------------------------  \n")
  }
 
-.print_findings <- function(selected_loci, map)
+.print_findings <- function(selected_loci, map, herit, stopping_rule)
 {
-
-     if (length(selected_loci[-length(selected_loci)]) == 1 & any(is.na(selected_loci)))
-     {
-         ## its -length() because while(continue) doesn't stop until it has gone 1 beyond
-         ## the best set of selected_loci. 
-          cat(" No significant marker-trait associations have been found. \n\n")
-     }  else {
-          cat(sprintf("%15s     %10s        %10s        %10s \n", 
-                    "Mrk Name", "Chrm", "Map Pos", "Col Number"))
-          ## its [-length()] because extBIC doesnt caouse the loop to stop until it has 
-          ## gone one beyond the best model.
-           for(ii in selected_loci[-length(selected_loci)])
-                  cat(sprintf("%15s     %10s        %10f        %9i \n", 
-                      map[[1]][ii], map[[2]][ii], map[[3]][ii], ii))
-        cat(" --------------------------------------------------------------------  \n")
-        cat("\n\n")
-     }
+     if(stopping_rule=="BIC"){
+         if (length(selected_loci[-length(selected_loci)]) == 1 & any(is.na(selected_loci)))
+         {
+             ## its -length() because while(continue) doesn't stop until it has gone 1 beyond
+             ## the best set of selected_loci. 
+              cat(" No significant marker-trait associations have been found. \n\n")
+         }  else {
+              cat(sprintf("%15s     %10s        %10s        %10s       %10s\n", 
+                        "Mrk Name", "Chrm", "Map Pos", "Col Number", "Heritability"))
+              ## its [-length()] because extBIC doesnt caouse the loop to stop until it has 
+                  ## gone one beyond the best model.
+               for(ii in selected_loci[-length(selected_loci)])
+                      cat(sprintf("%15s     %10s        %10f        %9i    %ff\n", 
+                          map[[1]][ii], map[[2]][ii], map[[3]][ii], ii, herit[which(ii==selected_loci)] ))
+            cat(" --------------------------------------------------------------------  \n")
+            cat("\n\n")
+         }
    
-}
+    }  else {
+       ### stopping_rule == "h"
+              if (length(selected_loci) == 1 & any(is.na(selected_loci)))
+              {
+                   cat(" No significant marker-trait associations have been found. \n\n")
+              }  else {
+                   cat(sprintf("%15s     %10s        %10s        %10s       %10s\n",
+                        "Mrk Name", "Chrm", "Map Pos", "Col Number", "Heritability"))
 
- .print_results <- function(itnum, selected_loci, map)
+                   for(ii in selected_loci)
+                           cat(sprintf("%15s     %10s        %10f        %9i    %ff\n",
+                               map[[1]][ii], map[[2]][ii], map[[3]][ii], ii, herit[which(ii==selected_loci)] ))
+                 cat(" --------------------------------------------------------------------  \n")
+                 cat("\n\n")
+              }
+   }
+
+
+}  ## end function print.finals
+
+ .print_results <- function(itnum, selected_loci, map,h)
  { 
     cat(" Significant marker-trait association found ... \n")
     cat(" Results after iteration ", itnum, "\n")
-    cat(sprintf("%15s     %10s        %10s        %10s \n", "Mrk Name", "Chrm", "Map Pos", "Col Number"))
+    cat(sprintf("%15s     %10s        %10s        %10s      %10s \n", "Mrk Name", "Chrm", "Map Pos", "Col Number","Heritability"))
     for(ii in selected_loci)
-       cat(sprintf("%15s     %10s        %10f        %9i \n", map[[1]][ii], map[[2]][ii], map[[3]][ii], ii))
+       cat(sprintf("%15s     %10s        %10f        %9i      %4f\n", map[[1]][ii], map[[2]][ii], map[[3]][ii], ii, h[which(ii==selected_loci)] ))
     cat("\n")
  }
 
 
 
-  .find_qtl <- function(geno, workingmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, currentX, error_checking, numcores, verbose, trait)
+  .find_qtl <- function(geno, workingmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
+                       currentX, error_checking, numcores, verbose, trait)
   {
     ##  internal function: use only with multiple_locus_am
     if(verbose) cat(" Calculating H matrix. \n")
@@ -177,13 +218,13 @@ if(!is.matrix(Xmat))
 
     hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                       y=trait, verbose = verbose)  
+                       y=trait, verbose = verbose )  
 
     if (verbose) 
              cat(" Calculating variance of BLUPs for dimension reduced model. \n")
     var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
-                                            MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                verbose = verbose)
+                                                MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
+                                                verbose = verbose)
    
     if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
@@ -222,6 +263,7 @@ if(!is.matrix(Xmat))
 #'                        not specified, only an overall mean will be fitted.
 #' @param map   the (data frame) object obtained from running \code{\link{read.map}}. If not specifed, a generic map will 
 #'              be assumed. 
+#' @param stopping_rule  takes a character value of "BIC" or "h" (for heritability). See details.
 #' @param pheno  the (data frame) object  obtained  from running \code{\link{read.phenotypes}}.
 #' @param geno   the (list) object obtained from running \code{\link{read.genotypes}}.
 #' @param alpha  the type 1 error rate where setting \code{alpha} to 0.05 say is a 5\% error rate.
@@ -233,7 +275,6 @@ if(!is.matrix(Xmat))
 #'  to the screen for monitoring progress. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
 #' qtl that are to be included in the model. 
-#'
 #' @details
 #' The steps to running \code{multiple_locus_am} are as follows:
 #' \itemize{
@@ -270,7 +311,7 @@ if(!is.matrix(Xmat))
 #' association mapping methods because at each iteration of the model building process, we fit all snp loci 
 #' simultaneously, as opposed to fitting them one at a time. 
 #'
-#' NEEDS MORE
+#' NEEDS MORE  Add something about stopping rule
 #'
 #'
 #' @seealso \code{\link{read.genotypes}}, and \code{\link{read.phenotypes}}.
@@ -314,6 +355,7 @@ if(!is.matrix(Xmat))
 #'
 #'
 multiple_locus_am <- function(numcores=1,workingmemGb=8, 
+                              stopping_rule = c("h","BIC"),
                               colname.trait = NULL, 
                               colname.feffects  = NULL,
                               map = NULL,
@@ -336,13 +378,14 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
  ## maxit           maximum number of qtl to include in the model
 
 
-
  ## check parameter inputs
+ stopping_rule <- match.arg(stopping_rule)
  check.inputs.mlam(numcores, workingmemGb, colname.trait, colname.feffects, 
-                     map, pheno, geno, alpha)
-
+                     map, pheno, geno, alpha )
+ ## ADD CHECK TO MAKE SURE PHENO AND GENO NROWS ARE CORRECT - NOT BEING CHECKED AT THE MOMENT
  continue <- TRUE
  selected_loci <- NA
+ herit <- NA
  ## assign trait 
  trait <-  pheno[[colname.trait]]
 
@@ -365,54 +408,66 @@ currentX <- do.call(.build_design_matrix, Args)
 
  ## Initialization
  old_extBIC <- 1e10 ; itnum <- 1
+ h <- 1
 
  ## main loop
 
  while(continue){
        cat(" Performing iteration ... ", itnum, "\n")
 
-       ## Calculate MMt and its inverse
-       Args <- list(geno=geno,workingmemGb=workingmemGb,numcores=numcores,selected_loci=selected_loci,
-                    verbose=verbose, indxNA=indxNA)
-       MMt <- do.call(.calcMMt, Args)
-       invMMt <- chol2inv(chol(MMt))
-       gc()
 
       ## Calculate variance components
-      if(itnum == 1){
+    #  if(itnum == 1){
+         ## Calculate MMt and its inverse
+         Args <- list(geno=geno,workingmemGb=workingmemGb,
+                    numcores=numcores,selected_loci=selected_loci,
+                    verbose=verbose, indxNA=indxNA)
+         MMt <- do.call(.calcMMt, Args)
+         invMMt <- chol2inv(chol(MMt))
+         gc()
          vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt)
          best_ve <- vc[["ve"]]
          best_vg <- vc[["vg"]]
-      }
+    #  }
       ## Calculate extBIC
       new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose)
+      h <- best_vg/(best_vg + best_ve)
 
+     cat(" old BIC ", old_extBIC, " new BIC ", new_extBIC, "h", h,  "\n")
 
-     if(new_extBIC > old_extBIC){
+      
+     if(stopping_rule == "BIC" && new_extBIC > old_extBIC){
         continue <- FALSE
         .print_header()
-        .print_findings(selected_loci, map)
-     } else {  ## QTL present
+        .print_findings(selected_loci, map, herit, stopping_rule)
+      } else if (stopping_rule == "h" && h < 0.01){
+       continue <- FALSE
+       .print_header()
+       .print_findings(selected_loci, map, herit, stopping_rule)
+      } else {
+        # QTL present
         old_extBIC <- new_extBIC
         ARgs <- list(geno=geno,workingmemGb=workingmemGb, indxNA=indxNA, selected_loci=selected_loci, 
                      MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX, 
                      error_checking=error_checking, 
-                      numcores=numcores, verbose=verbose, trait=trait)
-        new_selected_locus <- do.call(.find_qtl, ARgs)
+                      numcores=numcores, verbose=verbose, trait=trait )
+        new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
 
         if(any(is.na(selected_loci))  & length(selected_loci)==1){
             selected_loci <- new_selected_locus
+            herit <- h
         } else {
             selected_loci <- c(selected_loci, new_selected_locus)
+            herit <- c(herit, h)
         }
      
-        .print_results(itnum, selected_loci, map)
+        .print_results(itnum, selected_loci, map, herit)
 
        currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus, 
                                bin_path = dirname(geno[["binfileM"]]), 
                                dim_of_bin_M=geno[["dim_of_bin_M"]],
                                indxNA = indxNA, 
-                               map=map) 
+                               map=map, workingmemGb = workingmemGb) 
     }  ## if new_extBIC 
 
      itnum <- itnum + 1
@@ -422,7 +477,7 @@ currentX <- do.call(.build_design_matrix, Args)
   }  ## end while continue
 
 
-  sigres <- .form_results(trait, selected_loci, map, colname.trait, colname.feffects, dirname(geno[["binfileM"]]), indxNA, numcores, workingmemGb, verbose)   
+  sigres <- .form_results(trait, selected_loci, map, colname.trait, colname.feffects, dirname(geno[["binfileM"]]), indxNA, numcores, workingmemGb, verbose, herit, stopping_rule)   
 
 
 
