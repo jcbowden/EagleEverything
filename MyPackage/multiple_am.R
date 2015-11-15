@@ -426,8 +426,9 @@ currentX <- do.call(.build_design_matrix, Args)
  while(continue){
        cat(" Performing iteration ... ", itnum, "\n")
 
-
-      ## Calculate variance components
+    
+    ## Calculate variance components
+    ##---------------------------
     #  if(itnum == 1){
          ## Calculate MMt and its inverse
          Args <- list(geno=geno,workingmemGb=workingmemGb,
@@ -440,47 +441,53 @@ currentX <- do.call(.build_design_matrix, Args)
          best_ve <- vc[["ve"]]
          best_vg <- vc[["vg"]]
     #  }
-      ## Calculate extBIC
-      new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose)
-      h <- best_vg/(best_vg + best_ve)
+ 
+    ## Calculate extBIC
+    ##---------------------
+    new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose)
+    h <- best_vg/(best_vg + best_ve)
 
-     cat(" old BIC ", old_extBIC, " new BIC ", new_extBIC, "h", h,  "\n")
+    cat(" old BIC ", old_extBIC, " new BIC ", new_extBIC, "h", h,  "\n")
 
-      
-     if(stopping_rule == "BIC" && new_extBIC > old_extBIC){
+    ## find QTL
+    ##-----------
+    old_extBIC <- new_extBIC
+    ARgs <- list(geno=geno,workingmemGb=workingmemGb, indxNA=indxNA, selected_loci=selected_loci,
+                     MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
+                     error_checking=error_checking,
+                      numcores=numcores, verbose=verbose, trait=trait )
+    new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
+
+    if(any(is.na(selected_loci))  & length(selected_loci)==1){
+        selected_loci <- new_selected_locus
+        herit <- h
+        extBIC <- new_extBIC
+    } else {
+        selected_loci <- c(selected_loci, new_selected_locus)
+        herit <- c(herit, h)
+        extBIC <- c(extBIC, new_extBIC)
+    }
+
+    .print_results(itnum, selected_loci, map, herit, extBIC)
+
+    currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus,
+                               bin_path = dirname(geno[["binfileM"]]),
+                               dim_of_bin_M=geno[["dim_of_bin_M"]],
+                               indxNA = indxNA,
+                               map=map, workingmemGb = workingmemGb)
+
+    ## check if loop needs to be stopped  
+    if(stopping_rule == "BIC" && new_extBIC > old_extBIC){
         continue <- FALSE
         .print_header()
         .print_findings(selected_loci, map, herit, extBIC, stopping_rule)
-      } else if (stopping_rule == "h" && h < 0.01){
+    } else if (stopping_rule == "h" && h < 0.01){
        continue <- FALSE
        .print_header()
        .print_findings(selected_loci, map, herit, extBIC, stopping_rule)
-      } else {
+    } else {
        # QTL present
         old_extBIC <- new_extBIC
-        ARgs <- list(geno=geno,workingmemGb=workingmemGb, indxNA=indxNA, selected_loci=selected_loci, 
-                     MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX, 
-                     error_checking=error_checking, 
-                      numcores=numcores, verbose=verbose, trait=trait )
-        new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
-
-        if(any(is.na(selected_loci))  & length(selected_loci)==1){
-            selected_loci <- new_selected_locus
-            herit <- h
-            extBIC <- new_extBIC
-        } else {
-            selected_loci <- c(selected_loci, new_selected_locus)
-            herit <- c(herit, h)
-            extBIC <- c(extBIC, new_extBIC)
-        }
-     
-        .print_results(itnum, selected_loci, map, herit, extBIC)
-
-       currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus, 
-                               bin_path = dirname(geno[["binfileM"]]), 
-                               dim_of_bin_M=geno[["dim_of_bin_M"]],
-                               indxNA = indxNA, 
-                               map=map, workingmemGb = workingmemGb) 
     }  ## if new_extBIC 
 
      itnum <- itnum + 1
