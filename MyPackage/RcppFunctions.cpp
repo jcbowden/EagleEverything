@@ -1053,7 +1053,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
     Eigen::MatrixXi
                    Mt;
 
-    Rprintf(" Begin reading Mt \n");
     Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
 
   // removing columns that correspond to individuals with no 
@@ -1075,10 +1074,8 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
    }
 
    // calculate untransformed BLUP values
-   Rprintf(" convert Mt into Mtd \n");
    Eigen::MatrixXd
            Mtd = Mt.cast<double>();
-   Rprintf(" conversion completed. Check memory usage \n");
 
 
    Mt.resize(0,0);
@@ -1096,7 +1093,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
     ans_part1.resize(0,0);  // erase matrix
    //  ans =    Mt *  inv_MMt_sqrt  * a ;
-   Rprintf(" finished untransfomred BLUP values \n");
+ //  Rprintf(" finished untransfomred BLUP values \n");
 
 
 
@@ -1230,7 +1227,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 }  //  end if block update
 
 
-  Rprintf(" Returning list object ... \n");
   return Rcpp::List::create(Rcpp::Named("a")=ans,
                             Rcpp::Named("vara") = var_ans);
 
@@ -1339,7 +1335,6 @@ Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_bin,
   if (indxNA.size() != 0 )
     nind = dims[0] - indxNA.size();
 
-Rcout << "NIND " << nind << endl;
 
 //-----------------------------------
 // Calculate amount of memory needed
@@ -1355,7 +1350,6 @@ Eigen::VectorXi
 
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
-   Rcout << "In here " << endl;
     Eigen::MatrixXi genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
 
     // removing rows that correspond to individuals with no 

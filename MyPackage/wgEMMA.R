@@ -547,11 +547,6 @@ if(is.null(map)){
 ##  library('RcppEigen')
 ##  library('matrixcalc')
 ##  library('Matrix')
-
-##---------------------------
-## Rcpp Function Declarion
-##---------------------------
-
 ## This builds a dll for the function
 ## sourceCpp("/home/geo047/gitHUB_WMAM/MyPackage/RcppFunctions.cpp", rebuild=TRUE, verbose=TRUE)
 ## source("/home/geo047/gitHUB_WMAM/MyPackage/wgEMMA.R")
@@ -1496,13 +1491,18 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL,
     ##   currentX    current model matrix
     ##   loci        the marker loci to be included as fixed QTL effects (additive model)
     ##   indxNA      those individuals that should be removed due to missing phenotypes
-   genodat <- extract_geno(bin_path=bin_path, colnum=loci_indx, 
+   
+   if(is.na(loci_indx))
+   {
+     return(currentX)
+   } else {
+       genodat <- extract_geno(bin_path=bin_path, colnum=loci_indx, 
                            workingmemGb=workingmemGb, dim_of_bin_M=dim_of_bin_M,
                            indxNA = indxNA)
-   newX <- cbind(currentX, genodat)
-   colnames(newX) <- c(colnames(currentX), as.character(map[[1]][loci_indx])) ## adding col names to new X  
-   return(newX)
-
+      newX <- cbind(currentX, genodat)
+      colnames(newX) <- c(colnames(currentX), as.character(map[[1]][loci_indx])) ## adding col names to new X  
+      return(newX)
+   }
   }
 
 
