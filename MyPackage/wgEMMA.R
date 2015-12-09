@@ -741,17 +741,27 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, numcores=1,
       cat(" Warning: this may take some time as numcores has been set to 1. Only \n")
       cat("          a single core is being used for computation. \n")
    }
-   svdM <- svd(MMt)
-   Sigma <- diag(sqrt(svdM[["d"]]))
-   sqrt_MMt <- svdM[["u"]] %*% Sigma %*% t(svdM[["v"]])
-   rm(Sigma)
+#   svdM <- svd(MMt)
+#   Sigma <- diag(sqrt(svdM[["d"]]))
+#   sqrt_MMt <- svdM[["u"]] %*% Sigma %*% t(svdM[["v"]])
+## Josh's suggestion to replace SVD with eigen 27/11/15
+   MMt.eigen <- eigen(MMt, symmetric=T )
+   sqrt_evals <- diag(sqrt(MMt.eigen$values))
+   sqrt_MMt <- MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)
+   rm(MMt.eigen, sqrt_evals)
    gc()
 
    ## calculate inverse square root of MMT
-   inverse_Sigma <- diag(1/sqrt(svdM[["d"]]))
-   inverse_sqrt_MMt <- svdM[["u"]] %*% inverse_Sigma %*% t(svdM[["v"]])
-   rm(inverse_Sigma)
-   gc()
+#   inverse_Sigma <- diag(1/sqrt(svdM[["d"]]))
+#   inverse_sqrt_MMt <- svdM[["u"]] %*% inverse_Sigma %*% t(svdM[["v"]])
+#   rm(inverse_Sigma)
+#   gc()
+## Josh's suggestion to replace SVD with eigen 27/11/15
+   inverse_sqrt_MMt <- chol2inv(chol(sqrt_MMt))
+ 
+
+
+
    if(checkres){
        a <- (sqrt_MMt %*% inverse_sqrt_MMt)
        if(trunc(sum(diag(a))) != nrow(MMt))
