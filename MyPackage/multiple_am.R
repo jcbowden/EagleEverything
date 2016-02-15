@@ -205,6 +205,7 @@ if(!is.matrix(Xmat))
    
     if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
+    ## not enough memory for this ......
     bin_path <- dirname(geno[["binfileM"]])
     a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, 
                                             dims=geno[["dim_of_bin_M"]],
@@ -373,7 +374,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
  }
 
  ## build design matrix currentX
-
+ cat(" Forming currentX \n")
  Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, colname.feffects=colname.feffects, verbose=verbose )
  currentX <- do.call(.build_design_matrix, Args)
 
@@ -393,6 +394,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
    cat(" Performing iteration ... ", itnum, "\n")
 
    ## based on selected_locus, form model matrix X
+   cat(" While - form currentX \n")
    currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus,
                           bin_path = dirname(geno[["binfileM"]]),
                           dim_of_bin_M=geno[["dim_of_bin_M"]],
@@ -404,15 +406,21 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
     Args <- list(geno=geno,workingmemGb=workingmemGb,
                     numcores=numcores,selected_loci=selected_loci,
                     verbose=verbose, indxNA=indxNA)
+    cat(" While - MMt \n")
     MMt <- do.call(.calcMMt, Args)
+
+    cat(" While invMMt \n")
     invMMt <- chol2inv(chol(MMt))
     gc()
+    
+    cat(" While calVC \n")
     vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt)
     best_ve <- vc[["ve"]]
     best_vg <- vc[["vg"]]
 
 
     ## Calculate extBIC
+    cat(" calculte  extBIC and h \n")
     new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose)
     h <- best_vg/(best_vg + best_ve)
 
@@ -423,6 +431,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
 
 
     ## Print findings to screen
+
     .print_results(itnum, selected_loci, map, herit, extBIC)
 
 
@@ -433,11 +442,13 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
                  numcores=numcores, verbose=verbose, trait=trait )
+     cat(" while - new seelcted locus \n")
      new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
 
      selected_loci <- c(selected_loci, new_selected_locus)
 
    }  else {
+     cat( " while terminating loop ... \n")
      ## terminate while loop, h near 0
      continue <- FALSE
      .print_header()

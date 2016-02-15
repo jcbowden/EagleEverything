@@ -201,7 +201,7 @@ void  CreatePackedBinary(std::string fname, std::string binfname, std::vector<lo
                          bool csv, 
                          bool verbose)
 {
-int 
+long 
    indx_packed = 0,
    indx_packed_long_vec = 0,
    colindx = 0, 
@@ -264,7 +264,7 @@ std::ofstream fileOUT(binfname.c_str(), ios::binary );
  Rcpp::Rcout << " " << std::endl;
  Rcpp::Rcout << " Loading file .";
  }
-int counter = 0;
+long  counter = 0;
 while(getline(fileIN, line ))
 {
   if (verbose){
@@ -280,7 +280,7 @@ while(getline(fileIN, line ))
  // Here, BB is coded into 2 when bit packed, 
  //       AB is coded into 1, 
  //       AA is coded into 0. 
-  for(int i=0; i< dims[1] ; i++){
+  for(long i=0; i< dims[1] ; i++){
   //   streamA >> rowvec[i];
 
 
@@ -334,15 +334,15 @@ fileOUT.close();
 }
 
 Eigen::MatrixXi  ReadBlock(std::string binfname, 
-                           int start_row,
-                           int numcols,
-                           int numrows_in_block)
+                           long start_row,
+                           long numcols,
+                           long numrows_in_block)
 
 {
  // reads in packed data from binary file of longs
  // to form M Eign interger matrix 
 
-int 
+long 
   coli = 0, 
   rowi = 0;
 
@@ -365,16 +365,23 @@ std::bitset <bits_in_ulong>
    std::ifstream fileBIN(binfname.c_str(), ios::in | ios::binary );
 
 
-
 // Determine size (in bytes) of block
-   int number_of_longs_in_row  =  (int) numcols/(bits_in_ulong/2);
+   long number_of_longs_in_row  =  (long) numcols/(bits_in_ulong/2);
    if (numcols % (bits_in_ulong/2) !=0) 
         number_of_longs_in_row++;
-    int size_in_bytes_of_block  = numrows_in_block * number_of_longs_in_row  * bits_in_ulong/8;
+
+  long size_in_bytes_of_block =  numrows_in_block * number_of_longs_in_row  * bits_in_ulong/8 ;
+
+
+   
    fileBIN.seekg(start_row*number_of_longs_in_row*bits_in_ulong/8, std::ios_base::beg);
 // create float vector to store block of binary results. This is going 
 // to be a chunk of data that is subrows x colnum in size To Do. 
+
+
    std::vector<unsigned long int> v(size_in_bytes_of_block/(bits_in_ulong/8) );
+
+
 
 // Load the data
 fileBIN.read((char*)&v[0] , size_in_bytes_of_block );  // reads a block of bytes of size. 
@@ -385,10 +392,10 @@ fileBIN.read((char*)&v[0] , size_in_bytes_of_block );  // reads a block of bytes
 
 // Convert integers into bitsets
 packed.reset(); //to initialize bitset
-for(int i=0;i < v.size(); i++)
+for(long i=0;i < v.size(); i++)
 {
   std::bitset <bits_in_ulong> packed(v[i]);
-  for(int j=0; j< (bits_in_ulong/2); j++)
+  for(long j=0; j< (bits_in_ulong/2); j++)
   {
      geno_bitset.reset();
      geno_bitset =  ((packed & (mask << (j*2)))) >> (j*2);
@@ -419,7 +426,7 @@ Eigen::MatrixXi  createMmat(std::string binfname, std::vector<int> dims)
  // reads in packed data from binary file of longs
  // to form M arma matrix of doubles for further analysis. 
 
-int 
+long 
   coli = 0, 
   rowi = 0;
 
@@ -459,10 +466,10 @@ fileBIN.read((char*)&v[0] , size );  // reads a block of bytes of size.
 
 // Convert integers into bitsets
 packed.reset(); //to initialize bitset
-for(int i=0;i < v.size(); i++)
+for(long i=0;i < v.size(); i++)
 {
   std::bitset <bits_in_ulong> packed(v[i]);
-  for(int j=0; j< (bits_in_ulong/2); j++)
+  for(long j=0; j< (bits_in_ulong/2); j++)
   {
      geno_bitset.reset();
      geno_bitset =  ((packed & (mask << (j*2)))) >> (j*2);
@@ -574,7 +581,7 @@ long
 
 
   // calculate number of columns that can be read into XGb
-  int n_of_cols_to_be_read = (max_memory_in_Gbytes * 1000000/mem_bytes) * (bits_in_ulong/2);
+  long n_of_cols_to_be_read = (max_memory_in_Gbytes * 1000000/mem_bytes) * (bits_in_ulong/2);
 
 
  // open binary output file
@@ -599,8 +606,8 @@ if(n_of_cols_to_be_read > dims[1]){
 
 
  // initialize the packed 2D array to all 0's.
-  for(int i=0; i < dims[1]; i++)
-    for(int j=0; j < n_total; j++)
+  for(long i=0; i < dims[1]; i++)
+    for(long j=0; j < n_total; j++)
         packed_block[i][j].reset();
 
 int
@@ -623,7 +630,7 @@ int
 
 
 
-   for(int i=0; i < dims[1]; i++){
+   for(long i=0; i < dims[1]; i++){
 //     streamA >> rowvec[i];
        getline(streamA, token, sep); 
    rowvec[i] = atoi(token.c_str());
@@ -644,7 +651,7 @@ int
       os << "Genotype file contains genotypes that are not " << AA << "," << AB << ", or " << BB << " For example " << rowvec[i] << "\n\n";
       Rcpp::stop(os.str() );
   }
-  }  // end for int i
+  }  // end for long i
 
 
   if(  ( ((indx_packed_within + 1)  % ( bits_in_ulong/2))==0)   ) {
@@ -659,8 +666,8 @@ int
  }  // end while
 
  // write packed binary file to disc
-  for(int i=0; i < dims[1]; i++){
-    for(int j=0; j < n_total; j++){
+  for(long i=0; i < dims[1]; i++){
+    for(long j=0; j < n_total; j++){
            fileOUTbin.write((char *)(&packed_block[i][j]), sizeof(unsigned long int));
    }}
 
@@ -675,7 +682,7 @@ if (verbose){
      Rcpp::Rcout << " If possible, increase workingmemGb parameter. " << std::endl;
  }
   // Calculate number of blocks needed
-  int n_blocks = dims[1]/n_of_cols_to_be_read;
+  long n_blocks = dims[1]/n_of_cols_to_be_read;
   if (dims[1] % n_of_cols_to_be_read != 0)
       n_blocks++;
 
@@ -683,8 +690,8 @@ if (verbose){
 
   // Block read and transpose - requires n_blocks passes through the 
   // ASCII input file which could be slow if file is large and memory low
-   for(int b=0; b < n_blocks; b++){
-  //for(int b=1; b < 2; b++){
+   for(long b=0; b < n_blocks; b++){
+  //for(long b=1; b < 2; b++){
      if (verbose) Rcpp::Rcout << " Processing block ... " << b << " of a total number of blocks of " << n_blocks << std::endl;
 
 
@@ -694,8 +701,8 @@ if (verbose){
 
 
     // initialize the packed 2D array to all 0's.
-     for(int i=0; i < n_of_cols_to_be_read ; i++)
-       for(int j=0; j < n_total; j++)
+     for(long i=0; i < n_of_cols_to_be_read ; i++)
+       for(long j=0; j < n_total; j++)
            packed_block[i][j].reset();
 
    int
@@ -703,7 +710,7 @@ if (verbose){
         indx_packed_across = 0;
 
 
-    int
+    long
         start_val = b * n_of_cols_to_be_read,
         end_val   = (b+1) * n_of_cols_to_be_read;
 
@@ -720,7 +727,7 @@ if (verbose){
       os << "ERROR: Could not open  " << fname << std::endl;
       Rcpp::stop(os.str() );
      }
-    int counter = 0;
+    long counter = 0;
     if (verbose) {
        Rcpp::Rcout << std::endl;
        Rcpp::Rcout << std::endl;
@@ -734,14 +741,14 @@ if (verbose){
 
 
 
-      for(int i=0; i < dims[1] ; i++){
+      for(long i=0; i < dims[1] ; i++){
        // streamA >> rowvec[i];
        getline(streamA, token, sep);
    rowvec[i] = atoi(token.c_str());
 
        if(i>= start_val & i <  end_val){
         //  if(counter==0)   Rcpp::Rcout << rowvec[i] << " " ;
-          int iindx = i % n_of_cols_to_be_read; // converts it back to an 
+          long iindx = i % n_of_cols_to_be_read; // converts it back to an 
                                                 // index between 0 and n_of_cols_to_be_read
          if(rowvec[i] == BB){
             packed_block[iindx][indx_packed_across][indx_packed_within*2 + 1] = 1;
@@ -757,7 +764,7 @@ if (verbose){
             Rcpp::stop(os.str() );
         }
        } // end if
-     }  // end for int i
+     }  // end for long i
 
 
      if(  ( ((indx_packed_within + 1)  % ( bits_in_ulong/2))==0)   ) {
@@ -775,8 +782,8 @@ if (verbose){
    fileIN.close();
 
  // write packed binary file to disc
-  for(int i=0; i < n_of_cols_to_be_read; i++){
-    for(int j=0; j < n_total; j++){
+  for(long i=0; i < n_of_cols_to_be_read; i++){
+    for(long j=0; j < n_total; j++){
            fileOUTbin.write((char *)(&packed_block[i][j]), sizeof(unsigned long int));
    }}
 
@@ -853,7 +860,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
   if(!R_IsNA(selected_loci(0))){
    // setting columns to 0
-   for(int ii=0; ii < selected_loci.size() ; ii++)
+   for(long ii=0; ii < selected_loci.size() ; ii++)
           Mt.row(selected_loci(ii) ).setZero();
    }
 
@@ -869,7 +876,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
       // calculate the maximum number of rows in Mt that can be contained in the
       // block multiplication. This involves a bit of algrebra but it is comes to the following
-      int num_rows_in_block = (max_memory_in_Gbytes /  ( bits_in_double/(8.0 * 1000000000)) - dims[0] * dims[0] - dims[0])/dims[0] ;
+      long num_rows_in_block = (max_memory_in_Gbytes /  ( bits_in_double/(8.0 * 1000000000)) - dims[0] * dims[0] - dims[0])/dims[0] ;
 
     if (num_rows_in_block < 0){
         Rcpp::Rcout << std::endl;
@@ -888,7 +895,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       // blockwise multiplication
 
       // find out the number of blocks needed
-      int num_blocks = dims[0]/num_rows_in_block;
+      long num_blocks = dims[0]/num_rows_in_block;
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
 
@@ -897,7 +904,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       Rprintf(" Block multiplication necessary. \n");
       Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
       } 
-      for(int i=0; i < num_blocks; i++){
+      for(long i=0; i < num_blocks; i++){
          long start_row1 = i * num_rows_in_block;
          long num_rows_in_block1 = num_rows_in_block;
          if ((start_row1 + num_rows_in_block1) > dims[1])
@@ -912,7 +919,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
          if(!R_IsNA(selected_loci(0))){
          // setting columns (or row when Mt) to 0
-            for(int ii=0; ii < selected_loci.size() ; ii++)
+            for(long ii=0; ii < selected_loci.size() ; ii++)
             {
             // since we are now dealing with Mt, and blocking on columns, 
             // because columns are rows in Mt, then we have to be careful
@@ -920,7 +927,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
             // the values have to be adjusted based on the block number
                 if(selected_loci(ii) >= start_row1 & selected_loci(ii) < start_row1 + num_rows_in_block1 )
                 {   // selected loci index is in block 
-                int block_selected_loci = selected_loci(ii) - start_row1;
+                long block_selected_loci = selected_loci(ii) - start_row1;
                 Mt.row(block_selected_loci).setZero();
                 }
              }   
@@ -932,14 +939,14 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 
          // assign block vector results to final vector (ar) of results
-         int  counter = 0;
-         for(int j=start_row1; j < start_row1 + num_rows_in_block1; j++){
+         long  counter = 0;
+         for(long j=start_row1; j < start_row1 + num_rows_in_block1; j++){
               ar(j,0) = ar_tmp(counter,0);
               counter++;
          }
 
        if (verbose)  Rcpp::Rcout << "block done ... " << std::endl;
-      } // end for int
+      } // end for long
 
 
 
@@ -954,10 +961,10 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 
 // internal function to remove a row from a dynamic matrix
-void removeRow(MatrixXi& matrix, unsigned int rowToRemove)
+void removeRow(MatrixXi& matrix, unsigned long rowToRemove)
 {
-    unsigned int numRows = matrix.rows()-1;
-    unsigned int numCols = matrix.cols();
+    unsigned long numRows = matrix.rows()-1;
+    unsigned long numCols = matrix.cols();
 
     if( rowToRemove < numRows )
         matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+1,0,numRows-rowToRemove,numCols);
@@ -967,10 +974,10 @@ void removeRow(MatrixXi& matrix, unsigned int rowToRemove)
 
 
 
-void removeColumn(Eigen::MatrixXi& matrix, unsigned int colToRemove)
+void removeColumn(Eigen::MatrixXi& matrix, unsigned long colToRemove)
 {
-    unsigned int numRows = matrix.rows();
-    unsigned int numCols = matrix.cols()-1;
+    unsigned long numRows = matrix.rows();
+    unsigned long numCols = matrix.cols()-1;
 
     if( colToRemove < numCols )
         matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
@@ -1059,7 +1066,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
   // trait data
 //   if(!R_IsNA(indxNA(0)))
    if(indxNA.size()!=0){
-     for (int ii=0; ii < indxNA.size(); ii++){
+     for (long ii=0; ii < indxNA.size(); ii++){
         removeColumn(Mt, indxNA(ii) );
      }
   }
@@ -1068,7 +1075,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
    if(!R_IsNA(selected_loci(0))){
    // setting columns to 0
-   for(int ii=0; ii < selected_loci.size() ; ii++){
+   for(long ii=0; ii < selected_loci.size() ; ii++){
            Mt.row(selected_loci(ii)).setZero();
     }
    }
@@ -1106,7 +1113,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
   
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
 
-  for(int i=0; i< dims[0]; i++){
+  for(long i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mtd.row(i)).transpose() ;
   }
 
@@ -1123,7 +1130,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
       // calculate the maximum number of rows in Mt that can be contained in the
       // block multiplication. This involves a bit of algrebra but it is comes to the following
-      int num_rows_in_block =  max_memory_in_Gbytes / ( dims[1] * bits_in_double/(8.0 * 1000000000)) - dims[1] - 1 ;
+      long num_rows_in_block =  max_memory_in_Gbytes / ( dims[1] * bits_in_double/(8.0 * 1000000000)) - dims[1] - 1 ;
 
       if (num_rows_in_block < 0){
         Rcpp::Rcout << std::endl;
@@ -1143,7 +1150,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       // blockwise multiplication
 
       // find out the number of blocks needed
-      int num_blocks = dims[0]/num_rows_in_block;
+      long num_blocks = dims[0]/num_rows_in_block;
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
       if (verbose){
@@ -1151,26 +1158,30 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       Rprintf(" Block multiplication necessary. \n");
       Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
       } 
-      for(int i=0; i < num_blocks; i++){
+      for(long i=0; i < num_blocks; i++){
+         Rcpp::Rcout << "Performing block iteration ... " << i << endl;
          long start_row1 = i * num_rows_in_block;
          long num_rows_in_block1 = num_rows_in_block;
          if ((start_row1 + num_rows_in_block1) > dims[0])
             num_rows_in_block1 = dims[0] - start_row1;
-
            Eigen::MatrixXi
                    Mt;
            Eigen::MatrixXd
                    Mtd;
 
+          Rcpp::Rcout << " Reading block " << endl;
           Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+          Rcpp::Rcout << " Casting as double " << endl;
           Mtd = Mt.cast<double>(); 
+          Rcpp::Rcout << " Resizing .. " << endl;
           Mt.resize(0,0);
 
          // removing columns that correspond to individuals with no 
          // trait data
          //  if(!R_IsNA(indxNA(0)))
          if(indxNA.size() != 0 ){
-               for (int ii=0; ii < indxNA.size(); ii++){
+               Rcpp::Rcout << " Removing columns don't know why though ... " << endl;
+               for (long ii=0; ii < indxNA.size(); ii++){
                      removeColumn(Mt, indxNA(ii) );
                }
           }
@@ -1181,13 +1192,15 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
             Eigen::MatrixXd
              vt,
              ans_tmp;
-
+          Rcpp::Rcout << "Assign var_ans_tmp" << endl;
+          Rcpp::Rcout << "(num_rows_in_block1" << num_rows_in_block1 << endl;
+          
           Eigen::MatrixXd   var_ans_tmp(num_rows_in_block1,1);
-
+          Rcpp::Rcout << "bombed ... " << endl;
 
             if(!R_IsNA(selected_loci(0))){
             // setting columns (or row when Mt) to 0
-               for(int ii=0; ii < selected_loci.size() ; ii++)
+               for(long ii=0; ii < selected_loci.size() ; ii++)
                {
                // since we are now dealing with Mt, and blocking on columns, 
                // because columns are rows in Mt, then we have to be careful
@@ -1195,23 +1208,25 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
                // the values have to be adjusted based on the block number
                    if(selected_loci(ii) >= start_row1 & selected_loci(ii) < start_row1 + num_rows_in_block1 )
                    {   // selected loci index is in block 
-                   int block_selected_loci = selected_loci(ii) - start_row1;
+                   long block_selected_loci = selected_loci(ii) - start_row1;
                    Mtd.row(block_selected_loci).setZero();
                    }
                 }   
             }
-
+            Rcpp::Rcout << "Mtd *  inv_MMt_sqrt  * a " << endl;
             ans_tmp  =  Mtd *  inv_MMt_sqrt  * a ;
 
 
             // variance calculation
+            Rcpp::Rcout << "variance calculation .. " << endl;
             vt.noalias() =  Mtd *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
-            for(int j=0; j < num_rows_in_block1; j++)
+            for(long j=0; j < num_rows_in_block1; j++)
                       var_ans_tmp(j,0)  =   vt.row(j)  * ((Mtd.row(j)).transpose()).cast<double>() ;
 
             // assign block vector results to final vector (ans) of results
-            int  counter = 0;
-            for(int j=start_row1; j < start_row1 + num_rows_in_block1; j++){
+            long  counter = 0;
+            Rcpp::Rcout << " assigning block vector results to final vector .. " << endl;
+            for(long j=start_row1; j < start_row1 + num_rows_in_block1; j++){
                  ans(j,0) = ans_tmp(counter,0);
                  var_ans(j,0) = var_ans_tmp(counter,0);
                  counter++;
@@ -1220,7 +1235,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
              if (verbose)  Rcpp::Rcout << "block done ... " << std::endl;
 
 
-      } // end for int
+      } // end for long
 
 
 
@@ -1262,9 +1277,7 @@ ofstream
    fileOUT;
 
 int 
-   genoval,
-   rown,
-   coln;
+   genoval;
 
 std::string 
      fname = Rcpp::as<std::string>(f_name),
@@ -1317,14 +1330,14 @@ Rcpp::Rcout << "\n\n" << std::endl;
 // [[Rcpp::export]]
 Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_bin, 
                                    double  max_memory_in_Gbytes, 
-                                    int selected_locus, 
+                                    long  selected_locus, 
                                     std::vector<long> dims,
                                    Rcpp::NumericVector indxNA)
 {
   std::string
      fnamebin = Rcpp::as<std::string>(f_name_bin);
 
-  int 
+  long 
      nind;
 
   nind = dims[0];
@@ -1355,7 +1368,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
     // removing rows that correspond to individuals with no 
   // trait data
   if(indxNA.size() != 0){
-     for (int ii=0; ii < indxNA.size(); ii++){
+     for (long ii=0; ii < indxNA.size(); ii++){
            removeRow(genoMat, indxNA(ii) ); } 
   }
    column_of_genos = genoMat.col(selected_locus);
@@ -1366,12 +1379,12 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    Rcout << " In else part of if statement " << endl;
     long num_rows_in_block = (max_memory_in_Gbytes  * (double) 8000000000 )/(bits_in_int * dims[1]);
 
-         int num_blocks = dims[0]/num_rows_in_block;
+         long num_blocks = dims[0]/num_rows_in_block;
           if (dims[0] % num_rows_in_block)
                  num_blocks++;
 
 
-          for(int i=0; i < num_blocks; i++){
+          for(long i=0; i < num_blocks; i++){
               long start_row1 = i * num_rows_in_block;
               long num_rows_in_block1 = num_rows_in_block;
               if ((start_row1 + num_rows_in_block1) > dims[0])
@@ -1382,11 +1395,11 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
               // removing rows that correspond to individuals with no 
               // trait data
-              int start = start_row1;
-              int finish = start_row1 + num_rows_in_block1;
+              long start = start_row1;
+              long  finish = start_row1 + num_rows_in_block1;
               // if(!R_IsNA(indxNA(0))){
               if(indxNA.size() != 0 ){
-                 for (int ii=0; ii < indxNA.size(); ii++){
+                 for (long ii=0; ii < indxNA.size(); ii++){
                    if(indxNA(ii) >= start & indxNA(ii) <= finish)
                         removeRow(genoMat_block1, indxNA(ii) );
                  }
@@ -1395,10 +1408,10 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
               // dealing with assigning column_of_genos when some values 
               // may be missing due to having been removed. 
-              int colindx = start_row1;
-              for(int j=start_row1; j< start_row1+num_rows_in_block1 ; j++){
+              long colindx = start_row1;
+              for(long j=start_row1; j< start_row1+num_rows_in_block1 ; j++){
                  bool found = 0;
-                 for(int ii = 0; ii < indxNA.size() ; ii++){
+                 for(long ii = 0; ii < indxNA.size() ; ii++){
                    if(indxNA[ii] == j){
                           found=1;
                    }
@@ -1461,9 +1474,7 @@ ofstream
    fileOUT;
 
 int 
-   genoval,
-   rown,
-   coln;
+   genoval;
 
 std::string 
      fnamebin = Rcpp::as<std::string>(f_name_bin);
@@ -1495,7 +1506,7 @@ double
   memory_needed_in_Gb =  (dims[0]*dims[0]* bits_in_int + 2*(dims[0] *  dims[1] *   bits_in_int))/( (double) 8000000000) ;
 
 
-
+Rcpp::Rcout << "memory needed is " << memory_needed_in_Gb << endl;
 
 
 //-------------------------
@@ -1507,7 +1518,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
    if(!R_IsNA(selected_loci(0))){
      // setting columns to 0
-     for(int ii=0; ii < selected_loci.size() ; ii++) 
+     for(long ii=0; ii < selected_loci.size() ; ii++) 
        genoMat.col(selected_loci(ii)).setZero(); 
    }
 
@@ -1530,7 +1541,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 //        // Efficient calculation of MMt
 //       if(!R_IsNA(selected_loci(0)(0) )){
 //       // setting columns to 0
-//       for(int ii=0; ii < selected_loci.size() ; ii++)
+//       for(long ii=0; ii < selected_loci.size() ; ii++)
 //          genoMat.col(selected_loci(ii)).setZero();
 //       }
 //       MMt = genoMat * genoMat.transpose(); 
@@ -1541,20 +1552,26 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
            // blockwise multiplication
 
           // find out the number of blocks needed
-          int num_blocks = dims[0]/num_rows_in_block;
+          long num_blocks = dims[0]/num_rows_in_block;
+
+
+
           if (dims[0] % num_rows_in_block)
                  num_blocks++;
 
 
-          for(int i=0; i < num_blocks; i++){
+          for(long i=0; i < num_blocks; i++){
               long start_row1 = i * num_rows_in_block;
               long num_rows_in_block1 = num_rows_in_block;
               if ((start_row1 + num_rows_in_block1) > dims[0])
                      num_rows_in_block1 = dims[0] - start_row1;
             //  Rcpp::Rcout << num_rows_in_block1 << " num rows in block 1 " << std::endl;
 
+
+
                Eigen::MatrixXi    
                     genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
+
 
 
               Eigen::MatrixXi    
@@ -1562,7 +1579,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
              if(!R_IsNA(selected_loci(0) )){
              // setting columns to 0
-             for(int ii=0; ii < selected_loci.size() ; ii++)
+             for(long ii=0; ii < selected_loci.size() ; ii++)
                 genoMat_block1.col(selected_loci(ii)).setZero();
              }
              // Rcpp::Rcout << "  Block 1  "  << std::endl;
@@ -1575,7 +1592,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               MMt.block(start_row1, start_row1, num_rows_in_block1, num_rows_in_block1) = MMtsub;
 
 
-              for(int j=i+1;j<num_blocks; j++){
+              for(long j=i+1;j<num_blocks; j++){
                    long start_row2 = j * num_rows_in_block;
                    long num_rows_in_block2 = num_rows_in_block;
                    if ((start_row2 + num_rows_in_block2) > dims[0])
@@ -1591,7 +1608,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
                   if(!R_IsNA(selected_loci(0) )){
                    // setting columns to 0
-                   for(int jj=0; jj < selected_loci.size() ; jj++)
+                   for(long jj=0; jj < selected_loci.size() ; jj++)
                       genoMat_block2.col(selected_loci(jj)).setZero();
                    }
             //  Rcpp::Rcout << " Block 2 " << std::endl;
