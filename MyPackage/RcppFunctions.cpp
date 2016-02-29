@@ -19,7 +19,8 @@
 //     1. file name of ASCII file with genotypes (not handling marker names yet, or different formats like cvs)
 //     2. max memory size in bytes
 
-//  [[Rcpp::depends(RcppEigen)]]
+// [[Rcpp::depends(RcppEigen)]]
+
 #include <RcppEigen.h>
 #include <R.h>
 
@@ -42,7 +43,6 @@ using Eigen::MatrixXd;
 using Eigen::Lower;
 using Eigen::Map;   // maps rather than copies
 
-
 #ifdef _OPENMP
 #include <omp.h>
 //   [[Rcpp::plugins(openmp)]]
@@ -52,6 +52,7 @@ using Eigen::Map;   // maps rather than copies
 const size_t bits_in_double = std::numeric_limits<long double>::digits;
 const size_t bits_in_ulong = std::numeric_limits<unsigned long int>::digits;
 const size_t bits_in_int = std::numeric_limits<unsigned int>::digits;
+
 
 
 
@@ -1097,7 +1098,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 
 
-
     ans_part1.resize(0,0);  // erase matrix
    //  ans =    Mt *  inv_MMt_sqrt  * a ;
  //  Rprintf(" finished untransfomred BLUP values \n");
@@ -1214,14 +1214,26 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
                 }   
             }
             Rcpp::Rcout << "Mtd *  inv_MMt_sqrt  * a " << endl;
-            ans_tmp  =  Mtd *  inv_MMt_sqrt  * a ;
+           //  ans_tmp  =  Mtd *  inv_MMt_sqrt  * a ;
+             ans_tmp  =   inv_MMt_sqrt  * a ;
+             ans_tmp  =  Mtd *  ans_tmp ;
 
 
             // variance calculation
             Rcpp::Rcout << "variance calculation .. " << endl;
-            vt.noalias() =  Mtd *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
-            for(long j=0; j < num_rows_in_block1; j++)
+            // vt.noalias() =  Mtd *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
+             // AWG changed 16/02/16
+            vt =   dim_reduced_vara * inv_MMt_sqrt;
+            vt =    inv_MMt_sqrt * vt;
+            vt =  Mtd *  vt;
+
+
+
+
+            Rcpp::Rcout << "about to do for long j " << endl;
+            for(long j=0; j < num_rows_in_block1; j++){
                       var_ans_tmp(j,0)  =   vt.row(j)  * ((Mtd.row(j)).transpose()).cast<double>() ;
+            }
 
             // assign block vector results to final vector (ans) of results
             long  counter = 0;

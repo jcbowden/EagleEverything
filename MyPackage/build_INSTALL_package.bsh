@@ -66,6 +66,7 @@ echo " using Eigen::MatrixXi;"  >> ./tmp1
 echo " using Eigen::MatrixXd;"  >> ./tmp1
 echo " using Eigen::Lower;"  >> ./tmp1
 echo " using Eigen::Map;  "  >> ./tmp1
+
 echo "    " >> tmp1
 
 awk 'NR > 7' "RcppExports.cpp" > ./block2.tmp
