@@ -98,6 +98,7 @@ if(!is.matrix(Xmat))
   {
     ## internal function: used only in multilocus_loci_am and summaryam
     ## values passed by environments
+    cat(" Inside calcMMt ... \n")
     MMt <- calculateMMt(geno=geno[["binfileM"]], workingmemGb=workingmemGb, 
                            numcores=numcores, 
                            dim_of_bin_M = geno[["dim_of_bin_M"]], 
@@ -179,16 +180,16 @@ if(!is.matrix(Xmat))
 
 
   .find_qtl <- function(geno, workingmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
-                       currentX, error_checking, numcores, verbose, trait)
+                       currentX, error_checking, numcores, verbose, trait, ngpu)
   {
     ##  internal function: use only with multiple_locus_am
-    if(verbose) cat(" Calculating H matrix. \n")
+    if(verbose) cat(" Calculating H matrix - NOT GPU . \n")
     H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg)
-    if(verbose) cat(" Calculating P matrix. \n")
+    if(verbose) cat(" Calculating P matrix - NOT GPU. \n")
     P <- calculateP(H=H, X=currentX)
     if (verbose)
               cat(" Calculating  square root of M %*% t(M) and it's inverse. \n")
-    MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, numcores=numcores )
+    MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, numcores=numcores , ngpu=ngpu)
 
     if (verbose)
             cat(" Calculating BLUPs for dimension reduced model. \n")
@@ -201,7 +202,7 @@ if(!is.matrix(Xmat))
              cat(" Calculating variance of BLUPs for dimension reduced model. \n")
     var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
                                                 MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                                                verbose = verbose)
+                                                verbose = verbose )
    
     if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
@@ -252,6 +253,7 @@ if(!is.matrix(Xmat))
 #'  to the screen for monitoring progress. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
 #' qtl that are to be included in the model. 
+#' @param ngpu   an integer value for the number of gpu to be used in the calculations. 
 #' @details
 #' The steps to running \code{multiple_locus_am} are as follows:
 #' \itemize{
@@ -339,7 +341,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
                               geno=NULL, 
                               alpha=0.05, error_checking=FALSE, 
                               verbose=FALSE,
-                              maxit=20){
+                              maxit=20, ngpu=0){
  ## Core function for performing whole genome association mapping with EMMA
  ## Args
  ## numcores        number of cores available for computation
@@ -367,6 +369,20 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
 
  ## check for NA's in trait
  indxNA <- check.for.NA.in.trait(trait=trait)
+
+
+## set up gpu is ngpu > 0
+ if(ngpu > 0){
+   #library(rcppMagmaSYEVD)
+   ## caters for the two ways data can be inputed into am+
+  if(geno[["columnwise"]]){
+    cat(" oooooooooooooooo \n")
+      RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
+   } else {
+      RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][2],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
+   } 
+ }
+
 
  ## remove missing observations from trait
  if(length(indxNA)>0){
@@ -441,7 +457,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
      ARgs <- list(geno=geno,workingmemGb=workingmemGb, indxNA=indxNA, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
-                 numcores=numcores, verbose=verbose, trait=trait )
+                 numcores=numcores, verbose=verbose, trait=trait, ngpu=ngpu )
      cat(" while - new seelcted locus \n")
      new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
 

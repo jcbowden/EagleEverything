@@ -44,7 +44,8 @@ cp ./DESCRIPTION.OLD ./MWAM/DESCRIPTION
  cd $DIR/MWAM/src
  awk 'NR>=1&&NR<=3' "RcppExports.cpp" > ./block1.tmp
 
-echo "#include <RcppEigen.h> " > ./tmp1
+echo "#define EIGEN_USE_MKL_ALL " > ./tmp1
+echo "#include <RcppEigen.h> " >> ./tmp1
 echo " #include <omp.h> "  >>  ./tmp1
 echo " #include <iostream> " >> ./tmp1
 echo " #include <fstream> " >> ./tmp1
@@ -97,10 +98,12 @@ cd $DIR
 ## User needs to set CUDA_HOME
 ##                   R_HOME
 ##                   MAGMA_HOME
-## echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./MWAM/src/Makevars
-echo "PKG_LIBS=-fopenmp"  >> ./MWAM/src/Makevars
+##echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./MWAM/src/Makevars
+##echo "PKG_LIBS=-fopenmp"  >> ./MWAM/src/Makevars
 ##  echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./MWAM/src/Makevars
-echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./MWAM/src/Makevars
+#echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./MWAM/src/Makevars
+
+echo "PKG_CPPFLAGS = -lnvblas " > ./MWAM/src/Makevars
 
 
 

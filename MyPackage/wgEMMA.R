@@ -699,7 +699,7 @@ calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, di
     cat(" Error: The binary packed file ", geno, " cannot be found.\n")
     stop(" calculateMMt has terminated with errors.") 
    }
-
+  cat(" moving into calculateMMt_rcpp .... \n")
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
   MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
                                max_memory_in_Gbytes=workingmemGb, num_cores=numcores, 
@@ -717,7 +717,7 @@ calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, di
 
 
 calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, numcores=1, 
-                                           verbose = FALSE )
+                                           verbose = FALSE , ngpu=0)
 {
   ## R function for calculating the square root of M * M^t
   ## and the inverse of the square root of MMt
@@ -745,25 +745,31 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, numcores=1,
 #   Sigma <- diag(sqrt(svdM[["d"]]))
 #   sqrt_MMt <- svdM[["u"]] %*% Sigma %*% t(svdM[["v"]])
 ## Josh's suggestion to replace SVD with eigen 27/11/15
-   MMt.eigen <- eigen(MMt, symmetric=T )
-   sqrt_evals <- diag(sqrt(MMt.eigen$values))
-   sqrt_MMt <- MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)
-   rm(MMt.eigen, sqrt_evals)
-   gc()
+   res <- list()
+   cat(" NNNNNNGGGGGGPPPPPUUUUUUU is ", ngpu, "\n")
 
-   ## calculate inverse square root of MMT
-#   inverse_Sigma <- diag(1/sqrt(svdM[["d"]]))
-#   inverse_sqrt_MMt <- svdM[["u"]] %*% inverse_Sigma %*% t(svdM[["v"]])
-#   rm(inverse_Sigma)
-#   gc()
-## Josh's suggestion to replace SVD with eigen 27/11/15
-   inverse_sqrt_MMt <- chol2inv(chol(sqrt_MMt))
- 
+   if(ngpu ==0){
+      cat("=========================================================\n")
+      cat("  Beginning eigen(MMt, symmetric=TRUE )  \n")
+      MMt.eigen <- eigen(MMt, symmetric=TRUE )
+      cat(" Taking diag ... \n")
+      sqrt_evals <- diag(sqrt(MMt.eigen$values))
+      cat(" Performing MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)  \n")
+      res[["sqrt"]] <- MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)
+      cat("End =========================================================\n")
+      rm(MMt.eigen, sqrt_evals)
+      gc()
+      res[["invsqrt"]] <- chol2inv(chol(res[["sqrt"]]))
+   }  else {
+      cat(" In here *******should be using gpu    ...... \n")
+      res <- sqrt_invsqrt(MMt, symmetric=TRUE)
+      cat(" Out of here ...... end of using gpu .... \n") 
+   } 
 
 
 
    if(checkres){
-       a <- (sqrt_MMt %*% inverse_sqrt_MMt)
+       a <- (res[["sqrt"]] %*% res[["invsqrt"]] )
        if(trunc(sum(diag(a))) != nrow(MMt))
        {
          cat(" \n\n\nWARNING: these results may be unstable.\n")
@@ -774,7 +780,7 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, numcores=1,
 
        } 
    }   ## end if(checkres)
-   res <- list(sqrt_MMt=sqrt_MMt, inverse_sqrt_MMt=inverse_sqrt_MMt)
+   res <- list(sqrt_MMt=res[["sqrt"]], inverse_sqrt_MMt=res[["invsqrt"]] )
   
 
 
@@ -866,8 +872,10 @@ calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, verbose
   if(is.null(y))
    stop(" y must be specified")
 
-
+    cat("  In calculate_reduced_a   -------------- \n")
+    cat(" a <- varG * MMtsqrt %*% P %*% y  \n")
     a <- varG * MMtsqrt %*% P %*% y
+    cat(" end ------------------------  \n")
 
 return(a)
 
@@ -1010,23 +1018,41 @@ calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MM
 ## 
 
   ## first principals
+  cat("  In   ... calculate_reduced_vara   ...... \n")
+  cat(" Ze <- MMtsqrt \n")
   Ze <- MMtsqrt
+  cat(" R1  <- solve( varE * diag(nrow(invMMt))) \n")
   R1  <- solve( varE * diag(nrow(invMMt)))
+  cat(" dim is R1 ", dim(R1), "\n")
+  cat(" G1  <- solve( varG * diag(nrow(invMMt))) \n")
   G1  <- solve( varG * diag(nrow(invMMt)))
+  cat(" dim is G1 ", dim(G1), "\n")
+  cat(" A <- t(X) %*% R1 %*% X \n")
   A <- t(X) %*% R1 %*% X
+  cat(" dim is A ", dim(A), "\n")
+  cat(" B <- t(X) %*% R1 %*% Ze \n")
   B <- t(X) %*% R1 %*% Ze
+ cat(" dim is B ", dim(B), "\n")
+
+  cat(" C <- t(Ze) %*% R1 %*% X \n")
   C <- t(Ze) %*% R1 %*% X
+ cat(" dim is C ", dim(C), "\n")
+
+
+  cat(" D <- t(Ze) %*% R1 %*% Ze + G1 ")
   D <- t(Ze) %*% R1 %*% Ze + G1
+ cat(" dim is D ", dim(D), "\n")
 
+  cat("  D1 <- solve(D) \n")
   D1 <- solve(D)
-
+  cat(" dim is D1 ", dim(D1), "\n")
 
 #  C1 <- cbind(A,B)
 #  C2 <- cbind(C,D)
 #  CC <- rbind(C1, C2)
 #  invCC <- solve(CC)
 
-  ## ?? not sure about this ....
+  cat(" vars <- varG * diag(nrow(D1))  - ( D1 + D1 %*% C %*% solve(A - B %*% D1 %*% C) %*% B %*% D1 ) \n")
   vars <- varG * diag(nrow(D1))  - ( D1 + D1 %*% C %*% solve(A - B %*% D1 %*% C) %*% B %*% D1 )
 
     return(vars )
