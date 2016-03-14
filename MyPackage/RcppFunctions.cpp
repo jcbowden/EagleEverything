@@ -32,6 +32,9 @@
 #include <vector>
 #include <bitset>
 #include <string>
+
+#include <ctime>
+
 //    #include <magma.h>
 
 
@@ -55,21 +58,31 @@ const size_t bits_in_ulong = std::numeric_limits<unsigned long int>::digits;
 const size_t bits_in_int = std::numeric_limits<unsigned int>::digits;
 
 
+
 // [[Rcpp::export]]
 void  mymatmul( )
 {
- Eigen::MatrixXd  X(8000,8000);
- for(int i=0;i<8000;i++){
+  std::clock_t    start;
+
+ Eigen::MatrixXd  B(300,300);
+ Eigen::MatrixXd  C(300,1);
+ for(int i=0;i<300;i++){
      Rcpp::NumericVector rn;
-     rn =  rnorm(8000);
-
-Eigen::Map<Eigen::VectorXd> RN(Rcpp::as<Eigen::Map<Eigen::VectorXd > >(rn)); 
-
-
-X.row(i) = RN;
-
+     rn =  rnorm(300);
+     Eigen::Map<Eigen::VectorXd> RN(Rcpp::as<Eigen::Map<Eigen::VectorXd > >(rn)); 
+     B.row(i) = RN;
  }
- Eigen::MatrixXd  res= X * X.transpose();
+
+ for(int i=0;i<300;i++){
+     Rcpp::NumericVector rn;
+     rn =  rnorm(1);
+     Eigen::Map<Eigen::VectorXd> RN(Rcpp::as<Eigen::Map<Eigen::VectorXd > >(rn));
+     C.row(i) = RN;
+ }
+
+     start = std::clock();
+ Eigen::MatrixXd  res= B * C;
+    Rcout << "Time1: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 }
 
@@ -879,14 +892,17 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
           Mt.row(selected_loci(ii) ).setZero();
    }
 
-
+   Rcout << " calculate_reduced_a_rcpp " << " about to read in Mt " << endl;
    Mt = ReadBlock(fnamebin, 0, dims[0], dims[1]);
+   Rcout << " read ... " << endl;
    // ar  =    varG * Mt *  P   * y ;
+     std::clock_t    start;
+     start = std::clock();
+   Rcout << " ar  =    varG * Mt *  P   * y " << endl;
     ar  =     P   * y ;
-    ar  =    Mt + ar;
+    ar  =    Mt * ar;
     ar  =    varG * ar;
-
-
+    Rcout << "Time1: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 } else {
 
       // calculation being processed in block form
@@ -1044,11 +1060,9 @@ std::string
      fnamebin = Rcpp::as<std::string>(f_name_bin);
 
 
-Eigen::MatrixXd
-      ans(dims[0],1);
+ Eigen::MatrixXd
+       ans(dims[0],1);
 
-Eigen::MatrixXd
-      AWGans(dims[0],1);
 
 
 
@@ -1079,7 +1093,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
     Eigen::MatrixXd
                    Mt;
-
+    Rcout << " Reading Mt ... " << endl;
     Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
 
   // removing columns that correspond to individuals with no 
@@ -1105,15 +1119,18 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 //   AWGans =    Mtd *  inv_MMt_sqrt  * a ;
 //   AWGans =    Mt.cast<double>() *  inv_MMt_sqrt  * a ;
+std::clock_t    start;
 
-   Eigen::MatrixXd  ans_part1 = inv_MMt_sqrt * a;
-   ans =   Mt  * ans_part1; 
+   start = std::clock();
+    Eigen::MatrixXd  ans_part1 = inv_MMt_sqrt * a;
+    ans =   Mt  * ans_part1; 
+
+   Rcout << "Time2 Mtd *  inv_MMt_sqrt  * a : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 
 
 
-
-    ans_part1.resize(0,0);  // erase matrix
+// AWG    ans_part1.resize(0,0);  // erase matrix
    //  ans =    Mt *  inv_MMt_sqrt  * a ;
  //  Rprintf(" finished untransfomred BLUP values \n");
 
@@ -1122,18 +1139,28 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
   // calculate untransformed variances of BLUP values
   Eigen::MatrixXd
          var_ans_tmp;
-  
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
+
+     start = std::clock();
     Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt;
     var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1;
-//  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
-  var_ans_tmp.noalias() =  Mt *  var_ans_tmp_part1;
+     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+//  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
+
+     start = std::clock();
+  var_ans_tmp =  Mt *  var_ans_tmp_part1;
+     Rcout << "Time4 var_ans_tmp.noalias() =  Mt *  var_ans_tmp_part1 : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
   
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
 
+  start = std::clock();
   for(long i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
+     Rcout << "Time5  var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+
+
+
 
 
 } else {
@@ -1141,7 +1168,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
     //       BLOCK WISE UPDATE
     //  -----------------------------------------
 
-
+      // ans.resize(dims[0],1);   //added AWG 12/03/16 in a bid to improve GPU performance
 
       // calculation being processed in block form
       Rprintf(" Increasing maxmemGb would improve performance... \n");
@@ -1185,7 +1212,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
            Eigen::MatrixXd
                    Mt;
 
-          Rcpp::Rcout << " Reading block " << endl;
           Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
 
          // removing columns that correspond to individuals with no 
@@ -1204,11 +1230,8 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
             Eigen::MatrixXd
              vt,
              ans_tmp;
-          Rcpp::Rcout << "Assign var_ans_tmp" << endl;
-          Rcpp::Rcout << "(num_rows_in_block1" << num_rows_in_block1 << endl;
           
           Eigen::MatrixXd   var_ans_tmp(num_rows_in_block1,1);
-          Rcpp::Rcout << "bombed ... " << endl;
 
             if(!R_IsNA(selected_loci(0))){
             // setting columns (or row when Mt) to 0
@@ -1225,14 +1248,12 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
                    }
                 }   
             }
-            Rcpp::Rcout << "Mtd *  inv_MMt_sqrt  * a " << endl;
            //  ans_tmp  =  Mtd *  inv_MMt_sqrt  * a ;
              ans_tmp  =   inv_MMt_sqrt  * a ;
              ans_tmp  =  Mt *  ans_tmp ;
 
 
             // variance calculation
-            Rcpp::Rcout << "variance calculation .. " << endl;
             // vt.noalias() =  Mtd *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
              // AWG changed 16/02/16
             vt =   dim_reduced_vara * inv_MMt_sqrt;
@@ -1242,14 +1263,12 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 
 
-            Rcpp::Rcout << "about to do for long j " << endl;
             for(long j=0; j < num_rows_in_block1; j++){
                       var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
             }
 
             // assign block vector results to final vector (ans) of results
             long  counter = 0;
-            Rcpp::Rcout << " assigning block vector results to final vector .. " << endl;
             for(long j=start_row1; j < start_row1 + num_rows_in_block1; j++){
                  ans(j,0) = ans_tmp(counter,0);
                  var_ans(j,0) = var_ans_tmp(counter,0);
@@ -1442,7 +1461,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
                  }
                  if (!found){ 
                     // j not in indxNA
-                    Rcpp::Rcout << "colindx " << colindx << endl;
                    column_of_genos(colindx) = genoMat_block1.col(selected_locus)(j-start_row1);
                    colindx++;
                 }

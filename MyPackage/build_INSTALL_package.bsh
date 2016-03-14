@@ -103,7 +103,7 @@ cd $DIR
 ##  echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./MWAM/src/Makevars
 #echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./MWAM/src/Makevars
 
-echo "PKG_CPPFLAGS = -lnvblas " > ./MWAM/src/Makevars
+#echo "PKG_CPPFLAGS = -lnvblas " > ./MWAM/src/Makevars
 
 
 

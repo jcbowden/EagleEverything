@@ -21,14 +21,19 @@ emma.delta.ML.dLL.w.Z <-  function (logdelta, lambda, etas.1, xi.1, n, etas.2.sq
         delta)) + (n - t)/delta)))
 }
 
- emma.eigen.L.w.Z <- function (Z, K, complete = TRUE) 
+ emma.eigen.L.w.Z <- function (Z, K, complete = TRUE, gpu=FALSE) 
 {
     if (complete == FALSE) {
         vids <- colSums(Z) > 0
         Z <- Z[, vids]
         K <- K[vids, vids]
     }
-    eig <- eigen(K %*% crossprod(Z, Z), symmetric = FALSE, EISPACK = TRUE)
+    res <- K %*% crossprod(Z, Z)
+    if(gpu){
+       eig <- rcppMagmaSYEVD::eigen_mgpu(res, symmetric=FALSE)
+    } else {
+       eig <- eigen(res, symmetric = FALSE, EISPACK = TRUE)
+    }
     return(list(values = eig$values, vectors = qr.Q(qr(Z %*% 
         eig$vectors), complete = TRUE)))
 }
@@ -81,7 +86,7 @@ emma.delta.REML.LL.w.Z <- function (logdelta, lambda, etas.1, n, t, etas.2.sq)
 
 
 emma.MLE <- function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10, 
-    esp = 1e-10, eig.L = NULL, eig.R = NULL) 
+    esp = 1e-10, eig.L = NULL, eig.R = NULL, gpu=FALSE) 
 {
     n <- length(y)
     t <- nrow(K)
@@ -94,10 +99,10 @@ emma.MLE <- function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10,
     }
     if (is.null(Z)) {
         if (is.null(eig.L)) {
-            eig.L <- emma.eigen.L.wo.Z(K)
+            eig.L <- emma.eigen.L.wo.Z(K, gpu)
         }
         if (is.null(eig.R)) {
-            eig.R <- emma.eigen.R.wo.Z(K, X)
+            eig.R <- emma.eigen.R.wo.Z(K, X, gpu)
         }
         etas <- crossprod(eig.R$vectors, y)
         logdelta <- (0:ngrids)/ngrids * (ulim - llim) + llim
@@ -138,10 +143,10 @@ emma.MLE <- function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10,
     }
     else {
         if (is.null(eig.L)) {
-            eig.L <- emma.eigen.L.w.Z(Z, K)
+            eig.L <- emma.eigen.L.w.Z(Z, K, gpu)
         }
         if (is.null(eig.R)) {
-            eig.R <- emma.eigen.R.w.Z(Z, K, X)
+            eig.R <- emma.eigen.R.w.Z(Z, K, X, gpu)
         }
         etas <- crossprod(eig.R$vectors, y)
         etas.1 <- etas[1:(t - q)]
@@ -209,22 +214,29 @@ emma.delta.ML.LL.wo.Z <- function (logdelta, lambda, etas, xi)
 
 
 
-emma.eigen.L.wo.Z <- function (K) 
+emma.eigen.L.wo.Z <- function (K, gpu=FALSE) 
 {
-    eig <- eigen(K, symmetric = TRUE)
+    if(gpu){
+       eig <- rcppMagmaSYEVD::eigen_mgpu(K, symmetric = TRUE)
+     } else {
+      eig <- eigen(K, symmetric = TRUE)
+     }
     return(list(values = eig$values, vectors = eig$vectors))
 }
 
-emma.eigen.R.wo.Z <-  function (K, X) 
+emma.eigen.R.wo.Z <-  function (K, X, gpu=FALSE) 
 {
     n <- nrow(X)
     q <- ncol(X)
     dn <- diag(n)
     S <- dn - X %*% solve(crossprod(X, X)) %*% t(X)
     gc()
-
-    eig <- eigen(S %*% (K + dn) %*% S, symmetric = TRUE)
-
+    
+    if(gpu){
+       eig <- rcppMagmaSYEVD::eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
+    } else {
+       eig <- eigen(S %*% (K + dn) %*% S, symmetric = TRUE)
+    }
 
     stopifnot(!is.complex(eig$values))
     return(list(values = eig$values[1:(n - q)] - 1, vectors = eig$vectors[, 
@@ -262,7 +274,7 @@ emma.delta.ML.dLL.wo.Z <- function (logdelta, lambda, etas, xi)
 
 
 
- emma.REMLE <-  function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10, 
+ emma.REMLE <-  function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10,  gpu=FALSE,
     esp = 1e-10, eig.L = NULL, eig.R = NULL) 
 {
     n <- length(y)
@@ -276,7 +288,7 @@ emma.delta.ML.dLL.wo.Z <- function (logdelta, lambda, etas, xi)
     }
     if (is.null(Z)) {
         if (is.null(eig.R)) {
-            eig.R <- emma.eigen.R.wo.Z(K, X)
+            eig.R <- emma.eigen.R.wo.Z(K, X, gpu)
         }
         etas <- crossprod(eig.R$vectors, y)
         logdelta <- (0:ngrids)/ngrids * (ulim - llim) + llim
@@ -716,8 +728,8 @@ calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, di
 
 
 
-calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, numcores=1, 
-                                           verbose = FALSE , ngpu=0)
+calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, 
+                                           verbose = FALSE , gpu=FALSE)
 {
   ## R function for calculating the square root of M * M^t
   ## and the inverse of the square root of MMt
@@ -736,19 +748,9 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, numcores=1,
     cat("        information as well. \n")
     stop(" Internal function: calculateMMt_sqrt_and_sqrtinv has terminated with errors.\n")
   } 
-   ## calculate square root of MMt 
-   if(numcores==1 & verbose){
-      cat(" Warning: this may take some time as numcores has been set to 1. Only \n")
-      cat("          a single core is being used for computation. \n")
-   }
-#   svdM <- svd(MMt)
-#   Sigma <- diag(sqrt(svdM[["d"]]))
-#   sqrt_MMt <- svdM[["u"]] %*% Sigma %*% t(svdM[["v"]])
-## Josh's suggestion to replace SVD with eigen 27/11/15
    res <- list()
-   cat(" NNNNNNGGGGGGPPPPPUUUUUUU is ", ngpu, "\n")
 
-   if(ngpu ==0){
+   if(!gpu){
       cat("=========================================================\n")
       cat("  Beginning eigen(MMt, symmetric=TRUE )  \n")
       MMt.eigen <- eigen(MMt, symmetric=TRUE )
@@ -762,7 +764,7 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, numcores=1,
       res[["invsqrt"]] <- chol2inv(chol(res[["sqrt"]]))
    }  else {
       cat(" In here *******should be using gpu    ...... \n")
-      res <- sqrt_invsqrt(MMt, symmetric=TRUE)
+      res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
       cat(" Out of here ...... end of using gpu .... \n") 
    } 
 
@@ -788,7 +790,7 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, numcores=1,
 
 
 
-calculateH <- function(MMt=NULL, varE=NULL, varG=NULL)
+calculateH <- function(MMt=NULL, varE=NULL, varG=NULL )
 {
   ## R function for calculating the H variance matrix 
   ## which is
@@ -816,19 +818,19 @@ calculateH <- function(MMt=NULL, varE=NULL, varG=NULL)
   if(is.null(MMt))
     stop("MMt cannot be null.")
 
-
   return( varE * diag(nrow(MMt)) + varG * MMt)
 
 
 }
 
 
-calculateP  <- function(H=NULL, X=NULL)
+calculateP  <- function(H=NULL, X=NULL, gpu=FALSE)
 {
   ## R function to calculate P matrix
   ## Args:
   ##       H is the variance matrix
   ##       X is the design matrix supplied by the user
+  ##       gpu for whether GPU computation - requires gputools to be installed
   ## Returns:
   ##   matrix object P
 
@@ -841,8 +843,7 @@ calculateP  <- function(H=NULL, X=NULL)
       stop(" The number of rows in H and X are not the same.")
 
  Hinv <- chol2inv(chol(H))
-   P <- Hinv - Hinv %*% X %*% solve( t(X) %*% Hinv %*% X )  %*% t(X) %*% Hinv
-
+ P <- Hinv - Hinv %*% X %*% solve( t(X) %*% Hinv %*% X )  %*% t(X) %*% Hinv
 
   return(P)
 

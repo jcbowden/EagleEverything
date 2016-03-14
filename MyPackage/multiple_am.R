@@ -114,10 +114,10 @@ if(!is.matrix(Xmat))
     return(MMt)
   }
 
-  .calcVC <- function(trait, currentX, MMt)
+  .calcVC <- function(trait, currentX, MMt, gpu)
   {
     ## perform likelihood ratio test for variance component Var_g
-    res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
+    res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100,gpu=gpu)
     return(list("vg"=res_full$vg, "ve"=res_full$ve))
 
   }
@@ -180,42 +180,54 @@ if(!is.matrix(Xmat))
 
 
   .find_qtl <- function(geno, workingmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
-                       currentX, error_checking, numcores, verbose, trait, ngpu)
+                       currentX, error_checking, numcores, verbose, trait, gpu )
   {
     ##  internal function: use only with multiple_locus_am
-    if(verbose) cat(" Calculating H matrix - NOT GPU . \n")
-    H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg)
+    if(verbose) cat(" Calculating H matrix   \n")
+    a  <- system.time(H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg ) )
+    cat(" Time_find_qtl  calculateH ", a, "\n")
     if(verbose) cat(" Calculating P matrix - NOT GPU. \n")
-    P <- calculateP(H=H, X=currentX)
+    a <- system.time (P <- calculateP(H=H, X=currentX ) )
+    cat(" Time_find_qtl  calculateP ", a, "\n")
+  
     if (verbose)
               cat(" Calculating  square root of M %*% t(M) and it's inverse. \n")
-    MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, numcores=numcores , ngpu=ngpu)
+    a <- system.time (MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
+                              gpu=gpu ) )
+     cat(" Time_find_qtl   calculateMMt_sqrt_and_sqrtinv ", a, "\n")
 
     if (verbose)
             cat(" Calculating BLUPs for dimension reduced model. \n")
 
-    hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
+    a <- system.time (hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                       y=trait, verbose = verbose )  
+                       y=trait, verbose = verbose )   )
+     cat(" Time_find_qtl   calculate_reduced_a ", a, "\n")
+
 
     if (verbose) 
              cat(" Calculating variance of BLUPs for dimension reduced model. \n")
-    var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
+    a <- system.time ( var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
                                                 MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                                                verbose = verbose )
+                                                verbose = verbose ) )
+        cat(" Time_find_qtl   calculate_reduced_vara ", a, "\n")
+
    
     if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
     ## not enough memory for this ......
     bin_path <- dirname(geno[["binfileM"]])
-    a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, 
+    a <- system.time ( a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, 
                                             dims=geno[["dim_of_bin_M"]],
                                             selectedloci = selected_loci,
                                             invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
                                             transformed_a=hat_a, 
                                             transformed_vara=var_hat_a,
                                             indxNA = indxNA,
-                                            verbose=verbose)
+                                            verbose=verbose) )
+        cat(" Time_find_qtl   calculate_reduced_a_and_vara  ", a, "\n")
+
+
   
     ## outlier test statistic
     if (verbose) cat(" Calculating outlier test statistics. \n")
@@ -253,7 +265,7 @@ if(!is.matrix(Xmat))
 #'  to the screen for monitoring progress. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
 #' qtl that are to be included in the model. 
-#' @param ngpu   an integer value for the number of gpu to be used in the calculations. 
+#' @param gpu   a logical value for whether computations should be performed on a GPU. This requires the package gputools to have been installed. 
 #' @details
 #' The steps to running \code{multiple_locus_am} are as follows:
 #' \itemize{
@@ -341,7 +353,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
                               geno=NULL, 
                               alpha=0.05, error_checking=FALSE, 
                               verbose=FALSE,
-                              maxit=20, ngpu=0){
+                              maxit=20, gpu=FALSE){
  ## Core function for performing whole genome association mapping with EMMA
  ## Args
  ## numcores        number of cores available for computation
@@ -354,7 +366,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
  ## alpha           significance level at which to perform the likelihood ratio test
  ## error_checking  when true, it performs some checks of the calculations
  ## maxit           maximum number of qtl to include in the model
-
+ ## gpu             if GPU computation should be used. 
 
  ## check parameter inputs
  check.inputs.mlam(numcores, workingmemGb, colname.trait, colname.feffects, 
@@ -371,17 +383,17 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
  indxNA <- check.for.NA.in.trait(trait=trait)
 
 
-## set up gpu is ngpu > 0
- if(ngpu > 0){
-   #library(rcppMagmaSYEVD)
-   ## caters for the two ways data can be inputed into am+
-  if(geno[["columnwise"]]){
-    cat(" oooooooooooooooo \n")
-      RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
-   } else {
-      RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][2],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
-   } 
- }
+
+  if(gpu ){
+# library(rcppMagmaSYEVD)
+## caters for the two ways data can be inputed into am+
+if(geno[["columnwise"]]){
+     cat(" oooooooooooooooo \n")
+       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=1, memName="/syevd_mem", semName="/syevd_sem", print=0)
+    } else {
+       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][2],  numGPUsWanted=1, memName="/syevd_mem", semName="/syevd_sem", print=0)
+    } 
+  }
 
 
  ## remove missing observations from trait
@@ -392,7 +404,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
  ## build design matrix currentX
  cat(" Forming currentX \n")
  Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, colname.feffects=colname.feffects, verbose=verbose )
- currentX <- do.call(.build_design_matrix, Args)
+ a1 <- system.time (currentX <- do.call(.build_design_matrix, Args) )
 
 
  ## print tile
@@ -422,22 +434,28 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
     Args <- list(geno=geno,workingmemGb=workingmemGb,
                     numcores=numcores,selected_loci=selected_loci,
                     verbose=verbose, indxNA=indxNA)
-    cat(" While - MMt \n")
-    MMt <- do.call(.calcMMt, Args)
 
-    cat(" While invMMt \n")
-    invMMt <- chol2inv(chol(MMt))
-    gc()
-    
+    if(itnum==1){
+       cat(" While - MMt \n")
+        a1 <- system.time( MMt <- do.call(.calcMMt, Args)  )
+
+        cat(" While invMMt \n")
+        a2 <- system.time (invMMt <- chol2inv(chol(MMt)) )
+        cat(" Time MMt <- do.call(.calcMMt, Args) ", a1, "\n")
+        cat(" Time invMMt <- chol2inv(chol(MMt)) ", a2, "\n")
+        gc()
+    } 
     cat(" While calVC \n")
-    vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt)
+    a3 <- system.time ( vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, gpu=gpu) )
+    cat(" Time vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, gpu=gpu) ", a3, "\n")
     best_ve <- vc[["ve"]]
     best_vg <- vc[["vg"]]
 
 
     ## Calculate extBIC
     cat(" calculte  extBIC and h \n")
-    new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose)
+    a4 <- system.time (new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose) )
+    cat(" Time new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose) ", a4, "\n")
     h <- best_vg/(best_vg + best_ve)
 
 
@@ -457,10 +475,10 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
      ARgs <- list(geno=geno,workingmemGb=workingmemGb, indxNA=indxNA, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
-                 numcores=numcores, verbose=verbose, trait=trait, ngpu=ngpu )
+                 numcores=numcores, verbose=verbose, trait=trait, gpu=gpu)
      cat(" while - new seelcted locus \n")
-     new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
-
+     a5 <- system.time( new_selected_locus <- do.call(.find_qtl, ARgs))  ## memory blowing up here !!!! 
+     cat(" new_selected_locus <- do.call(.find_qtl, ARgs)   ", a5, "\n")
      selected_loci <- c(selected_loci, new_selected_locus)
 
    }  else {
