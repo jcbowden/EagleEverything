@@ -184,48 +184,48 @@ if(!is.matrix(Xmat))
   {
     ##  internal function: use only with multiple_locus_am
     if(verbose) cat(" Calculating H matrix   \n")
-    a  <- system.time(H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg ) )
-    cat(" Time_find_qtl  calculateH ", a, "\n")
+    cat(" Beginning  calculateH \n")
+    H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg ) 
     if(verbose) cat(" Calculating P matrix - NOT GPU. \n")
-    a <- system.time (P <- calculateP(H=H, X=currentX ) )
-    cat(" Time_find_qtl  calculateP ", a, "\n")
+    cat("Beginning calculateH \n")
+    P <- calculateP(H=H, X=currentX ) 
   
     if (verbose)
               cat(" Calculating  square root of M %*% t(M) and it's inverse. \n")
-    a <- system.time (MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
-                              gpu=gpu ) )
-     cat(" Time_find_qtl   calculateMMt_sqrt_and_sqrtinv ", a, "\n")
+    cat("Beginning calculateMMt_sqrt_and_sqrtinv \n")
+    MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
+                              gpu=gpu ) 
 
     if (verbose)
             cat(" Calculating BLUPs for dimension reduced model. \n")
-
-    a <- system.time (hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
+    cat(" Beginning calculate_reduced_a \n")
+    hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                       y=trait, verbose = verbose )   )
-     cat(" Time_find_qtl   calculate_reduced_a ", a, "\n")
+                       y=trait, verbose = verbose )   
 
 
     if (verbose) 
              cat(" Calculating variance of BLUPs for dimension reduced model. \n")
-    a <- system.time ( var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
+    cat(" Beginning calculate_reduced_vara \n")
+    var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
                                                 MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                                                verbose = verbose ) )
-        cat(" Time_find_qtl   calculate_reduced_vara ", a, "\n")
+                                                verbose = verbose ) 
 
    
     if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
     ## not enough memory for this ......
     bin_path <- dirname(geno[["binfileM"]])
-    a <- system.time ( a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, 
+     cat(" Beginning calculate_a_and_vara \n")
+     readline()
+     a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, 
                                             dims=geno[["dim_of_bin_M"]],
                                             selectedloci = selected_loci,
                                             invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
                                             transformed_a=hat_a, 
                                             transformed_vara=var_hat_a,
                                             indxNA = indxNA,
-                                            verbose=verbose) )
-        cat(" Time_find_qtl   calculate_reduced_a_and_vara  ", a, "\n")
+                                            verbose=verbose) 
 
 
   
@@ -239,7 +239,7 @@ if(!is.matrix(Xmat))
     indx <- indx[1]
 
     orig_indx <- seq(1, geno[["dim_of_bin_M"]][2])  ## 1:ncols
-
+    cat(" End of ..... \n")
     return(orig_indx[indx])
 }
 
@@ -422,12 +422,13 @@ if(geno[["columnwise"]]){
    cat(" Performing iteration ... ", itnum, "\n")
 
    ## based on selected_locus, form model matrix X
-   cat(" While - form currentX \n")
-   currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus,
+  cat("Beginning currentX \n")
+  currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus,
                           bin_path = dirname(geno[["binfileM"]]),
                           dim_of_bin_M=geno[["dim_of_bin_M"]],
                           indxNA = indxNA,
-                          map=map, workingmemGb = workingmemGb)
+                          map=map, workingmemGb = workingmemGb)  
+
 
 
     ## calculate Ve and Vg
@@ -436,26 +437,20 @@ if(geno[["columnwise"]]){
                     verbose=verbose, indxNA=indxNA)
 
     if(itnum==1){
-       cat(" While - MMt \n")
-        a1 <- system.time( MMt <- do.call(.calcMMt, Args)  )
+         cat(" Beginning .calcMMt \n")
+         MMt <- do.call(.calcMMt, Args)  
 
-        cat(" While invMMt \n")
-        a2 <- system.time (invMMt <- chol2inv(chol(MMt)) )
-        cat(" Time MMt <- do.call(.calcMMt, Args) ", a1, "\n")
-        cat(" Time invMMt <- chol2inv(chol(MMt)) ", a2, "\n")
-        gc()
+        invMMt <- chol2inv(chol(MMt)) 
     } 
-    cat(" While calVC \n")
-    a3 <- system.time ( vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, gpu=gpu) )
-    cat(" Time vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, gpu=gpu) ", a3, "\n")
+    cat(" Beginning calVC \n")
+      vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, gpu=gpu) 
     best_ve <- vc[["ve"]]
     best_vg <- vc[["vg"]]
 
 
     ## Calculate extBIC
-    cat(" calculte  extBIC and h \n")
-    a4 <- system.time (new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose) )
-    cat(" Time new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose) ", a4, "\n")
+    cat(" Beginning .calc_extBIC \n")
+    new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose) 
     h <- best_vg/(best_vg + best_ve)
 
 
@@ -476,9 +471,8 @@ if(geno[["columnwise"]]){
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
                  numcores=numcores, verbose=verbose, trait=trait, gpu=gpu)
-     cat(" while - new seelcted locus \n")
+     cat(" Beginning .find_qtl \n")
      a5 <- system.time( new_selected_locus <- do.call(.find_qtl, ARgs))  ## memory blowing up here !!!! 
-     cat(" new_selected_locus <- do.call(.find_qtl, ARgs)   ", a5, "\n")
      selected_loci <- c(selected_loci, new_selected_locus)
 
    }  else {

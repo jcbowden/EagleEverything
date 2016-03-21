@@ -1091,10 +1091,8 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
 
 
-    Eigen::MatrixXd
-                   Mt;
     Rcout << " Reading Mt ... " << endl;
-    Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
+    Eigen::MatrixXd Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
 
   // removing columns that correspond to individuals with no 
   // trait data
@@ -1121,9 +1119,11 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 //   AWGans =    Mt.cast<double>() *  inv_MMt_sqrt  * a ;
 std::clock_t    start;
 
+   Rcout << " about to ans_part1.noalias() = inv_MMt_sqrt * a " << endl;
    start = std::clock();
     Eigen::MatrixXd  ans_part1 = inv_MMt_sqrt * a;
-    ans =   Mt  * ans_part1; 
+   Rcout << " about to ans_part1.noalias() = inv_MMt_sqrt * a " << endl;
+    ans.noalias() =   Mt  * ans_part1; 
 
    Rcout << "Time2 Mtd *  inv_MMt_sqrt  * a : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
@@ -1148,7 +1148,7 @@ std::clock_t    start;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
 
      start = std::clock();
-  var_ans_tmp =  Mt *  var_ans_tmp_part1;
+  var_ans_tmp.noalias()  =  Mt *  var_ans_tmp_part1;
      Rcout << "Time4 var_ans_tmp.noalias() =  Mt *  var_ans_tmp_part1 : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
   
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
@@ -1209,11 +1209,13 @@ std::clock_t    start;
          long num_rows_in_block1 = num_rows_in_block;
          if ((start_row1 + num_rows_in_block1) > dims[0])
             num_rows_in_block1 = dims[0] - start_row1;
-           Eigen::MatrixXd
-                   Mt;
 
-          Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+          Rcout << "Reading Mt " << endl;
 
+
+
+          Eigen::MatrixXd Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+          Rcout << "end read .... " << endl;
          // removing columns that correspond to individuals with no 
          // trait data
          //  if(!R_IsNA(indxNA(0)))
@@ -1228,12 +1230,15 @@ std::clock_t    start;
 
 
             Eigen::MatrixXd
-             vt,
+              vt1,
+             ans_tmp1,
              ans_tmp;
           
+           Rcout << "beginning var_ans_tmp " << endl; 
           Eigen::MatrixXd   var_ans_tmp(num_rows_in_block1,1);
 
             if(!R_IsNA(selected_loci(0))){
+             Rcout << " in if(!R_IsNA(selected_loci(0))) " << endl;
             // setting columns (or row when Mt) to 0
                for(long ii=0; ii < selected_loci.size() ; ii++)
                {
@@ -1249,32 +1254,52 @@ std::clock_t    start;
                 }   
             }
            //  ans_tmp  =  Mtd *  inv_MMt_sqrt  * a ;
-             ans_tmp  =   inv_MMt_sqrt  * a ;
-             ans_tmp  =  Mt *  ans_tmp ;
+          Rcout << " inv_MMt_sqrt  * a " << endl;
+             ans_tmp1.noalias()  =   inv_MMt_sqrt  * a ;
 
 
             // variance calculation
             // vt.noalias() =  Mtd *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
-             // AWG changed 16/02/16
-            vt =   dim_reduced_vara * inv_MMt_sqrt;
-            vt =    inv_MMt_sqrt * vt;
-            vt =  Mt *  vt;
+//            vt1.noalias() =   dim_reduced_vara * inv_MMt_sqrt;
+//            vt1 =    inv_MMt_sqrt * vt1;
+
+// AWG
+        //  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt
+            Rcout << " dim_reduced_vara * inv_MMt_sqrt " << endl;
+             vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt;
+            Rcout << " inv_MMt_sqrt * vt1 " << endl;
+             vt1           =  inv_MMt_sqrt * vt1;
 
 
 
+        // performing quadratic form, remembering only diag elements are needed for variances. 
+//        Rcout << " Performing ... Mt.row(j) * vt1 * ((Mt.row(j)).transpose())  " << endl;
+//        for(long j=0; j < num_rows_in_block1; j++){
+//           var_ans_tmp(j,0) =  Mt.row(j) * vt1 * ((Mt.row(j)).transpose()) ;
+//        }
+//        Rcout << "end of computing variances ... " << endl;
+            // vt.noalias() =  Mt *  vt1;
+          Rcout << "doing vt =  Mt *  vt1 " << endl;
+           Eigen::MatrixXd vt;
+              vt.noalias()  =  Mt *  vt1;
 
+Rcout << " now in for loop  vt.row(j)  * ((Mt.row(j)).transpose()) " << endl;
             for(long j=0; j < num_rows_in_block1; j++){
                       var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
             }
 
+
+
+
             // assign block vector results to final vector (ans) of results
             long  counter = 0;
+            Rcout << " Beginning var_ans " << endl;
             for(long j=start_row1; j < start_row1 + num_rows_in_block1; j++){
                  ans(j,0) = ans_tmp(counter,0);
                  var_ans(j,0) = var_ans_tmp(counter,0);
                  counter++;
             }
-
+    
              if (verbose)  Rcpp::Rcout << "block done ... " << std::endl;
 
 

@@ -44,7 +44,6 @@ cp ./DESCRIPTION.OLD ./MWAM/DESCRIPTION
  cd $DIR/MWAM/src
  awk 'NR>=1&&NR<=3' "RcppExports.cpp" > ./block1.tmp
 
-echo "#define EIGEN_USE_MKL_ALL " > ./tmp1
 echo "#include <RcppEigen.h> " >> ./tmp1
 echo " #include <omp.h> "  >>  ./tmp1
 echo " #include <iostream> " >> ./tmp1
@@ -105,7 +104,7 @@ cd $DIR
 
 #echo "PKG_CPPFLAGS = -lnvblas " > ./MWAM/src/Makevars
 
-
+cp /home/geo047/gitHUB_WMAM/MyPackage/Makevars.gpu /home/geo047/gitHUB_WMAM/MyPackage/MWAM/src/Makevars
 
 R CMD check MWAM
 
