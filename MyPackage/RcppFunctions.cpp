@@ -80,9 +80,9 @@ void  mymatmul( )
      C.row(i) = RN;
  }
 
-     start = std::clock();
+   //  start = std::clock();
  Eigen::MatrixXd  res= B * C;
-    Rcout << "Time1: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+ //   Rcout << "Time1: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 }
 
@@ -873,7 +873,7 @@ const size_t bits_in_double = std::numeric_limits<double>::digits;
 
 
    // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt))
-double mem_bytes_needed =   ( dims[0]*dims[1] + dims[0]*dims[0] + dims[0] ) *  ( bits_in_double/(8.0 * 1000000000));
+double mem_bytes_needed =   ( dims[0]*dims[1] + dims[0]*dims[0] + dims[0] ) *  ( sizeof(double)/( 1000000000));
 
 
 Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
@@ -896,13 +896,13 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
    Mt = ReadBlock(fnamebin, 0, dims[0], dims[1]);
    Rcout << " read ... " << endl;
    // ar  =    varG * Mt *  P   * y ;
-     std::clock_t    start;
-     start = std::clock();
+ //    std::clock_t    start;
+ //    start = std::clock();
    Rcout << " ar  =    varG * Mt *  P   * y " << endl;
     ar  =     P   * y ;
     ar  =    Mt * ar;
     ar  =    varG * ar;
-    Rcout << "Time1: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+//    Rcout << "Time1: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 } else {
 
       // calculation being processed in block form
@@ -910,7 +910,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
       // calculate the maximum number of rows in Mt that can be contained in the
       // block multiplication. This involves a bit of algrebra but it is comes to the following
-      long num_rows_in_block = (max_memory_in_Gbytes /  ( bits_in_double/(8.0 * 1000000000)) - dims[0] * dims[0] - dims[0])/dims[0] ;
+      long num_rows_in_block = (max_memory_in_Gbytes * 1000000000.0/sizeof(double) - dims[0] * dims[0] - dims[0])/dims[0] ;
 
     if (num_rows_in_block < 0){
         Rcpp::Rcout << std::endl;
@@ -1059,11 +1059,12 @@ ostringstream
 std::string
      fnamebin = Rcpp::as<std::string>(f_name_bin);
 
-
  Eigen::MatrixXd
        ans(dims[0],1);
 
-
+Eigen::MatrixXd
+             ans_tmp,
+             var_ans_tmp;
 
 
 
@@ -1075,8 +1076,9 @@ const size_t bits_in_integer = std::numeric_limits<int>::digits;
 
 
 
-   // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt))
-double mem_bytes_needed =   ( dims[0]   +  2*dims[1]   + 1 ) *  (dims[1] * bits_in_double/(8.0 * 1000000000));
+   // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt)%*%M)
+//AWG  double mem_bytes_needed =   ( dims[0]   +  2*dims[1]   + 1 ) *  (dims[1] * sizeof(double) /( 1000000000));
+ double mem_bytes_needed =   ((( dims[0]   +  2*dims[1] ) *  dims[0]) * sizeof(double))/1000000000;
 
 if (verbose){
    Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
@@ -1119,13 +1121,11 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 //   AWGans =    Mt.cast<double>() *  inv_MMt_sqrt  * a ;
 std::clock_t    start;
 
-   Rcout << " about to ans_part1.noalias() = inv_MMt_sqrt * a " << endl;
-   start = std::clock();
+//   start = std::clock();
     Eigen::MatrixXd  ans_part1 = inv_MMt_sqrt * a;
-   Rcout << " about to ans_part1.noalias() = inv_MMt_sqrt * a " << endl;
     ans.noalias() =   Mt  * ans_part1; 
 
-   Rcout << "Time2 Mtd *  inv_MMt_sqrt  * a : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+//   Rcout << "Time2 Mtd *  inv_MMt_sqrt  * a : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 
 
@@ -1137,27 +1137,25 @@ std::clock_t    start;
 
 
   // calculate untransformed variances of BLUP values
-  Eigen::MatrixXd
-         var_ans_tmp;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
 
-     start = std::clock();
+//     start = std::clock();
     Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt;
     var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1;
-     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+//     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
 
-     start = std::clock();
+//     start = std::clock();
   var_ans_tmp.noalias()  =  Mt *  var_ans_tmp_part1;
-     Rcout << "Time4 var_ans_tmp.noalias() =  Mt *  var_ans_tmp_part1 : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+//     Rcout << "Time4 var_ans_tmp.noalias() =  Mt *  var_ans_tmp_part1 : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
   
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
 
-  start = std::clock();
+//  start = std::clock();
   for(long i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
-     Rcout << "Time5  var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+//     Rcout << "Time5  var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 
 
@@ -1167,6 +1165,8 @@ std::clock_t    start;
     //  -----------------------------------------
     //       BLOCK WISE UPDATE
     //  -----------------------------------------
+      Eigen::MatrixXd
+             Mt;
 
       // ans.resize(dims[0],1);   //added AWG 12/03/16 in a bid to improve GPU performance
 
@@ -1175,7 +1175,10 @@ std::clock_t    start;
 
       // calculate the maximum number of rows in Mt that can be contained in the
       // block multiplication. This involves a bit of algrebra but it is comes to the following
-      long num_rows_in_block =  max_memory_in_Gbytes / ( dims[1] * bits_in_double/(8.0 * 1000000000)) - dims[1] - 1 ;
+      // Strickly, 2 should be used here but I want some extra memory to play with 
+      long num_rows_in_block =  max_memory_in_Gbytes * ( 1000000000) /
+                             ( 3 *dims[1] *  sizeof(double) ) ;
+
 
       if (num_rows_in_block < 0){
         Rcpp::Rcout << std::endl;
@@ -1189,7 +1192,7 @@ std::clock_t    start;
          Rcpp::stop(os.str() );
 
       }
-
+     
 
 
       // blockwise multiplication
@@ -1210,12 +1213,11 @@ std::clock_t    start;
          if ((start_row1 + num_rows_in_block1) > dims[0])
             num_rows_in_block1 = dims[0] - start_row1;
 
-          Rcout << "Reading Mt " << endl;
 
-
-
-          Eigen::MatrixXd Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
-          Rcout << "end read .... " << endl;
+         Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+         Rcout << "in here " << endl;
+         // Rcout << Mt.rows() << endl;
+         // Rcout << Mt.cols() << endl;
          // removing columns that correspond to individuals with no 
          // trait data
          //  if(!R_IsNA(indxNA(0)))
@@ -1226,16 +1228,13 @@ std::clock_t    start;
                }
           }
 
-          // vara calculation in block form
 
 
-            Eigen::MatrixXd
+        Eigen::MatrixXd
               vt1,
-             ans_tmp1,
-             ans_tmp;
+              ans_tmp1;
           
-           Rcout << "beginning var_ans_tmp " << endl; 
-          Eigen::MatrixXd   var_ans_tmp(num_rows_in_block1,1);
+        Eigen::MatrixXd   var_ans_tmp(num_rows_in_block1,1);
 
             if(!R_IsNA(selected_loci(0))){
              Rcout << " in if(!R_IsNA(selected_loci(0))) " << endl;
@@ -1254,20 +1253,12 @@ std::clock_t    start;
                 }   
             }
            //  ans_tmp  =  Mtd *  inv_MMt_sqrt  * a ;
-          Rcout << " inv_MMt_sqrt  * a " << endl;
-             ans_tmp1.noalias()  =   inv_MMt_sqrt  * a ;
-
+             ans_tmp.noalias()  =   inv_MMt_sqrt  * a ;
+             ans_tmp = Mt * ans_tmp;
 
             // variance calculation
             // vt.noalias() =  Mtd *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
-//            vt1.noalias() =   dim_reduced_vara * inv_MMt_sqrt;
-//            vt1 =    inv_MMt_sqrt * vt1;
-
-// AWG
-        //  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt
-            Rcout << " dim_reduced_vara * inv_MMt_sqrt " << endl;
              vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt;
-            Rcout << " inv_MMt_sqrt * vt1 " << endl;
              vt1           =  inv_MMt_sqrt * vt1;
 
 
@@ -1279,21 +1270,53 @@ std::clock_t    start;
 //        }
 //        Rcout << "end of computing variances ... " << endl;
             // vt.noalias() =  Mt *  vt1;
-          Rcout << "doing vt =  Mt *  vt1 " << endl;
            Eigen::MatrixXd vt;
               vt.noalias()  =  Mt *  vt1;
 
-Rcout << " now in for loop  vt.row(j)  * ((Mt.row(j)).transpose()) " << endl;
-            for(long j=0; j < num_rows_in_block1; j++){
-                      var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
-            }
 
 
+      double used_memory_Gbytes = (num_rows_in_block * dims[1] * 2 * sizeof(double))/1000000000;
+      double mem_left_Gbytes = max_memory_in_Gbytes  - used_memory_Gbytes;
 
+ //   Rcout << "Press ENTER to continue ... "  << endl;
+    std::string line;
+ //   std::getline(std::cin, line);  // read a line from std::cin into line
+
+      // number of rows in block for vt.row(j)  * ((Mt.row(j)).transpose()) calculation
+     // long num_r = mem_left_Gbytes * 1000000000 / ( 2.2 * dims[1] * sizeof(double));
+
+     long num_r=50;  // found this worked really well for speeding up block calculations
+     if (num_r > Mt.rows() )
+          num_r = Mt.rows() ;
+       // calculate number of blocks for  vt.row(j)  * ((Mt.row(j)).transpose()) calculation
+      long num_b = Mt.rows() /num_r;
+      if (Mt.rows()  % num_r)
+                     num_b++;
+
+      for(long j=0; j < num_b; j++){
+         long start_row1 = j * num_r;
+         long num_r1 = num_r;
+         if ((start_row1 + num_r1) > Mt.rows() )
+            num_r1 = Mt.rows()  - start_row1;
+
+         Eigen::MatrixXd var_ans_mat;
+   //    var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
+         
+         var_ans_mat.noalias() = vt.block(start_row1, 0, num_r1, dims[1])  *
+                                 (Mt.block(start_row1, 0, num_r1, dims[1]).transpose());
+         var_ans_tmp.block(start_row1,0, num_r1, 1) = var_ans_mat.diagonal();  // extracting diagonal elements 
+
+        }  // end for long j
+   //         for(long j=0; j < num_rows_in_block1; j++){
+   //                   var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
+   //         }
 
             // assign block vector results to final vector (ans) of results
             long  counter = 0;
-            Rcout << " Beginning var_ans " << endl;
+
+ //   std::string line;
+ //   std::getline(std::cin, line);  // read a line from std::cin into line
+            
             for(long j=start_row1; j < start_row1 + num_rows_in_block1; j++){
                  ans(j,0) = ans_tmp(counter,0);
                  var_ans(j,0) = var_ans_tmp(counter,0);
@@ -1357,7 +1380,7 @@ std::string
 // Calculate amount of memory needed
 //-----------------------------------
 double 
-  memory_needed_in_Gb =  (dims[0] *  dims[1] *   bits_in_double)/( (double) 8000000000) ;
+  memory_needed_in_Gb =  (dims[0] *  dims[1] *   sizeof(double) )/( (double) 1000000000) ;
 
 
 
@@ -1421,7 +1444,7 @@ Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_bin,
 // Calculate amount of memory needed
 //-----------------------------------
 double
-  memory_needed_in_Gb =  (dims[0] *  dims[1] *   bits_in_double)/( (double) 8000000000) ;
+  memory_needed_in_Gb =  (dims[0] *  dims[1] *   sizeof(double) )/( (double) 1000000000) ;
 
 
 Eigen::VectorXi
@@ -1445,7 +1468,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
 }  else {
    Rcout << " In else part of if statement " << endl;
-    long num_rows_in_block = (max_memory_in_Gbytes  * (double) 8000000000 )/(bits_in_double * dims[1]);
+    long num_rows_in_block = (max_memory_in_Gbytes  * (double) 1000000000 )/(sizeof(double) * dims[1]);
 
          long num_blocks = dims[0]/num_rows_in_block;
           if (dims[0] % num_rows_in_block)
@@ -1535,7 +1558,6 @@ std::string
 // gpu will only work with double precision matrices in Eigen. 
 // Had to change code to be double precision. 
 MatrixXd
-    genoMat,
     MMt(MatrixXd(dims[0], dims[0]).setZero());
 
 //MatrixXi 
@@ -1550,18 +1572,18 @@ MatrixXd
 // Calculate amount of memory needed
 //-----------------------------------
 // Memory required for 
-// MMt   dims[0] * dims[0] *  bits_in_double
-// genoMat  dims[0] * dims[1] * bits_in_double
-// genoMat transpose dims[0] * dims[1] * bits_in_double
+// MMt   dims[0] * dims[0] *  sizeof(double) 
+// genoMat  dims[0] * dims[1] * sizeof(double) 
+// genoMat transpose dims[0] * dims[1] * sizeof(double) 
 // 
 // Block update
 //
-// MMt   dims[0] * dims[0] *  bits_in_double
-// genoMat  num_rows_in_block * dims[1] * bits_in_double
-// genoMat transpose num_rows_in_block * dims[1] * bits_in_double
+// MMt   dims[0] * dims[0] *  sizeof(double) 
+// genoMat  num_rows_in_block * dims[1] * sizeof(double) 
+// genoMat transpose num_rows_in_block * dims[1] * sizeof(double) 
 
 double 
-  memory_needed_in_Gb =  (dims[0]*dims[0]* bits_in_double + 2*(dims[0] *  dims[1] *   bits_in_double))/( (double) 8000000000) ;
+  memory_needed_in_Gb =  (dims[0]*dims[0]* sizeof(double)  + 2*(dims[0] *  dims[1] *   sizeof(double) ))/( (double) 1000000000) ;
 
 
 Rcpp::Rcout << "memory needed is " << memory_needed_in_Gb << endl;
@@ -1573,7 +1595,7 @@ Rcpp::Rcout << "memory needed is " << memory_needed_in_Gb << endl;
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
     Rcout << "Reading data ... " << endl;
-    genoMat = ReadBlock(fnamebin,  0, dims[1], dims[0] );
+    Eigen::MatrixXd genoMat = ReadBlock(fnamebin,  0, dims[1], dims[0] );
     Rcout << " end of reading data ... " << endl;
    if(!R_IsNA(selected_loci(0))){
      // setting columns to 0
@@ -1586,29 +1608,22 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
      Rcout << "performing genoMat * genoMat.transpose() which should use GPU " << endl;
      Rcout << "--------------------------------------------------------------- " << endl;
 
-   MMt = genoMat * genoMat.transpose(); 
+   MMt.noalias() = genoMat * genoMat.transpose(); 
 
      Rcout << " Finished ... " << endl;
 
 
 } else {
     // based on user defined memory. Doing MMt via blockwise multiplication
-    // long num_rows_in_block = (max_memory_in_Gbytes  * (double) 8000000000 )/(bits_in_double * dims[1]);
-    long num_rows_in_block = (max_memory_in_Gbytes  * (double) 8000000000 - dims[0] * dims[0] * bits_in_double)/( 2* bits_in_double * dims[1]);
-//    if(num_rows_in_block > dims[0]){
-//         genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
+    // long num_rows_in_block = (max_memory_in_Gbytes  * (double) 1000000000 )/(sizeof(double)  * dims[1]);
+ //   long num_rows_in_block = (max_memory_in_Gbytes  * 1000000000 - dims[0] * dims[0] * sizeof(double) )/( 2* sizeof(double)  * dims[1]);
+   // its 2.2 instead of 2 and 4.84 instead of 4 to give us a 10% memory buffuer
+    double part1 = -2.2 *  dims[1];
+    double part2 = 4.84*dims[1] * dims[1] +  4 * max_memory_in_Gbytes  * 1000000000.0/sizeof(double);
+    part2 = sqrt(part2);
+    long num_rows_in_block = (part1 + part2)/2.0;
+    Rcout << "number of rows in block is " << num_rows_in_block << endl;  
 
-//        // Efficient calculation of MMt
-//       if(!R_IsNA(selected_loci(0)(0) )){
-//       // setting columns to 0
-//       for(long ii=0; ii < selected_loci.size() ; ii++)
-//          genoMat.col(selected_loci(ii)).setZero();
-//       }
-//       MMt = genoMat * genoMat.transpose(); 
-
-
-
-//    } else {
            // blockwise multiplication
 
           // find out the number of blocks needed
@@ -1628,7 +1643,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
             //  Rcpp::Rcout << num_rows_in_block1 << " num rows in block 1 " << std::endl;
 
 
-               Rcout << " Reading Block 1 Data .... ------------- " << endl;
+               Rcout << " Reading Block " << i << "  Data .... ------------- " << endl;
                Eigen::MatrixXd    
                     genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
                Rcout << " Finished reading Block Data .... --------------- " << endl;
@@ -1649,7 +1664,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               Rcout << "---------------------GPU--C++ -------------------------   " << endl;
               Rcout << " MMtsub = genoMat_block1 * genoMat_block1.transpose(); " << endl;
               Rcout << "------------------------------------------------------ " << endl;
-              MMtsub = genoMat_block1 * genoMat_block1.transpose(); 
+              MMtsub.noalias() = genoMat_block1 * genoMat_block1.transpose(); 
 
               //          i            j            num rows               num   cols
               MMt.block(start_row1, start_row1, num_rows_in_block1, num_rows_in_block1) = MMtsub;
@@ -1660,7 +1675,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
                    long num_rows_in_block2 = num_rows_in_block;
                    if ((start_row2 + num_rows_in_block2) > dims[0])
                           num_rows_in_block2 = dims[0] - start_row2;
-                    Rcout << " Reading genoMat_block2 data ... "   << endl;
+                    Rcout << " Reading genoMat_block " << j << "  data ... "   << endl;
                     Eigen::MatrixXd    
                        genoMat_block2 ( ReadBlock(fnamebin,  start_row2, dims[1], num_rows_in_block2)) ;
 
@@ -1680,7 +1695,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               Rcout << "---------------------GPU--C++ -------------------------   " << endl;
               Rcout << " MMtsub = genoMat_block1 * genoMat_block2.transpose(); " << endl;
               Rcout << "------------------------------------------------------ " << endl;
-                   MMtsub = genoMat_block1 * genoMat_block2.transpose(); 
+                   MMtsub.noalias() = genoMat_block1 * genoMat_block2.transpose(); 
                    //          i,        j,     num rows,              num cols
                    MMt.block(start_row1, start_row2, num_rows_in_block1, num_rows_in_block2) = MMtsub;
                    // and its symmetric block

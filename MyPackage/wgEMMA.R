@@ -422,7 +422,7 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
    } 
 
 
-check.inputs.mlam <- function (numcores, workingmemGb, colname.trait, colname.feffects, map, pheno, 
+check.inputs.mlam <- function (numcores, availmemGb, colname.trait, colname.feffects, map, pheno, 
                   geno, alpha)
 {
 
@@ -692,12 +692,12 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
 #}
 
 
-calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE)
+calculateMMt <- function(geno=NULL, availmemGb, numcores, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE)
 {
  ## R interface to Rcpp code to calculate M %*% t(M)
  ## Args
  ##      geno        absolute path + file name of binary packed M file
- ##      workingmemGb    amount of memory in Gbytes available for creation of MMt
+ ##      availmemGb    amount of memory in Gbytes available for creation of MMt
  ##      numcores    number of cores for matrix operations
  ##      selectedloci an integer vector that gives the column number (0- L-1 ) of the loci that
  ##                   have been selected to act as fixed QTL effects in the model. 
@@ -714,7 +714,7 @@ calculateMMt <- function(geno=NULL, workingmemGb, numcores, selected_loci=NA, di
   cat(" moving into calculateMMt_rcpp .... \n")
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
   MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
-                               max_memory_in_Gbytes=workingmemGb, num_cores=numcores, 
+                               max_memory_in_Gbytes=availmemGb, num_cores=numcores, 
                                dims= dim_of_bin_M, verbose = verbose) 
   return(MMt)
 
@@ -884,7 +884,7 @@ return(a)
 
 
 
-mistake_calculate_reduced_a <- function(varG=NULL, bin_path=getwd(), P=NULL, y=NULL, workingmemGb=8, dim_of_bin_M=NULL, 
+mistake_calculate_reduced_a <- function(varG=NULL, bin_path=getwd(), P=NULL, y=NULL, availmemGb=8, dim_of_bin_M=NULL, 
                                  selected_loci=NA, verbose = FALSE)
 {
  ## Rcpp function to calculate the BLUP (a) values under a dimension reduced model
@@ -930,7 +930,7 @@ if(.Platform$OS.type == "unix") {
   fnamebin <- paste(bin_path, "Mt.bin", sep="")
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
   ar <- calculate_reduced_a_rcpp(f_name_bin = fnamebin, varG=varG, P=P, 
-                                 y=ycolmat, max_memory_in_Gbytes=workingmemGb, 
+                                 y=ycolmat, max_memory_in_Gbytes=availmemGb, 
                                  dims=dim_of_bin_M , selected_loci = selected_loci , 
                                  verbose = verbose )
 
@@ -1019,41 +1019,24 @@ calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MM
 ## 
 
   ## first principals
-  cat("  In   ... calculate_reduced_vara   ...... \n")
-  cat(" Ze <- MMtsqrt \n")
   Ze <- MMtsqrt
-  cat(" R1  <- solve( varE * diag(nrow(invMMt))) \n")
   R1  <- solve( varE * diag(nrow(invMMt)))
-  cat(" dim is R1 ", dim(R1), "\n")
-  cat(" G1  <- solve( varG * diag(nrow(invMMt))) \n")
   G1  <- solve( varG * diag(nrow(invMMt)))
-  cat(" dim is G1 ", dim(G1), "\n")
-  cat(" A <- t(X) %*% R1 %*% X \n")
   A <- t(X) %*% R1 %*% X
-  cat(" dim is A ", dim(A), "\n")
-  cat(" B <- t(X) %*% R1 %*% Ze \n")
   B <- t(X) %*% R1 %*% Ze
- cat(" dim is B ", dim(B), "\n")
 
-  cat(" C <- t(Ze) %*% R1 %*% X \n")
   C <- t(Ze) %*% R1 %*% X
- cat(" dim is C ", dim(C), "\n")
 
 
-  cat(" D <- t(Ze) %*% R1 %*% Ze + G1 ")
   D <- t(Ze) %*% R1 %*% Ze + G1
- cat(" dim is D ", dim(D), "\n")
 
-  cat("  D1 <- solve(D) \n")
   D1 <- solve(D)
-  cat(" dim is D1 ", dim(D1), "\n")
 
 #  C1 <- cbind(A,B)
 #  C2 <- cbind(C,D)
 #  CC <- rbind(C1, C2)
 #  invCC <- solve(CC)
 
-  cat(" vars <- varG * diag(nrow(D1))  - ( D1 + D1 %*% C %*% solve(A - B %*% D1 %*% C) %*% B %*% D1 ) \n")
   vars <- varG * diag(nrow(D1))  - ( D1 + D1 %*% C %*% solve(A - B %*% D1 %*% C) %*% B %*% D1 )
 
     return(vars )
@@ -1062,7 +1045,7 @@ calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MM
 
 
 
-check.inputs <- function(numcores=NULL, workingmemGb=NULL, path=NULL, 
+check.inputs <- function(numcores=NULL, availmemGb=NULL, path=NULL, 
                          bin_path=NULL, file_genotype=NULL, 
                          file_phenotype=NULL, alpha=NULL)
 {
@@ -1088,13 +1071,13 @@ if(!is.null(numcores)){
     stop(" numcores cannot be zero or a negative number.")
 }
 
-if(!is.null(workingmemGb))
+if(!is.null(availmemGb))
 {
- if(!is.numeric(workingmemGb))
-   stop(" workingmemGb is not a numeric.")
+ if(!is.numeric(availmemGb))
+   stop(" availmemGb is not a numeric.")
 
- if(workingmemGb <= 0)
-    stop(" workingmemGb cannot be zero or a a negative number.")
+ if(availmemGb <= 0)
+    stop(" availmemGb cannot be zero or a a negative number.")
 }
 
 if(!is.null(path))
@@ -1270,7 +1253,7 @@ return(map)
 
 
 create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB, 
-                         workingmemGb, dim_of_bin_M, csv, verbose){
+                         availmemGb, dim_of_bin_M, csv, verbose){
  ## an Rcpp function to create the packed binary file of the genotype data M and Mt
  ## from genotype data that may be saved row or column wise in terms of the markers.
  ## Args
@@ -1278,7 +1261,7 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
  ## bin_path         path name for where binary files are to be stored. 
  ## columnwise       logical value. If TRUE, then the cols of the  genotype data are the markers. 
  ## AA, AB, BB       numeric codes for associated genotypes in marker genotype file
- ## workingmemGb     available memory for converstion to packed binary
+ ## availmemGb     available memory for converstion to packed binary
  ## dim_of_bin_M             row, column dimensions of M.  
 
  if(columnwise){
@@ -1286,28 +1269,28 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
     binMfile <- paste(bin_path, "M.bin", sep="") ## file name for binary packed Mt file.
 
     createM_rcpp(f_name = file_genotype, f_name_bin = binMfile, AA = AA, AB = AB, BB = BB,
-               max_memory_in_Gbytes=workingmemGb,  dims = dim_of_bin_M , csv = csv,
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv = csv,
                verbose = verbose)
 
     ## Mt.bin is created by transposing ASCII data
     binMtfile <- paste(bin_path, "Mt.bin", sep="") ## file name for binary packed Mt file.
 
     createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,  AA = AA, AB = AB, BB = BB,
-                  max_memory_in_Gbytes=workingmemGb,  dims = dim_of_bin_M, csv=csv, verbose = verbose )
+                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, csv=csv, verbose = verbose )
 
  } else {
    ## Here, Mt.bin can be created without transposing
    binMtfile <- paste(bin_path, "Mt.bin", sep="") ## file name for binary packed Mt file.
 
    createM_rcpp(f_name = file_genotype, f_name_bin = binMtfile, AA = AA, AB = AB, BB = BB,
-               max_memory_in_Gbytes=workingmemGb,  dims = dim_of_bin_M , csv = csv, 
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv = csv, 
                verbose = verbose )
 
     ## Here, M.bin is created by transposing data
     binMfile <- paste(bin_path, "M.bin", sep="") ## file name for binary packed Mt file.
 
     createMt_rcpp(f_name = file_genotype, f_name_bin = binMfile,  AA = AA, AB = AB, BB = BB,
-                  max_memory_in_Gbytes=workingmemGb,  
+                  max_memory_in_Gbytes=availmemGb,  
                   dims = c(dim_of_bin_M[2], dim_of_bin_M[1]), csv=csv,
                   verbose = verbose )
  }
@@ -1336,8 +1319,7 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' @param file_genotype character vector containing the name of the marker genotype file.
 #' @param  check  a logical value. If \code{TRUE}, then \code{\link{check.genofile}} is run to check the marker genotype file
 #'         for errors. 
-#' @param workingmemGb a numeric value. It specifies the amount of memory (in Gigabytes) available for reading in the marker 
-#'                     genotype file. 
+#' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). This should be set to be as large as possible.  
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. 
 #'  @param  verbose  a logical value. When \code{TRUE}, additional information is 
 #'          outputted.
@@ -1368,7 +1350,7 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' genotype file.  If there are no heterozygous genotypes (i.e., it is an inbred population), 
 #' then \code{AB} need not be specified.
 #'
-#' The \code{workingmemGb} parameter should be set to the largest amout of RAM for the machine, when practical.  If the marker 
+#' The \code{availmemGb} parameter should be set to the largest amout of RAM for the machine, when practical.  If the marker 
 #' genotype file is too large for the available memory, then it converted, chunk-wise,  into a single binary packed file.  
 #' The consequences of reading the marker genotype file chunk- or block-wise is a longer processing time. 
 #'
@@ -1393,7 +1375,7 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #'   # 3 Gbytes of memory has been specified. The file is space separated with the rows the individuals
 #'   # and the columns the snp loci.
 #'   geno.list <- read.genotypes(path=dirname(complete.name.Cwise), columnwise=TRUE, AA=0, BB=1, 
-#'                  file_genotype=basename(complete.name.Cwise),  workingmemGb=2) 
+#'                  file_genotype=basename(complete.name.Cwise),  availmemGb=8) 
 #'    
 #'
 #'   # geno.list is a list with elements binfileM, binfileMt, and dim_of_bin_M
@@ -1405,17 +1387,17 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #'   # read in the same ASCII marker genotype file but where the rows are the snp loci and 
 #'   # the individuals are the columns.
 #'   geno.list <- read.genotypes(path=dirname(complete.name.Rwise), columnwise=FALSE, AA=0, BB=1, 
-#'                  file_genotype=basename(complete.name.Rwise),  workingmemGb=2) 
+#'                  file_genotype=basename(complete.name.Rwise),  availmemGb=8) 
 #'
 #'  print(geno.list)
 #' @seealso \code{\link{check.genofile}}
 read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE, 
                            AA=NULL, AB=NULL, BB=NULL, 
-                           file_genotype=NULL, check=FALSE, workingmemGb=8, 
+                           file_genotype=NULL, check=FALSE, availmemGb=8, 
                            csv=FALSE, verbose=FALSE){
 
  ## check of parameters
- check.inputs(path=path, bin_path=bin_path, file_genotype=file_genotype, workingmemGb=workingmemGb)
+ check.inputs(path=path, bin_path=bin_path, file_genotype=file_genotype, availmemGb=availmemGb)
 
  ## checking that AA, AB, and BB have been specified. 
  ## Has AA, AB, BB been assigned numeric values
@@ -1463,15 +1445,15 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
   }
 
   ## Rcpp function to create binrary packed Mt file
-#  create.bin.Mt(genofile, bin_path, AA, AB, BB, workingmemGb, dim_of_bin_M, csv)
+#  create.bin.Mt(genofile, bin_path, AA, AB, BB, availmemGb, dim_of_bin_M, csv)
 
   ## Rcpp function to create binrary packed M file
-#  create.bin.M (genofile, bin_path, AA, AB, BB, workingmemGb, dim_of_bin_M, csv  )
+#  create.bin.M (genofile, bin_path, AA, AB, BB, availmemGb, dim_of_bin_M, csv  )
 
 
   ## Rcpp function to create binary packed M and Mt file from 
   ## columnwise or non-columnwise data
-  create.bin(genofile, bin_path, columnwise, AA, AB, BB, workingmemGb, 
+  create.bin(genofile, bin_path, columnwise, AA, AB, BB, availmemGb, 
                         dim_of_bin_M, csv, verbose  )
   
   if(.Platform$OS.type == "unix") {
@@ -1493,7 +1475,7 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
 
 
 
-extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8, 
+extract_geno <- function(bin_path=NULL, colnum=NULL, availmemGb=8, 
                           dim_of_bin_M=NULL, 
                           selected_locus=NA,
                           indxNA = NULL )
@@ -1509,7 +1491,7 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8,
     ## AWG if(!any(is.na(indxNA))) indxNA <- indxNA - 1
     if (!(length(indxNA)==0)) indxNA <- indxNA - 1
 
-    geno <- extract_geno_rcpp(f_name_bin=binfileM, max_memory_in_Gbytes = workingmemGb, 
+    geno <- extract_geno_rcpp(f_name_bin=binfileM, max_memory_in_Gbytes = availmemGb, 
                               selected_locus=selected_locus, dims=dim_of_bin_M,
                               indxNA = indxNA)
 
@@ -1520,7 +1502,7 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, workingmemGb=8,
 
 
 constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, 
-                       workingmemGb=8, dim_of_bin_M=NULL,
+                       availmemGb=8, dim_of_bin_M=NULL,
                        indxNA = NULL , map=NULL)
   {
     ## R function to construct the design matrix X
@@ -1534,7 +1516,7 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL,
      return(currentX)
    } else {
        genodat <- extract_geno(bin_path=bin_path, colnum=loci_indx, 
-                           workingmemGb=workingmemGb, dim_of_bin_M=dim_of_bin_M,
+                           availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M,
                            indxNA = indxNA)
       newX <- cbind(currentX, genodat)
       colnames(newX) <- c(colnames(currentX), as.character(map[[1]][loci_indx])) ## adding col names to new X  

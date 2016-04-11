@@ -1,5 +1,5 @@
 .form_results <- function(trait, selected_loci, map, colname.trait, colname.feffects, bin_path, indxNA,
-                           numcores, workingmemGb, verbose, herit, extBIC )
+                           numcores, availmemGb, verbose, herit, extBIC )
 {
   if (length(selected_loci) > 1){
    sigres <- list(trait=trait,
@@ -12,7 +12,7 @@
                     Pos=map[[3]][selected_loci], 
                     Indx=selected_loci,
                     numcores=numcores,
-                    workingmemGb=workingmemGb,
+                    availmemGb=availmemGb,
                     verbose=verbose,
                     herit=herit, 
                     extBIC=extBIC)
@@ -27,7 +27,7 @@
                     Pos=NA,
                     Indx=selected_loci,
                     numcores=numcores,
-                    workingmemGb=workingmemGb,
+                    availmemGb=availmemGb,
                     verbose=verbose,
                     herit=herit, 
                     extBIC=extBIC)
@@ -94,12 +94,12 @@ if(!is.matrix(Xmat))
 }
 
 
-.calcMMt <- function(geno, workingmemGb, numcores, selected_loci, verbose, indxNA)
+.calcMMt <- function(geno, availmemGb, numcores, selected_loci, verbose, indxNA)
   {
     ## internal function: used only in multilocus_loci_am and summaryam
     ## values passed by environments
     cat(" Inside calcMMt ... \n")
-    MMt <- calculateMMt(geno=geno[["binfileM"]], workingmemGb=workingmemGb, 
+    MMt <- calculateMMt(geno=geno[["binfileM"]], availmemGb=availmemGb, 
                            numcores=numcores, 
                            dim_of_bin_M = geno[["dim_of_bin_M"]], 
                            selected_loci=selected_loci, verbose = verbose) 
@@ -179,34 +179,33 @@ if(!is.matrix(Xmat))
 
 
 
-  .find_qtl <- function(geno, workingmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
+  .find_qtl <- function(geno, availmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
                        currentX, error_checking, numcores, verbose, trait, gpu )
   {
     ##  internal function: use only with multiple_locus_am
     if(verbose) cat(" Calculating H matrix   \n")
-    cat(" Beginning  calculateH \n")
     H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg ) 
     if(verbose) cat(" Calculating P matrix - NOT GPU. \n")
-    cat("Beginning calculateH \n")
     P <- calculateP(H=H, X=currentX ) 
-  
+    rm(H)
+    gc()
+ 
     if (verbose)
               cat(" Calculating  square root of M %*% t(M) and it's inverse. \n")
-    cat("Beginning calculateMMt_sqrt_and_sqrtinv \n")
     MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
                               gpu=gpu ) 
 
     if (verbose)
             cat(" Calculating BLUPs for dimension reduced model. \n")
-    cat(" Beginning calculate_reduced_a \n")
     hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
                        y=trait, verbose = verbose )   
+     rm(P)
+     gc()
 
 
     if (verbose) 
              cat(" Calculating variance of BLUPs for dimension reduced model. \n")
-    cat(" Beginning calculate_reduced_vara \n")
     var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
                                                 MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
                                                 verbose = verbose ) 
@@ -216,9 +215,9 @@ if(!is.matrix(Xmat))
          cat(" Calculating BLUPs and their variances for full model. \n")
     ## not enough memory for this ......
     bin_path <- dirname(geno[["binfileM"]])
-     cat(" Beginning calculate_a_and_vara \n")
-     readline()
-     a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=workingmemGb, 
+     gc()
+     ## load("everything.RData")   ## just for testing ... 
+     a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=availmemGb, 
                                             dims=geno[["dim_of_bin_M"]],
                                             selectedloci = selected_loci,
                                             invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
@@ -226,6 +225,7 @@ if(!is.matrix(Xmat))
                                             transformed_vara=var_hat_a,
                                             indxNA = indxNA,
                                             verbose=verbose) 
+
 
 
   
@@ -239,7 +239,6 @@ if(!is.matrix(Xmat))
     indx <- indx[1]
 
     orig_indx <- seq(1, geno[["dim_of_bin_M"]][2])  ## 1:ncols
-    cat(" End of ..... \n")
     return(orig_indx[indx])
 }
 
@@ -247,7 +246,8 @@ if(!is.matrix(Xmat))
 #' @description \code{multiple_locus_am} is used to perform multiple locus 
 #' association mapping via multi-locus whole-genome  association mapping (MWAM)
 #' @param numcores a numeric value for the number of cores that are available for distributed computing. 
-#' @param workingmemGb a numeric value. It specifies the amount of memory (in Gigabytes) available for reading analysis. 
+#' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). This 
+#' should be set to the maximum practical value of available memory for the analyis. 
 #' @param colname.trait  the name of the column in the phenotypic data file that contains the trait data. The name is case sensitive. 
 #' @param colname.feffects   a character vector containing the column names of 
 #'                        the explanatory/independent variables in the phenotypic data file. If
@@ -325,7 +325,7 @@ if(!is.matrix(Xmat))
 #'   geno.list <- read.genotypes(path=dirname(gen.file.loc), 
 #'                               columnwise=TRUE, AA=0, BB=1, 
 #'                               file_genotype=basename(gen.file.loc),  
-#'                               workingmemGb=4) 
+#'                               availmemGb=8) 
 #'  
 #'   # READ PHENOTYPIC INFORMATION
 #' phen.file.loc <- system.file("extdata", "phenoexample.csv", package="MWAM")
@@ -339,13 +339,13 @@ if(!is.matrix(Xmat))
 #'                            colname.feffects = c("cov1","cov2", "fac"),
 #'                            map = map.df,
 #'                            pheno = phenodf,
-#'                            geno = geno.list, verbose=TRUE, workingmemGb=4)
+#'                            geno = geno.list, verbose=TRUE, availmemGb=8)
 #'
 #'
 #'
 #'
 #'
-multiple_locus_am <- function(numcores=1,workingmemGb=8, 
+multiple_locus_am <- function(numcores=1,availmemGb=8, 
                               colname.trait = NULL, 
                               colname.feffects  = NULL,
                               map = NULL,
@@ -369,7 +369,7 @@ multiple_locus_am <- function(numcores=1,workingmemGb=8,
  ## gpu             if GPU computation should be used. 
 
  ## check parameter inputs
- check.inputs.mlam(numcores, workingmemGb, colname.trait, colname.feffects, 
+ check.inputs.mlam(numcores, availmemGb, colname.trait, colname.feffects, 
                      map, pheno, geno, alpha )
  ## ADD CHECK TO MAKE SURE PHENO AND GENO NROWS ARE CORRECT - NOT BEING CHECKED AT THE MOMENT
  selected_loci <- NA
@@ -422,37 +422,35 @@ if(geno[["columnwise"]]){
    cat(" Performing iteration ... ", itnum, "\n")
 
    ## based on selected_locus, form model matrix X
-  cat("Beginning currentX \n")
   currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus,
                           bin_path = dirname(geno[["binfileM"]]),
                           dim_of_bin_M=geno[["dim_of_bin_M"]],
                           indxNA = indxNA,
-                          map=map, workingmemGb = workingmemGb)  
+                          map=map, availmemGb = availmemGb)  
 
 
 
     ## calculate Ve and Vg
-    Args <- list(geno=geno,workingmemGb=workingmemGb,
+    Args <- list(geno=geno,availmemGb=availmemGb,
                     numcores=numcores,selected_loci=selected_loci,
                     verbose=verbose, indxNA=indxNA)
 
     if(itnum==1){
-         cat(" Beginning .calcMMt \n")
          MMt <- do.call(.calcMMt, Args)  
 
         invMMt <- chol2inv(chol(MMt)) 
+        gc()
     } 
-    cat(" Beginning calVC \n")
       vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, gpu=gpu) 
+    gc()
     best_ve <- vc[["ve"]]
     best_vg <- vc[["vg"]]
 
 
     ## Calculate extBIC
-    cat(" Beginning .calc_extBIC \n")
     new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose) 
     h <- best_vg/(best_vg + best_ve)
-
+    gc()
 
     ## set vectors herit and extBIC
     herit <- c(herit, h)
@@ -467,12 +465,12 @@ if(geno[["columnwise"]]){
    ## Select new locus if h > 0.01
    if(h > 0.01){
      ## find QTL
-     ARgs <- list(geno=geno,workingmemGb=workingmemGb, indxNA=indxNA, selected_loci=selected_loci,
+     ARgs <- list(geno=geno,availmemGb=availmemGb, indxNA=indxNA, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
                  numcores=numcores, verbose=verbose, trait=trait, gpu=gpu)
-     cat(" Beginning .find_qtl \n")
      a5 <- system.time( new_selected_locus <- do.call(.find_qtl, ARgs))  ## memory blowing up here !!!! 
+     gc()
      selected_loci <- c(selected_loci, new_selected_locus)
 
    }  else {
@@ -482,7 +480,7 @@ if(geno[["columnwise"]]){
      .print_header()
      .print_final(selected_loci, map, herit, extBIC)
      sigres <- .form_results(trait, selected_loci, map, colname.trait, colname.feffects, 
-                     dirname(geno[["binfileM"]]), indxNA, numcores, workingmemGb, verbose, herit, extBIC )   
+                     dirname(geno[["binfileM"]]), indxNA, numcores, availmemGb, verbose, herit, extBIC )   
    }  ## end if else
 
 
@@ -495,7 +493,7 @@ if(geno[["columnwise"]]){
          ## under this new model. 
          .print_final(selected_loci[-length(selected_loci)], map, herit, extBIC)
          sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map, colname.trait, colname.feffects, 
-                     dirname(geno[["binfileM"]]), indxNA, numcores, workingmemGb, verbose, herit, extBIC )   
+                     dirname(geno[["binfileM"]]), indxNA, numcores, availmemGb, verbose, herit, extBIC )   
     }
  
   }  ## end while continue
