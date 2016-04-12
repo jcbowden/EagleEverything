@@ -1025,13 +1025,15 @@ void removeColumn(Eigen::MatrixXd& matrix, unsigned long colToRemove)
 
 
 
-
 // ------------------------------------------------------
 //    Calculation of untransformed BLUP a values 
 // ------------------------------------------------------
 
 // [[Rcpp::export]]
-Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,  
+Rcpp::List   calculate_a_and_vara_rcpp( 
+                                    bool in_memory,
+                                    Map<MatrixXd>  genoM, 
+                                     CharacterVector f_name_bin,  
                                     Rcpp::NumericVector  selected_loci,
                                     Map<MatrixXd> inv_MMt_sqrt,
                                     Map<MatrixXd> dim_reduced_vara,
@@ -1088,14 +1090,17 @@ if (verbose){
 
 
 
-
 if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
 
-
+    Eigen::MatrixXd 
+         Mt;
     Rcout << " Reading Mt ... " << endl;
-    Eigen::MatrixXd Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
-
+    if (!in_memory ){
+         Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
+     } else {
+        Mt = genoM.transpose();
+     }
   // removing columns that correspond to individuals with no 
   // trait data
 //   if(!R_IsNA(indxNA(0)))

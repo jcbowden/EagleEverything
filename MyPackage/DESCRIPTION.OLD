@@ -15,7 +15,8 @@ Imports:
    RcppEigen, 
    matrixcalc, 
    Matrix,
-   rcppMagmaSYEVD
+   rcppMagmaSYEVD,
+   data.table
 LinkingTo: 
    Rcpp , 
    RcppEigen,

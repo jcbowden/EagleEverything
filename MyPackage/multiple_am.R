@@ -44,7 +44,7 @@ return(sigres)
 }
 
 
-.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, colname.feffects=NULL, verbose=FALSE  )
+.build_design_matrix <- function(pheno=NULL,  indxNA=NULL, colname.feffects=NULL, verbose=FALSE  )
 {
    ## internal fuction: use only in multiple_locus_am function and summaryam function
    ## build design matrix given character vector colname.feffects of column names
@@ -99,7 +99,7 @@ if(!is.matrix(Xmat))
     ## internal function: used only in multilocus_loci_am and summaryam
     ## values passed by environments
     cat(" Inside calcMMt ... \n")
-    MMt <- calculateMMt(geno=geno[["binfileM"]], availmemGb=availmemGb, 
+    MMt <- calculateMMt(M=geno[["M"]], geno=geno[["binfileM"]], availmemGb=availmemGb, 
                            numcores=numcores, 
                            dim_of_bin_M = geno[["dim_of_bin_M"]], 
                            selected_loci=selected_loci, verbose = verbose) 
@@ -214,17 +214,23 @@ if(!is.matrix(Xmat))
     if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
     ## not enough memory for this ......
-    bin_path <- dirname(geno[["binfileM"]])
+    bin_path <- "notneeded"
+    if(is.null(geno[["M"]]))
+        bin_path <- dirname(geno[["binfileM"]])
      gc()
      ## load("everything.RData")   ## just for testing ... 
-     a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=availmemGb, 
-                                            dims=geno[["dim_of_bin_M"]],
-                                            selectedloci = selected_loci,
-                                            invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
-                                            transformed_a=hat_a, 
-                                            transformed_vara=var_hat_a,
-                                            indxNA = indxNA,
-                                            verbose=verbose) 
+   
+
+
+     a_and_vara  <- calculate_a_and_vara(M=geno[["M"]], 
+                                         bin_path=bin_path,  maxmemGb=availmemGb, 
+                                         dims=geno[["dim_of_bin_M"]],
+                                         selectedloci = selected_loci,
+                                         invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
+                                         transformed_a=hat_a, 
+                                         transformed_vara=var_hat_a,
+                                         indxNA = indxNA,
+                                         verbose=verbose) 
 
 
 
@@ -403,8 +409,8 @@ if(geno[["columnwise"]]){
 
  ## build design matrix currentX
  cat(" Forming currentX \n")
- Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, colname.feffects=colname.feffects, verbose=verbose )
- a1 <- system.time (currentX <- do.call(.build_design_matrix, Args) )
+ Args <- list(pheno=pheno, indxNA=indxNA, colname.feffects=colname.feffects, verbose=verbose )
+ currentX <- do.call(.build_design_matrix, Args) 
 
 
  ## print tile
@@ -426,7 +432,7 @@ if(geno[["columnwise"]]){
                           bin_path = dirname(geno[["binfileM"]]),
                           dim_of_bin_M=geno[["dim_of_bin_M"]],
                           indxNA = indxNA,
-                          map=map, availmemGb = availmemGb)  
+                          map=map, availmemGb = availmemGb, M=geno[["M"]])  
 
 
 
@@ -469,7 +475,7 @@ if(geno[["columnwise"]]){
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
                  numcores=numcores, verbose=verbose, trait=trait, gpu=gpu)
-     a5 <- system.time( new_selected_locus <- do.call(.find_qtl, ARgs))  ## memory blowing up here !!!! 
+      new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
      gc()
      selected_loci <- c(selected_loci, new_selected_locus)
 

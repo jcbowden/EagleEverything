@@ -1,6 +1,6 @@
 useDynLib(MWAM)
 importFrom(Rcpp, evalCpp)
-import(RcppEigen,  matrixcalc, Matrix )
+import(RcppEigen,  matrixcalc, Matrix, data.table )
 
 export(
    check.genofile,
