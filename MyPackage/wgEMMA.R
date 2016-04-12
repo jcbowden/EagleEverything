@@ -1444,11 +1444,7 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
     dim_of_bin_M <- c(dim_of_bin_M[2], dim_of_bin_M[1])
   }
 
-  ## Rcpp function to create binrary packed Mt file
-#  create.bin.Mt(genofile, bin_path, AA, AB, BB, availmemGb, dim_of_bin_M, csv)
 
-  ## Rcpp function to create binrary packed M file
-#  create.bin.M (genofile, bin_path, AA, AB, BB, availmemGb, dim_of_bin_M, csv  )
 
 
   ## Rcpp function to create binary packed M and Mt file from 

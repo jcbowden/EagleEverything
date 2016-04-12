@@ -1145,17 +1145,13 @@ std::clock_t    start;
 //     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
 
-//     start = std::clock();
   var_ans_tmp.noalias()  =  Mt *  var_ans_tmp_part1;
-//     Rcout << "Time4 var_ans_tmp.noalias() =  Mt *  var_ans_tmp_part1 : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
   
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
 
-//  start = std::clock();
   for(long i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
-//     Rcout << "Time5  var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 
 
@@ -1165,8 +1161,6 @@ std::clock_t    start;
     //  -----------------------------------------
     //       BLOCK WISE UPDATE
     //  -----------------------------------------
-      Eigen::MatrixXd
-             Mt;
 
       // ans.resize(dims[0],1);   //added AWG 12/03/16 in a bid to improve GPU performance
 
@@ -1177,7 +1171,7 @@ std::clock_t    start;
       // block multiplication. This involves a bit of algrebra but it is comes to the following
       // Strickly, 2 should be used here but I want some extra memory to play with 
       long num_rows_in_block =  max_memory_in_Gbytes * ( 1000000000) /
-                             ( 3 *dims[1] *  sizeof(double) ) ;
+                             ( 2.2 *dims[1] *  sizeof(double) ) ;
 
 
       if (num_rows_in_block < 0){
@@ -1214,7 +1208,7 @@ std::clock_t    start;
             num_rows_in_block1 = dims[0] - start_row1;
 
 
-         Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+         Eigen::MatrixXd Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
          Rcout << "in here " << endl;
          // Rcout << Mt.rows() << endl;
          // Rcout << Mt.cols() << endl;
@@ -1275,48 +1269,17 @@ std::clock_t    start;
 
 
 
-      double used_memory_Gbytes = (num_rows_in_block * dims[1] * 2 * sizeof(double))/1000000000;
-      double mem_left_Gbytes = max_memory_in_Gbytes  - used_memory_Gbytes;
 
- //   Rcout << "Press ENTER to continue ... "  << endl;
-    std::string line;
- //   std::getline(std::cin, line);  // read a line from std::cin into line
 
-      // number of rows in block for vt.row(j)  * ((Mt.row(j)).transpose()) calculation
-     // long num_r = mem_left_Gbytes * 1000000000 / ( 2.2 * dims[1] * sizeof(double));
 
-     long num_r=50;  // found this worked really well for speeding up block calculations
-     if (num_r > Mt.rows() )
-          num_r = Mt.rows() ;
-       // calculate number of blocks for  vt.row(j)  * ((Mt.row(j)).transpose()) calculation
-      long num_b = Mt.rows() /num_r;
-      if (Mt.rows()  % num_r)
-                     num_b++;
-
-      for(long j=0; j < num_b; j++){
-         long start_row1 = j * num_r;
-         long num_r1 = num_r;
-         if ((start_row1 + num_r1) > Mt.rows() )
-            num_r1 = Mt.rows()  - start_row1;
-
-         Eigen::MatrixXd var_ans_mat;
    //    var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
-         
-         var_ans_mat.noalias() = vt.block(start_row1, 0, num_r1, dims[1])  *
-                                 (Mt.block(start_row1, 0, num_r1, dims[1]).transpose());
-         var_ans_tmp.block(start_row1,0, num_r1, 1) = var_ans_mat.diagonal();  // extracting diagonal elements 
+            for(long j=0; j < num_rows_in_block1; j++){
+                      var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
+            }
 
-        }  // end for long j
-   //         for(long j=0; j < num_rows_in_block1; j++){
-   //                   var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
-   //         }
 
             // assign block vector results to final vector (ans) of results
             long  counter = 0;
-
- //   std::string line;
- //   std::getline(std::cin, line);  // read a line from std::cin into line
-            
             for(long j=start_row1; j < start_row1 + num_rows_in_block1; j++){
                  ans(j,0) = ans_tmp(counter,0);
                  var_ans(j,0) = var_ans_tmp(counter,0);
