@@ -456,7 +456,7 @@ if(!is.list(geno)){
 }
 
 nms <- names(geno)
-indx <- match(nms, c("M", "binfileM", "binfileMt", "dim_of_bin_M", "columnwise"))
+indx <- match(nms, c("M", "Mt", "binfileM", "binfileMt", "dim_of_bin_M", "columnwise"))
 if(any(is.na(indx))){
   cat(" Error: there is a problem with the list structure of the geno object. \n")
   cat("        It should contain the elements binfileM, binfileMt, and dim_of_bin_M. \n")
@@ -765,21 +765,14 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
    res <- list()
 
    if(!gpu){
-      cat("=========================================================\n")
-      cat("  Beginning eigen(MMt, symmetric=TRUE )  \n")
       MMt.eigen <- eigen(MMt, symmetric=TRUE )
-      cat(" Taking diag ... \n")
       sqrt_evals <- diag(sqrt(MMt.eigen$values))
-      cat(" Performing MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)  \n")
       res[["sqrt"]] <- MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)
-      cat("End =========================================================\n")
       rm(MMt.eigen, sqrt_evals)
       gc()
       res[["invsqrt"]] <- chol2inv(chol(res[["sqrt"]]))
    }  else {
-      cat(" In here *******should be using gpu    ...... \n")
       res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
-      cat(" Out of here ...... end of using gpu .... \n") 
    } 
 
 
@@ -887,10 +880,7 @@ calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, verbose
   if(is.null(y))
    stop(" y must be specified")
 
-    cat("  In calculate_reduced_a   -------------- \n")
-    cat(" a <- varG * MMtsqrt %*% P %*% y  \n")
     a <- varG * MMtsqrt %*% P %*% y
-    cat(" end ------------------------  \n")
 
 return(a)
 
@@ -962,7 +952,7 @@ return(ar)
 
 
 
-calculate_a_and_vara <- function(M=NULL, bin_path=getwd(), maxmemGb=8, dims=NULL,
+calculate_a_and_vara <- function(Mt=NULL, bin_path=getwd(), maxmemGb=8, dims=NULL,
                          selectedloci = NA,
                          invMMtsqrt=NULL, transformed_a=NULL, transformed_vara=NULL,
                          verbose = FALSE,
@@ -971,7 +961,7 @@ calculate_a_and_vara <- function(M=NULL, bin_path=getwd(), maxmemGb=8, dims=NULL
  ## an Rcpp function to take dimension reduced a (BLUP) values 
  ## and transform them into the original a (BLUP) values and their variances 
  ## Args:a
- ##   M                either null or a matrix of column wise genotypes
+ ##   Mt                either null or a transpose of M (which is column wise)
  ##   bin_path         path to the location of the binary file containing the 
  ##                              transposed M matrix
  ##   maxmemGb         maximum available memory (in Gigabytes) that are available for use
@@ -981,9 +971,9 @@ calculate_a_and_vara <- function(M=NULL, bin_path=getwd(), maxmemGb=8, dims=NULL
  ##   transformed_vara a numeric matrix of dimension dims(1) x dims(1) for the dimension reduced BLUPs (or a) values. 
  ##   selectedloci     an integer vector that gives the column number (0- L-1 ) of the loci that
  ##                    have been selected to act as fixed QTL effects in the model. 
-  ##  M contained in memory
+  ##  Mt contained in memory
   
-  if(!is.null(M)){
+  if(!is.null(Mt)){
       in_memory<-TRUE
       file_bin <- "notneeded"
    }  else {
@@ -1003,8 +993,8 @@ calculate_a_and_vara <- function(M=NULL, bin_path=getwd(), maxmemGb=8, dims=NULL
   }  ## if !is.null(M) else 
 
   if(!any(is.na(selectedloci))) selectedloci <- selectedloci-1
-
-  calculate_a_and_vara_rcpp(in_memory=in_memory, genoM=M, f_name_bin=file_bin,
+  dimsMt <- c(dims[2], dims[1]) 
+  calculate_a_and_vara_rcpp(in_memory=in_memory, genoMt=Mt, f_name_bin=file_bin,
                     selected_loci = selectedloci,
                     inv_MMt_sqrt=invMMtsqrt,  
                     dim_reduced_vara = transformed_vara,
@@ -1468,12 +1458,14 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
     M <- fread(genofile, header=FALSE)
     M <- data.matrix(M)  
     mode(M) <- "double"
-    if(!columnwise)
+    Mt <- t(M)
+    if(!columnwise){
+       Mt <- M
        M <- t(M)  ## because here, the rows are the markers 
-
+     }
     dim_of_bin_M <- c(nrow(M), ncol(M))
-    binfileM <- NULL
-    binfileMt <- NULL
+    binfileM <- "notneeded"
+    binfileMt <- "notneeded"
   }  else {
       M <- NULL
       ## Rcpp function to create binary packed M and Mt file from 
@@ -1491,7 +1483,7 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
 
   }  ## end if else mem_required
 
-  return(list("M" = M, "binfileM"=binfileM, "binfileMt"=binfileMt, 
+  return(list("M" = M, "Mt" = Mt, "binfileM"=binfileM, "binfileMt"=binfileMt, 
                "dim_of_bin_M" = dim_of_bin_M,
               "columnwise"=columnwise) )
 

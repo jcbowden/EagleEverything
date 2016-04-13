@@ -222,7 +222,7 @@ if(!is.matrix(Xmat))
    
 
 
-     a_and_vara  <- calculate_a_and_vara(M=geno[["M"]], 
+     a_and_vara  <- calculate_a_and_vara(Mt=geno[["Mt"]], 
                                          bin_path=bin_path,  maxmemGb=availmemGb, 
                                          dims=geno[["dim_of_bin_M"]],
                                          selectedloci = selected_loci,
@@ -237,6 +237,8 @@ if(!is.matrix(Xmat))
   
     ## outlier test statistic
     if (verbose) cat(" Calculating outlier test statistics. \n")
+
+
     tsq <- a_and_vara[["a"]]**2/a_and_vara[["vara"]]
     indx <- which(tsq == max(tsq, na.rm=TRUE))   ## index of largest test statistic. However, need to account for other loci 
                                          ## already having been removed from M which affects the indexing
