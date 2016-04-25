@@ -66,7 +66,7 @@ summarymlam <- function(resam=NULL, pheno=NULL, geno=NULL, map=NULL)
 
 
   ## build enviornmental effects design matrix
-  baseX <- .build_design_matrix(pheno=pheno, geno=geno, indxNA=resam$indxNA, 
+  baseX <- .build_design_matrix(pheno=pheno,  indxNA=resam$indxNA, 
                                     colname.feffects=resam$colname.feffects,
                                    verbose=resam$verbose)
 

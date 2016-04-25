@@ -456,7 +456,7 @@ if(!is.list(geno)){
 }
 
 nms <- names(geno)
-indx <- match(nms, c("M", "Mt", "binfileM", "binfileMt", "dim_of_bin_M", "columnwise"))
+indx <- match(nms, c("binfileM", "binfileMt", "dim_of_bin_M", "columnwise"))
 if(any(is.na(indx))){
   cat(" Error: there is a problem with the list structure of the geno object. \n")
   cat("        It should contain the elements binfileM, binfileMt, and dim_of_bin_M. \n")
@@ -692,13 +692,10 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
 #}
 
 
-calculateMMt <- function(M=NULL, geno=NULL, availmemGb, numcores, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE)
+calculateMMt <- function(geno=NULL, availmemGb, numcores, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE)
 {
  ## R interface to Rcpp code to calculate M %*% t(M)
- ## Modified 12/04/16 to also include in memory calculation 
- ##
  ## Args
- ##      M           either NULL or a data matrix with marker genotypes (column wise). 
  ##      geno        absolute path + file name of binary packed M file
  ##      availmemGb    amount of memory in Gbytes available for creation of MMt
  ##      numcores    number of cores for matrix operations
@@ -709,27 +706,16 @@ calculateMMt <- function(M=NULL, geno=NULL, availmemGb, numcores, selected_loci=
   # bin file about to be overwritten
   #------------------------------------------
 
-  if (!is.null(M))
-  { ## in memory MMt calculation
-    if(is.na(selected_loci))
-    {
-        MMt <- tcrossprod(M)
-    } else {
-        MMt <- tcrossprod(M[, -selected_loci])
-    }
-  } else {
-     if(!file.exists(geno)){
-       cat(" Error: The binary packed file ", geno, " cannot be found.\n")
-       stop(" calculateMMt has terminated with errors.") 
-      }
-     cat(" moving into calculateMMt_rcpp .... \n")
-     if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
-     MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
-                                  max_memory_in_Gbytes=availmemGb, num_cores=numcores, 
-                                  dims= dim_of_bin_M, verbose = verbose) 
- } ## end if else !is.null(M)
 
-
+  if(!file.exists(geno)){
+    cat(" Error: The binary packed file ", geno, " cannot be found.\n")
+    stop(" calculateMMt has terminated with errors.") 
+   }
+  cat(" moving into calculateMMt_rcpp .... \n")
+  if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
+  MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
+                               max_memory_in_Gbytes=availmemGb, num_cores=numcores, 
+                               dims= dim_of_bin_M, verbose = verbose) 
   return(MMt)
 
 }  ## end function
@@ -952,7 +938,7 @@ return(ar)
 
 
 
-calculate_a_and_vara <- function(Mt=NULL, bin_path=getwd(), maxmemGb=8, dims=NULL,
+calculate_a_and_vara <- function(bin_path=getwd(), maxmemGb=8, dims=NULL,
                          selectedloci = NA,
                          invMMtsqrt=NULL, transformed_a=NULL, transformed_vara=NULL,
                          verbose = FALSE,
@@ -960,8 +946,7 @@ calculate_a_and_vara <- function(Mt=NULL, bin_path=getwd(), maxmemGb=8, dims=NUL
 {
  ## an Rcpp function to take dimension reduced a (BLUP) values 
  ## and transform them into the original a (BLUP) values and their variances 
- ## Args:a
- ##   Mt                either null or a transpose of M (which is column wise)
+ ## Args:
  ##   bin_path         path to the location of the binary file containing the 
  ##                              transposed M matrix
  ##   maxmemGb         maximum available memory (in Gigabytes) that are available for use
@@ -971,30 +956,29 @@ calculate_a_and_vara <- function(Mt=NULL, bin_path=getwd(), maxmemGb=8, dims=NUL
  ##   transformed_vara a numeric matrix of dimension dims(1) x dims(1) for the dimension reduced BLUPs (or a) values. 
  ##   selectedloci     an integer vector that gives the column number (0- L-1 ) of the loci that
  ##                    have been selected to act as fixed QTL effects in the model. 
-  ##  Mt contained in memory
-  
-  if(!is.null(Mt)){
-      in_memory<-TRUE
-      file_bin <- "notneeded"
-   }  else {
-      in_memory <- FALSE
-      if(.Platform$OS.type == "unix") {
-          bin_path  <- paste(bin_path, "/",  sep="")
-      } else {
-         bin_path    <- paste(bin_path, "\\",  sep="")
-      }
 
-        file_bin <- paste(bin_path, "Mt.bin",sep="")
 
-        if(!file.exists(file_bin)){
-            cat("\n\n  ERROR: ", file_bin, " does not exist and it should have been created. \n\n")
-            stop()
-        }
-  }  ## if !is.null(M) else 
 
-  if(!any(is.na(selectedloci))) selectedloci <- selectedloci-1
+if(.Platform$OS.type == "unix") {
+    bin_path  <- paste(bin_path, "/",  sep="")
+} else {
+   bin_path    <- paste(bin_path, "\\",  sep="")
+}
+
+
+
+  file_bin <- paste(bin_path, "Mt.bin",sep="")
+
+  if(!file.exists(file_bin)){
+      cat("\n\n  ERROR: ", file_bin, " does not exist and it should have been created. \n\n")
+      stop()
+  }
+
   dimsMt <- c(dims[2], dims[1]) 
-  calculate_a_and_vara_rcpp(in_memory=in_memory, genoMt=Mt, f_name_bin=file_bin,
+
+ 
+  if(!any(is.na(selectedloci))) selectedloci <- selectedloci-1
+  calculate_a_and_vara_rcpp(f_name_bin=file_bin,
                     selected_loci = selectedloci,
                     inv_MMt_sqrt=invMMtsqrt,  
                     dim_reduced_vara = transformed_vara,
@@ -1451,39 +1435,23 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
   }
 
 
-  ## Check to see if M can be read directly and held in memory or 
-  ## if it needs to be written to disc
-  mem_required <- 2.5 * dim_of_bin_M[1] * dim_of_bin_M[2] * 8/1000000000  ## in Gbytes 
-  if (mem_required < availmemGb){
-    M <- fread(genofile, header=FALSE)
-    M <- data.matrix(M)  
-    mode(M) <- "double"
-    Mt <- t(M)
-    if(!columnwise){
-       Mt <- M
-       M <- t(M)  ## because here, the rows are the markers 
-     }
-    dim_of_bin_M <- c(nrow(M), ncol(M))
-    binfileM <- "notneeded"
-    binfileMt <- "notneeded"
-  }  else {
-      M <- NULL
-      ## Rcpp function to create binary packed M and Mt file from 
-      ## columnwise or non-columnwise data
-      create.bin(genofile, bin_path, columnwise, AA, AB, BB, availmemGb, 
+
+
+  ## Rcpp function to create binary packed M and Mt file from 
+  ## columnwise or non-columnwise data
+  create.bin(genofile, bin_path, columnwise, AA, AB, BB, availmemGb, 
                         dim_of_bin_M, csv, verbose  )
   
-      if(.Platform$OS.type == "unix") {
-        binfileM <- paste(bin_path, "/", "M.bin", sep="")
-        binfileMt <- paste(bin_path, "/", "Mt.bin", sep="")
-      } else {
-       binfileM <- paste(bin_path, "\\", "M.bin", sep="")
-       binfileMt <- paste(bin_path, "\\", "Mt.bin", sep="")
-      }
+  if(.Platform$OS.type == "unix") {
+    binfileM <- paste(bin_path, "/", "M.bin", sep="")
+    binfileMt <- paste(bin_path, "/", "Mt.bin", sep="")
+  } else {
+   binfileM <- paste(bin_path, "\\", "M.bin", sep="")
+   binfileMt <- paste(bin_path, "\\", "Mt.bin", sep="")
+  }
 
-  }  ## end if else mem_required
 
-  return(list("M" = M, "Mt" = Mt, "binfileM"=binfileM, "binfileMt"=binfileMt, 
+  return(list("binfileM"=binfileM, "binfileMt"=binfileMt, 
                "dim_of_bin_M" = dim_of_bin_M,
               "columnwise"=columnwise) )
 
@@ -1521,29 +1489,21 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, availmemGb=8,
 
 constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, 
                        availmemGb=8, dim_of_bin_M=NULL,
-                       indxNA = NULL , map=NULL, M=NULL)
+                       indxNA = NULL , map=NULL)
   {
     ## R function to construct the design matrix X
     ## Args
     ##   currentX    current model matrix
     ##   loci        the marker loci to be included as fixed QTL effects (additive model)
     ##   indxNA      those individuals that should be removed due to missing phenotypes
-    ##   M           can be NULL or the M matrix
- 
+   
    if(is.na(loci_indx))
    {
      return(currentX)
    } else {
-       if(is.null(M)){
        genodat <- extract_geno(bin_path=bin_path, colnum=loci_indx, 
                            availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M,
                            indxNA = indxNA)
-       } else {
-          if(length(indxNA)>0)
-             M <- M[-indxNA,]
-          genodat <- M[, loci_indx]
-
-       }
       newX <- cbind(currentX, genodat)
       colnames(newX) <- c(colnames(currentX), as.character(map[[1]][loci_indx])) ## adding col names to new X  
       return(newX)

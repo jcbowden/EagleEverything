@@ -1025,15 +1025,13 @@ void removeColumn(Eigen::MatrixXd& matrix, unsigned long colToRemove)
 
 
 
+
 // ------------------------------------------------------
 //    Calculation of untransformed BLUP a values 
 // ------------------------------------------------------
 
 // [[Rcpp::export]]
-Rcpp::List   calculate_a_and_vara_rcpp( 
-                                    bool in_memory,
-                                    Map<MatrixXd>  genoMt, 
-                                     CharacterVector f_name_bin,  
+Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,  
                                     Rcpp::NumericVector  selected_loci,
                                     Map<MatrixXd> inv_MMt_sqrt,
                                     Map<MatrixXd> dim_reduced_vara,
@@ -1077,6 +1075,7 @@ const size_t bits_in_double = std::numeric_limits<double>::digits;
 const size_t bits_in_integer = std::numeric_limits<int>::digits;
 
 
+
    // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt)%*%M)
 //AWG  double mem_bytes_needed =   ( dims[0]   +  2*dims[1]   + 1 ) *  (dims[1] * sizeof(double) /( 1000000000));
  double mem_bytes_needed =   ((( dims[0]   +  2*dims[1] ) *  dims[0]) * sizeof(double))/1000000000;
@@ -1089,17 +1088,14 @@ if (verbose){
 
 
 
+
 if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
 
-    Eigen::MatrixXd 
-         Mt;
+
     Rcout << " Reading Mt ... " << endl;
-    if (!in_memory ){
-         Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
-     } else {
-        Mt = genoMt;
-     }
+    Eigen::MatrixXd Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
+
   // removing columns that correspond to individuals with no 
   // trait data
 //   if(!R_IsNA(indxNA(0)))
@@ -1108,6 +1104,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
         removeColumn(Mt, indxNA(ii) );
      }
   }
+
 
 
    if(!R_IsNA(selected_loci(0))){
@@ -1151,6 +1148,7 @@ std::clock_t    start;
   var_ans_tmp.noalias()  =  Mt *  var_ans_tmp_part1;
   
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
+
   for(long i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
@@ -1419,7 +1417,6 @@ Eigen::VectorXi
 
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
-    Rcout << " In here " << endl;
     Eigen::MatrixXd genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
 
     // removing rows that correspond to individuals with no 
@@ -1447,7 +1444,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               if ((start_row1 + num_rows_in_block1) > dims[0])
                      num_rows_in_block1 = dims[0] - start_row1  ;
 
-  Rcout << " In here " << endl;
               Eigen::MatrixXd    
                 genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
 

@@ -44,7 +44,7 @@ return(sigres)
 }
 
 
-.build_design_matrix <- function(pheno=NULL,  indxNA=NULL, colname.feffects=NULL, verbose=FALSE  )
+.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, colname.feffects=NULL, verbose=FALSE  )
 {
    ## internal fuction: use only in multiple_locus_am function and summaryam function
    ## build design matrix given character vector colname.feffects of column names
@@ -99,7 +99,7 @@ if(!is.matrix(Xmat))
     ## internal function: used only in multilocus_loci_am and summaryam
     ## values passed by environments
     cat(" Inside calcMMt ... \n")
-    MMt <- calculateMMt(M=geno[["M"]], geno=geno[["binfileM"]], availmemGb=availmemGb, 
+    MMt <- calculateMMt(geno=geno[["binfileM"]], availmemGb=availmemGb, 
                            numcores=numcores, 
                            dim_of_bin_M = geno[["dim_of_bin_M"]], 
                            selected_loci=selected_loci, verbose = verbose) 
@@ -214,31 +214,23 @@ if(!is.matrix(Xmat))
     if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
     ## not enough memory for this ......
-    bin_path <- "notneeded"
-    if(is.null(geno[["M"]]))
-        bin_path <- dirname(geno[["binfileM"]])
+    bin_path <- dirname(geno[["binfileM"]])
      gc()
      ## load("everything.RData")   ## just for testing ... 
-   
-
-
-     a_and_vara  <- calculate_a_and_vara(Mt=geno[["Mt"]], 
-                                         bin_path=bin_path,  maxmemGb=availmemGb, 
-                                         dims=geno[["dim_of_bin_M"]],
-                                         selectedloci = selected_loci,
-                                         invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
-                                         transformed_a=hat_a, 
-                                         transformed_vara=var_hat_a,
-                                         indxNA = indxNA,
-                                         verbose=verbose) 
+     a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=availmemGb, 
+                                            dims=geno[["dim_of_bin_M"]],
+                                            selectedloci = selected_loci,
+                                            invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
+                                            transformed_a=hat_a, 
+                                            transformed_vara=var_hat_a,
+                                            indxNA = indxNA,
+                                            verbose=verbose) 
 
 
 
   
     ## outlier test statistic
     if (verbose) cat(" Calculating outlier test statistics. \n")
-
-
     tsq <- a_and_vara[["a"]]**2/a_and_vara[["vara"]]
     indx <- which(tsq == max(tsq, na.rm=TRUE))   ## index of largest test statistic. However, need to account for other loci 
                                          ## already having been removed from M which affects the indexing
@@ -411,8 +403,8 @@ if(geno[["columnwise"]]){
 
  ## build design matrix currentX
  cat(" Forming currentX \n")
- Args <- list(pheno=pheno, indxNA=indxNA, colname.feffects=colname.feffects, verbose=verbose )
- currentX <- do.call(.build_design_matrix, Args) 
+ Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, colname.feffects=colname.feffects, verbose=verbose )
+currentX <- do.call(.build_design_matrix, Args) 
 
 
  ## print tile
@@ -434,7 +426,7 @@ if(geno[["columnwise"]]){
                           bin_path = dirname(geno[["binfileM"]]),
                           dim_of_bin_M=geno[["dim_of_bin_M"]],
                           indxNA = indxNA,
-                          map=map, availmemGb = availmemGb, M=geno[["M"]])  
+                          map=map, availmemGb = availmemGb)  
 
 
 
@@ -467,7 +459,7 @@ if(geno[["columnwise"]]){
 
     ## Print findings to screen
 
-    .print_results(itnum, selected_loci, map, herit, extBIC)
+ #   .print_results(itnum, selected_loci, map, herit, extBIC)
 
 
    ## Select new locus if h > 0.01
