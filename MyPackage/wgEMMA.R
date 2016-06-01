@@ -5,7 +5,9 @@
 ## 
 ## read in M with rows as plants or  with rows as colums (as with  human data)
 ## NEED TEST  DATA set to test changes to code.  Create M and Mt case. 
-
+## 1. add h=0.01 option to multiple_locus_am to allow h to be set by user
+## 2. need to test A reps - whyc GPU different to CPU
+## 3. 
 
 ##-------------------------------------
 ##  EMMA code 
@@ -29,11 +31,13 @@ emma.delta.ML.dLL.w.Z <-  function (logdelta, lambda, etas.1, xi.1, n, etas.2.sq
         K <- K[vids, vids]
     }
     res <- K %*% crossprod(Z, Z)
+    cat(" in emma.eigen.L.w.Z \n")
     if(gpu){
        eig <- rcppMagmaSYEVD::eigen_mgpu(res, symmetric=FALSE)
     } else {
        eig <- eigen(res, symmetric = FALSE, EISPACK = TRUE)
     }
+   cat(" out emma.eigen.L.w.Z \n")
     return(list(values = eig$values, vectors = qr.Q(qr(Z %*% 
         eig$vectors), complete = TRUE)))
 }
@@ -215,12 +219,13 @@ emma.delta.ML.LL.wo.Z <- function (logdelta, lambda, etas, xi)
 
 
 emma.eigen.L.wo.Z <- function (K, gpu=FALSE) 
-{
+{  cat(" emma.eigen.L.wo.Z in \n")
     if(gpu){
        eig <- rcppMagmaSYEVD::eigen_mgpu(K, symmetric = TRUE)
      } else {
       eig <- eigen(K, symmetric = TRUE)
      }
+    cat(" emma.eigen.L.wo.Z out \n")
     return(list(values = eig$values, vectors = eig$vectors))
 }
 
@@ -231,13 +236,13 @@ emma.eigen.R.wo.Z <-  function (K, X, gpu=FALSE)
     dn <- diag(n)
     S <- dn - X %*% solve(crossprod(X, X)) %*% t(X)
     gc()
-    
+    cat(" in emma.eigen.R.wo.Z \n") 
     if(gpu){
        eig <- rcppMagmaSYEVD::eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
     } else {
        eig <- eigen(S %*% (K + dn) %*% S, symmetric = TRUE)
     }
-
+    cat(" emma.eigen.R.wo.Z out \n")
     stopifnot(!is.complex(eig$values))
     return(list(values = eig$values[1:(n - q)] - 1, vectors = eig$vectors[, 
         1:(n - q)]))

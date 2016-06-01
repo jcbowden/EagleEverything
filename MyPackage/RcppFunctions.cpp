@@ -59,33 +59,6 @@ const size_t bits_in_int = std::numeric_limits<unsigned int>::digits;
 
 
 
-// [[Rcpp::export]]
-void  mymatmul( )
-{
-  std::clock_t    start;
-
- Eigen::MatrixXd  B(300,300);
- Eigen::MatrixXd  C(300,1);
- for(int i=0;i<300;i++){
-     Rcpp::NumericVector rn;
-     rn =  rnorm(300);
-     Eigen::Map<Eigen::VectorXd> RN(Rcpp::as<Eigen::Map<Eigen::VectorXd > >(rn)); 
-     B.row(i) = RN;
- }
-
- for(int i=0;i<300;i++){
-     Rcpp::NumericVector rn;
-     rn =  rnorm(1);
-     Eigen::Map<Eigen::VectorXd> RN(Rcpp::as<Eigen::Map<Eigen::VectorXd > >(rn));
-     C.row(i) = RN;
- }
-
-   //  start = std::clock();
- Eigen::MatrixXd  res= B * C;
- //   Rcout << "Time1: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
-
-}
-
 
 
 
@@ -1078,7 +1051,7 @@ const size_t bits_in_integer = std::numeric_limits<int>::digits;
 
    // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt)%*%M)
 //AWG  double mem_bytes_needed =   ( dims[0]   +  2*dims[1]   + 1 ) *  (dims[1] * sizeof(double) /( 1000000000));
- double mem_bytes_needed =   ((( dims[0]   +  2*dims[1] ) *  dims[0]) * sizeof(double))/1000000000;
+ double mem_bytes_needed =   ( 4   *dims[1]  *  dims[0] * sizeof(double))/1000000000;
 
 if (verbose){
    Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
@@ -1122,8 +1095,11 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 std::clock_t    start;
 
 //   start = std::clock();
+    Rcout << "beginning ans_part1 = inv_MMt_sqrt * a" << endl;
     Eigen::MatrixXd  ans_part1 = inv_MMt_sqrt * a;
+    Rcout << "beginning Mt  * ans_part1 " << endl;
     ans.noalias() =   Mt  * ans_part1; 
+    Rcout << "end" << endl;
 
 //   Rcout << "Time2 Mtd *  inv_MMt_sqrt  * a : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
@@ -1140,20 +1116,26 @@ std::clock_t    start;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
 
 //     start = std::clock();
+    Rcout << " in   dim_reduced_vara * inv_MMt_sqrt " << endl;
     Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt;
+    Rcout << " in inv_MMt_sqrt * var_ans_tmp_part1 " << endl;
     var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1;
+    Rcout << " end ... " << endl;
 //     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
-
+  Rcout << " Beginning  Mt *  var_ans_tmp_part1 " << endl;
   var_ans_tmp.noalias()  =  Mt *  var_ans_tmp_part1;
   
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
 
-  for(long i=0; i< dims[0]; i++){
+  // Added 26 April
+  Rcout <<"Starting pragma .. " << endl;
+  long i;
+  #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
+  for(i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
-
-
+  Rcout << "Ending pragma " << endl;
 
 
 
@@ -1171,7 +1153,7 @@ std::clock_t    start;
       // block multiplication. This involves a bit of algrebra but it is comes to the following
       // Strickly, 2 should be used here but I want some extra memory to play with 
       long num_rows_in_block =  max_memory_in_Gbytes * ( 1000000000) /
-                             ( 2.2 *dims[1] *  sizeof(double) ) ;
+                             ( 4  *dims[1] *  sizeof(double) ) ;
 
 
       if (num_rows_in_block < 0){
@@ -1247,12 +1229,16 @@ std::clock_t    start;
                 }   
             }
            //  ans_tmp  =  Mtd *  inv_MMt_sqrt  * a ;
+            Rcout << " 1 ans_tmp.noalias()  =   inv_MMt_sqrt  * a " << endl;
              ans_tmp.noalias()  =   inv_MMt_sqrt  * a ;
+         Rcout << "ns_tmp = Mt * ans_tmp " << endl;
              ans_tmp = Mt * ans_tmp;
 
             // variance calculation
             // vt.noalias() =  Mtd *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
+Rcout << "vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt " << endl;
              vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt;
+     Rcout << " vt1           =  inv_MMt_sqrt * vt1 " << endl;
              vt1           =  inv_MMt_sqrt * vt1;
 
 
@@ -1265,6 +1251,7 @@ std::clock_t    start;
 //        Rcout << "end of computing variances ... " << endl;
             // vt.noalias() =  Mt *  vt1;
            Eigen::MatrixXd vt;
+             Rcout << " vt.noalias()  =  Mt *  vt1 " << endl; 
               vt.noalias()  =  Mt *  vt1;
 
 
@@ -1273,6 +1260,8 @@ std::clock_t    start;
 
 
    //    var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
+           // Added 26 April
+            #pragma omp parallel for
             for(long j=0; j < num_rows_in_block1; j++){
                       var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
             }

@@ -19,7 +19,6 @@ Imports:
    data.table
 LinkingTo: 
    Rcpp , 
-   RcppEigen,
-   RcppArmadillo
+   RcppEigen
 Roxygen: list(wrap=FALSE)
 LazyData: true

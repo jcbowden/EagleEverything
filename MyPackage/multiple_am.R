@@ -116,6 +116,7 @@ if(!is.matrix(Xmat))
 
   .calcVC <- function(trait, currentX, MMt, gpu)
   {
+   cat(" performing emma.REMLE  ... \n")
     ## perform likelihood ratio test for variance component Var_g
     res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100,gpu=gpu)
     return(list("vg"=res_full$vg, "ve"=res_full$ve))
@@ -389,9 +390,9 @@ multiple_locus_am <- function(numcores=1,availmemGb=8,
 ## caters for the two ways data can be inputed into am+
 if(geno[["columnwise"]]){
      cat(" oooooooooooooooo \n")
-       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=1, memName="/syevd_mem", semName="/syevd_sem", print=0)
+       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=3, memName="/syevd_mem", semName="/syevd_sem", print=0)
     } else {
-       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][2],  numGPUsWanted=1, memName="/syevd_mem", semName="/syevd_sem", print=0)
+       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][2],  numGPUsWanted=3, memName="/syevd_mem", semName="/syevd_sem", print=0)
     } 
   }
 
@@ -436,9 +437,10 @@ currentX <- do.call(.build_design_matrix, Args)
                     verbose=verbose, indxNA=indxNA)
 
     if(itnum==1){
+         cat(" Calculate MMt \n")   
          MMt <- do.call(.calcMMt, Args)  
 
-        invMMt <- chol2inv(chol(MMt)) 
+        invMMt <- chol2inv(chol(MMt))   ## doesn't use GPU
         gc()
     } 
       vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, gpu=gpu) 
@@ -448,6 +450,7 @@ currentX <- do.call(.build_design_matrix, Args)
 
 
     ## Calculate extBIC
+    cat(" Calculate extBIC ... \n")
     new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose) 
     h <- best_vg/(best_vg + best_ve)
     gc()
@@ -459,16 +462,17 @@ currentX <- do.call(.build_design_matrix, Args)
 
     ## Print findings to screen
 
- #   .print_results(itnum, selected_loci, map, herit, extBIC)
+   .print_results(itnum, selected_loci, map, herit, extBIC)
 
-
-   ## Select new locus if h > 0.01
-   if(h > 0.01){
+   ## increased June 1, 2016 because it was stopping short. 
+   ## Select new locus if h > 0.005
+   if(h > 0.005){
      ## find QTL
      ARgs <- list(geno=geno,availmemGb=availmemGb, indxNA=indxNA, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
                  numcores=numcores, verbose=verbose, trait=trait, gpu=gpu)
+      cat(" finding QTL ..,. \n")
       new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
      gc()
      selected_loci <- c(selected_loci, new_selected_locus)
