@@ -109,8 +109,9 @@ if(!is.matrix(Xmat))
         MMt <- MMt[-indxNA, -indxNA]
 
     ## Trick for dealing with singular MMt due to colinearity
-    MMt <- MMt/max(MMt) + diag(0.05, nrow(MMt)) 
-
+    MMt <- MMt/max(MMt) + diag(0.95, nrow(MMt)) 
+    #n <- nrow(MMt)
+    #MMt<-(n-1)/sum((diag(n)-matrix(1,n,n)/n)*MMt)*MMt
     return(MMt)
   }
 
@@ -118,7 +119,8 @@ if(!is.matrix(Xmat))
   {
    cat(" performing emma.REMLE  ... \n")
     ## perform likelihood ratio test for variance component Var_g
-    res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100,gpu=gpu)
+    #res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100,gpu=gpu)
+    res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, gpu=gpu)
     return(list("vg"=res_full$vg, "ve"=res_full$ve))
 
   }
@@ -407,12 +409,8 @@ if(geno[["columnwise"]]){
  Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, colname.feffects=colname.feffects, verbose=verbose )
 currentX <- do.call(.build_design_matrix, Args) 
 
-
  ## print tile
  .print_title()
-
-
-
 
  ## Initialization
  continue <- TRUE
@@ -465,8 +463,9 @@ currentX <- do.call(.build_design_matrix, Args)
    .print_results(itnum, selected_loci, map, herit, extBIC)
 
    ## increased June 1, 2016 because it was stopping short. 
-   ## Select new locus if h > 0.005
-   if(h > 0.005){
+   ## Select new locus if h > 0.01 | or extBIC is still decreasing 
+   ## if(h > 0.01 | which(extBIC==min(extBIC))==length(extBIC) ){
+   if(which(extBIC==min(extBIC))==length(extBIC) ){  ## new way of stoppint based on extBIC only
      ## find QTL
      ARgs <- list(geno=geno,availmemGb=availmemGb, indxNA=indxNA, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
