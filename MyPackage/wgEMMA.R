@@ -23,7 +23,7 @@ emma.delta.ML.dLL.w.Z <-  function (logdelta, lambda, etas.1, xi.1, n, etas.2.sq
         delta)) + (n - t)/delta)))
 }
 
- emma.eigen.L.w.Z <- function (Z, K, complete = TRUE, gpu=FALSE) 
+ emma.eigen.L.w.Z <- function (Z, K, complete = TRUE, ngpu=0) 
 {
     if (complete == FALSE) {
         vids <- colSums(Z) > 0
@@ -32,7 +32,7 @@ emma.delta.ML.dLL.w.Z <-  function (logdelta, lambda, etas.1, xi.1, n, etas.2.sq
     }
     res <- K %*% crossprod(Z, Z)
     cat(" in emma.eigen.L.w.Z \n")
-    if(gpu){
+    if(ngpu>0){
        eig <- rcppMagmaSYEVD::eigen_mgpu(res, symmetric=FALSE)
     } else {
        eig <- eigen(res, symmetric = FALSE, EISPACK = TRUE)
@@ -90,7 +90,7 @@ emma.delta.REML.LL.w.Z <- function (logdelta, lambda, etas.1, n, t, etas.2.sq)
 
 
 emma.MLE <- function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10, 
-    esp = 1e-10, eig.L = NULL, eig.R = NULL, gpu=FALSE) 
+    esp = 1e-10, eig.L = NULL, eig.R = NULL, ngpu=0) 
 {
     n <- length(y)
     t <- nrow(K)
@@ -103,10 +103,10 @@ emma.MLE <- function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10,
     }
     if (is.null(Z)) {
         if (is.null(eig.L)) {
-            eig.L <- emma.eigen.L.wo.Z(K, gpu)
+            eig.L <- emma.eigen.L.wo.Z(K, ngpu)
         }
         if (is.null(eig.R)) {
-            eig.R <- emma.eigen.R.wo.Z(K, X, gpu)
+            eig.R <- emma.eigen.R.wo.Z(K, X, ngpu)
         }
         etas <- crossprod(eig.R$vectors, y)
         logdelta <- (0:ngrids)/ngrids * (ulim - llim) + llim
@@ -147,10 +147,10 @@ emma.MLE <- function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10,
     }
     else {
         if (is.null(eig.L)) {
-            eig.L <- emma.eigen.L.w.Z(Z, K, gpu)
+            eig.L <- emma.eigen.L.w.Z(Z, K, ngpu)
         }
         if (is.null(eig.R)) {
-            eig.R <- emma.eigen.R.w.Z(Z, K, X, gpu)
+            eig.R <- emma.eigen.R.w.Z(Z, K, X, ngpu)
         }
         etas <- crossprod(eig.R$vectors, y)
         etas.1 <- etas[1:(t - q)]
@@ -218,9 +218,9 @@ emma.delta.ML.LL.wo.Z <- function (logdelta, lambda, etas, xi)
 
 
 
-emma.eigen.L.wo.Z <- function (K, gpu=FALSE) 
+emma.eigen.L.wo.Z <- function (K, ngpu=0) 
 {  cat(" emma.eigen.L.wo.Z in \n")
-    if(gpu){
+    if(ngpu > 0){
        eig <- rcppMagmaSYEVD::eigen_mgpu(K, symmetric = TRUE)
      } else {
       eig <- eigen(K, symmetric = TRUE)
@@ -229,7 +229,7 @@ emma.eigen.L.wo.Z <- function (K, gpu=FALSE)
     return(list(values = eig$values, vectors = eig$vectors))
 }
 
-emma.eigen.R.wo.Z <-  function (K, X, gpu=FALSE) 
+emma.eigen.R.wo.Z <-  function (K, X, ngpu=0) 
 {
     n <- nrow(X)
     q <- ncol(X)
@@ -237,7 +237,7 @@ emma.eigen.R.wo.Z <-  function (K, X, gpu=FALSE)
     S <- dn - X %*% solve(crossprod(X, X)) %*% t(X)
     gc()
     cat(" in emma.eigen.R.wo.Z \n") 
-    if(gpu){
+    if(ngpu > 0){
        eig <- rcppMagmaSYEVD::eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
     } else {
        eig <- eigen(S %*% (K + dn) %*% S, symmetric = TRUE)
@@ -279,7 +279,7 @@ emma.delta.ML.dLL.wo.Z <- function (logdelta, lambda, etas, xi)
 
 
 
- emma.REMLE <-  function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10,  gpu=FALSE,
+ emma.REMLE <-  function (y, X, K, Z = NULL, ngrids = 100, llim = -10, ulim = 10,  ngpu=0,
     esp = 1e-10, eig.L = NULL, eig.R = NULL) 
 {
     n <- length(y)
@@ -293,7 +293,7 @@ emma.delta.ML.dLL.wo.Z <- function (logdelta, lambda, etas, xi)
     }
     if (is.null(Z)) {
         if (is.null(eig.R)) {
-            eig.R <- emma.eigen.R.wo.Z(K, X, gpu)
+            eig.R <- emma.eigen.R.wo.Z(K, X, ngpu)
         }
         etas <- crossprod(eig.R$vectors, y)
         logdelta <- (0:ngrids)/ngrids * (ulim - llim) + llim
@@ -734,7 +734,7 @@ calculateMMt <- function(geno=NULL, availmemGb, numcores, selected_loci=NA, dim_
 
 
 calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, 
-                                           verbose = FALSE , gpu=FALSE)
+                                           verbose = FALSE , ngpu=0)
 {
   ## R function for calculating the square root of M * M^t
   ## and the inverse of the square root of MMt
@@ -755,7 +755,7 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
   } 
    res <- list()
 
-   if(!gpu){
+   if(ngpu == 0){
       MMt.eigen <- eigen(MMt, symmetric=TRUE )
       sqrt_evals <- diag(sqrt(MMt.eigen$values))
       res[["sqrt"]] <- MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)
@@ -822,13 +822,13 @@ calculateH <- function(MMt=NULL, varE=NULL, varG=NULL )
 }
 
 
-calculateP  <- function(H=NULL, X=NULL, gpu=FALSE)
+calculateP  <- function(H=NULL, X=NULL, ngpu=0)
 {
   ## R function to calculate P matrix
   ## Args:
   ##       H is the variance matrix
   ##       X is the design matrix supplied by the user
-  ##       gpu for whether GPU computation - requires gputools to be installed
+  ##       ngpu for the number of gpu
   ## Returns:
   ##   matrix object P
 
@@ -1140,7 +1140,7 @@ if(!is.null(file_phenotype))
 #' # Read in  example phenotypic data from ./inst/extdata/
 #' 
 #' # find the full location of the phenotypic data 
-#' complete.name <- system.file("extdata", "phenoexample.csv", package="MWAM")
+#' complete.name <- system.file("extdata", "phenoexample.csv", package="AMplus")
 #'   
 #' # read in phenotypic data which is in csv format
 #' phenodata <- read.phenotypes(path=dirname(complete.name),  
@@ -1211,7 +1211,7 @@ cat("\n Warning: if the column classes are incorrect, these will need to be chan
 #' # Read in  example map data from ./inst/extdata/
 #' 
 #' # find the full location of the map data 
-#' complete.name <- system.file("extdata", "mapexample.txt", package="MWAM")
+#' complete.name <- system.file("extdata", "mapexample.txt", package="AMplus")
 #'   
 #' # read in map data 
 #' mapdata <- read.map(path=dirname(complete.name),  
@@ -1358,11 +1358,11 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' @examples
 #'   # find the full location of the genotype data that has been 
 #'   # organized with marker data in columns. Data contained in ./inst/extdata/. 
-#'   complete.name.Cwise <- system.file("extdata", "genoexampleCwise.txt", package="MWAM")
+#'   complete.name.Cwise <- system.file("extdata", "genoexampleCwise.txt", package="AMplus")
 #'
 #'   # find the full location of the genotype data that has been
 #'   # organized with marker data in rows. Data contained in ./inst/extdata/.
-#'   complete.name.Rwise <- system.file("extdata", "genoexampleRwise.txt", package="MWAM")
+#'   complete.name.Rwise <- system.file("extdata", "genoexampleRwise.txt", package="AMplus")
 #'
 #'   
 #'   # read in the ASCII marker genotype data where 0 values are being treated as genotype AA 

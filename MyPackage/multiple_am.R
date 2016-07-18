@@ -115,12 +115,12 @@ if(!is.matrix(Xmat))
     return(MMt)
   }
 
-  .calcVC <- function(trait, currentX, MMt, gpu)
+  .calcVC <- function(trait, currentX, MMt, ngpu)
   {
    cat(" performing emma.REMLE  ... \n")
     ## perform likelihood ratio test for variance component Var_g
-    #res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100,gpu=gpu)
-    res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, gpu=gpu)
+    #res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100,ngpu=ngpu)
+    res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, ngpu=ngpu)
     return(list("vg"=res_full$vg, "ve"=res_full$ve))
 
   }
@@ -183,7 +183,7 @@ if(!is.matrix(Xmat))
 
 
   .find_qtl <- function(geno, availmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
-                       currentX, error_checking, numcores, verbose, trait, gpu )
+                       currentX, error_checking, numcores, verbose, trait, ngpu )
   {
     ##  internal function: use only with multiple_locus_am
     if(verbose) cat(" Calculating H matrix   \n")
@@ -196,7 +196,7 @@ if(!is.matrix(Xmat))
     if (verbose)
               cat(" Calculating  square root of M %*% t(M) and it's inverse. \n")
     MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
-                              gpu=gpu ) 
+                              ngpu=ngpu ) 
 
     if (verbose)
             cat(" Calculating BLUPs for dimension reduced model. \n")
@@ -247,7 +247,7 @@ if(!is.matrix(Xmat))
 
 #' @title multiple locus association mapping 
 #' @description \code{multiple_locus_am} is used to perform multiple locus 
-#' association mapping via multi-locus whole-genome  association mapping (MWAM)
+#' association mapping via multi-locus whole-genome  association mapping (AMplus)
 #' @param numcores a numeric value for the number of cores that are available for distributed computing. 
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). This 
 #' should be set to the maximum practical value of available memory for the analyis. 
@@ -268,7 +268,7 @@ if(!is.matrix(Xmat))
 #'  to the screen for monitoring progress. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
 #' qtl that are to be included in the model. 
-#' @param gpu   a logical value for whether computations should be performed on a GPU. This requires the package gputools to have been installed. 
+#' @param ngpu   a integer value for the number of GPU available for computation. 
 #' @details
 #' The steps to running \code{multiple_locus_am} are as follows:
 #' \itemize{
@@ -315,7 +315,7 @@ if(!is.matrix(Xmat))
 #' @examples
 #'   # READ MAP INFORMATION
 #'   map.file.loc <- system.file("extdata", "mapexample.txt", 
-#'                                    package="MWAM")
+#'                                    package="AMplus")
 #'   map.df <- read.map(path=dirname(map.file.loc),  
 #'                       file_map=basename(map.file.loc)) 
 #'
@@ -324,14 +324,14 @@ if(!is.matrix(Xmat))
 #'   #  0,1 genotypes
 #'   #  column wise marker data
 #'   gen.file.loc <- system.file("extdata", "genoexampleCwise.txt", 
-#'                                      package="MWAM")
+#'                                      package="AMplus")
 #'   geno.list <- read.genotypes(path=dirname(gen.file.loc), 
 #'                               columnwise=TRUE, AA=0, BB=1, 
 #'                               file_genotype=basename(gen.file.loc),  
 #'                               availmemGb=8) 
 #'  
 #'   # READ PHENOTYPIC INFORMATION
-#' phen.file.loc <- system.file("extdata", "phenoexample.csv", package="MWAM")
+#' phen.file.loc <- system.file("extdata", "phenoexample.csv", package="AMplus")
 #'   
 #' phenodf <- read.phenotypes(path=dirname(phen.file.loc),  
 #'                              file_phenotype=basename(phen.file.loc), 
@@ -356,7 +356,7 @@ multiple_locus_am <- function(numcores=1,availmemGb=8,
                               geno=NULL, 
                               alpha=0.05, error_checking=FALSE, 
                               verbose=FALSE,
-                              maxit=20, gpu=FALSE){
+                              maxit=20, ngpu=0){
  ## Core function for performing whole genome association mapping with EMMA
  ## Args
  ## numcores        number of cores available for computation
@@ -369,7 +369,7 @@ multiple_locus_am <- function(numcores=1,availmemGb=8,
  ## alpha           significance level at which to perform the likelihood ratio test
  ## error_checking  when true, it performs some checks of the calculations
  ## maxit           maximum number of qtl to include in the model
- ## gpu             if GPU computation should be used. 
+ ## ngpu            number of GPU available for computation
 
  ## check parameter inputs
  check.inputs.mlam(numcores, availmemGb, colname.trait, colname.feffects, 
@@ -387,14 +387,14 @@ multiple_locus_am <- function(numcores=1,availmemGb=8,
 
 
 
-  if(gpu ){
+  if(ngpu > 0 ){
 # library(rcppMagmaSYEVD)
-## caters for the two ways data can be inputed into am+
+## caters for the two ways data can be inputed into AMplus
 if(geno[["columnwise"]]){
      cat(" oooooooooooooooo \n")
-       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=3, memName="/syevd_mem", semName="/syevd_sem", print=0)
+       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
     } else {
-       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][2],  numGPUsWanted=3, memName="/syevd_mem", semName="/syevd_sem", print=0)
+       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][2],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
     } 
   }
 
@@ -441,7 +441,7 @@ currentX <- do.call(.build_design_matrix, Args)
         invMMt <- chol2inv(chol(MMt))   ## doesn't use GPU
         gc()
     } 
-      vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, gpu=gpu) 
+      vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, ngpu=ngpu) 
     gc()
     best_ve <- vc[["ve"]]
     best_vg <- vc[["vg"]]
@@ -470,7 +470,7 @@ currentX <- do.call(.build_design_matrix, Args)
      ARgs <- list(geno=geno,availmemGb=availmemGb, indxNA=indxNA, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
-                 numcores=numcores, verbose=verbose, trait=trait, gpu=gpu)
+                 numcores=numcores, verbose=verbose, trait=trait, ngpu=ngpu)
       cat(" finding QTL ..,. \n")
       new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
      gc()
