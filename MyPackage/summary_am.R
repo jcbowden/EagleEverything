@@ -28,7 +28,7 @@ GenomicRel = function(M){
 #' @description A summary of the results from \code{\link{multiple_locus_am}}
 #' @param resam  the (list) object obtained from running \code{\link{multiple_locus_am}}.
 #' @param  pheno  the (data frame) object  obtained  from running \code{\link{read.phenotypes}}.
-#' @param geno   the (list) object obtained from running \code{\link{read.genotypes}}.
+#' @param geno   the (list) object obtained from running \code{\link{ReadMarkerData}}.
 #' @param map   the (data frame) object obtained from running \code{\link{read.map}}.  
 #' If not specifed, a generic map will be assumed. 
 #' @details

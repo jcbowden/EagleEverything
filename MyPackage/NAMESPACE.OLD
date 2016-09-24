@@ -3,9 +3,9 @@ importFrom(Rcpp, evalCpp)
 import(RcppEigen,  matrixcalc, Matrix, data.table )
 
 export(
-   check.genofile,
+   CheckMarkerData,
    read.phenotypes,
-   read.genotypes,
+   ReadMarkerData,
    read.map,
    multiple_locus_am,
    summarymlam)

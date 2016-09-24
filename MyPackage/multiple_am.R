@@ -258,7 +258,7 @@ if(!is.matrix(Xmat))
 #' @param map   the (data frame) object obtained from running \code{\link{read.map}}. If not specifed, a generic map will 
 #'              be assumed. 
 #' @param pheno  the (data frame) object  obtained  from running \code{\link{read.phenotypes}}.
-#' @param geno   the (list) object obtained from running \code{\link{read.genotypes}}.
+#' @param geno   the (list) object obtained from running \code{\link{ReadMarkerData}}.
 #' @param alpha  the type 1 error rate where setting \code{alpha} to 0.05 say is a 5\% error rate.
 #' @param  error_checking a logical value. When \code{TRUE}, 
 #' the numericial stability of the dimension reduction is checked. That is, individuals 
@@ -272,7 +272,7 @@ if(!is.matrix(Xmat))
 #' @details
 #' The steps to running \code{multiple_locus_am} are as follows:
 #' \itemize{
-#' \item{Step 1:}{ Read in  genotypic information. Use \code{\link{read.genotypes}} to read in the marker data.}
+#' \item{Step 1:}{ Read in  genotypic information. Use \code{\link{ReadMarkerData}} to read in the marker data.}
 #' \item{Step 2:}{ Read in phenotypic information.  Use \code{\link{read.phenotypes}} to read in the phenotypic data.}
 #' \item{Step 3:}{ Read in map information. Use \code{\link{read.map}} to read in 
 #'  the marker map. Omit this step if marker map is unknown. A generic map will be created.}
@@ -308,7 +308,7 @@ if(!is.matrix(Xmat))
 #' NEEDS MORE  Add something about stopping rule
 #'
 #'
-#' @seealso \code{\link{read.genotypes}}, and \code{\link{read.phenotypes}}.
+#' @seealso \code{\link{ReadMarkerData}}, and \code{\link{read.phenotypes}}.
 #'
 #' @return
 #' something here .... 
@@ -325,7 +325,7 @@ if(!is.matrix(Xmat))
 #'   #  column wise marker data
 #'   gen.file.loc <- system.file("extdata", "genoexampleCwise.txt", 
 #'                                      package="AMplus")
-#'   geno.list <- read.genotypes(path=dirname(gen.file.loc), 
+#'   geno.list <- ReadMarkerData(path=dirname(gen.file.loc), 
 #'                               columnwise=TRUE, AA=0, BB=1, 
 #'                               file_genotype=basename(gen.file.loc),  
 #'                               availmemGb=8) 
@@ -364,7 +364,7 @@ multiple_locus_am <- function(numcores=1,availmemGb=8,
  ## pheno           data frame 
  ##                 remaining columns are explanatory variables to include in the model. If a numeric vector, then it 
  ##                 is only a response to be fitted. 
- ## geno            if geno is a matrix or data frame, then the user has not read.genotypes and a bin packed file
+ ## geno            if geno is a matrix or data frame, then the user has not ReadMarkerData and a bin packed file
  ##                 has not been created. If it is a character string, then it is the file location of the binary packed files. 
  ## alpha           significance level at which to perform the likelihood ratio test
  ## error_checking  when true, it performs some checks of the calculations

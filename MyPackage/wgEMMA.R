@@ -448,7 +448,7 @@ if(is.null(geno)){
    cat(" Error: the geno parameter has not been set. \n")
    cat("        Set this parameter to the object that contains \n")
    cat("        the phenotypic data. This object is the result of running  \n")
-   cat("        read.genotypes. \n")
+   cat("        ReadMarkerData. \n")
    stop(" multiple_locus_am has terminated with errors.")
 }
 
@@ -456,7 +456,7 @@ if(is.null(geno)){
 ## checking list structure of geno
 if(!is.list(geno)){
   cat(" Error: the geno object is not a list object. \n")
-  cat("       The geno object is obtained from running read.genotypes.\n")
+  cat("       The geno object is obtained from running ReadMarkerData.\n")
   stop(" multiple_locus_am has terminated with errors.")
 }
 
@@ -576,7 +576,7 @@ if(is.null(map)){
 #' @title Check correctness of marker genotypes.
 #' 
 #' @description
-#' \code{check.genofile} performs various checks on the marker genotype file.
+#' \code{CheckMarkerData} performs various checks on the marker genotype file.
 #' @param fnameIN  character vector containing the name of the marker genotype file
 #' @param dirPath  character vector contain the directory path to where the marker genotype file is located. 
 #' @param columnwise a logical value. When \code{TRUE},  each row contains an individuals genotypes and each 
@@ -592,7 +592,7 @@ if(is.null(map)){
 #' @param csv      is a logical value. When \code{TRUE}, a comma seperated version (csv) file is assumed. 
 #'
 #' @details
-#' The function \code{check.genofile} checks the following that:
+#' The function \code{CheckMarkerData} checks the following that:
 #' \itemize{
 #'   \item{ the file exists}
 #'   \item{ there is the same number of genotypes per row}
@@ -607,8 +607,8 @@ if(is.null(map)){
 #' is assumed and any  heterozygous genotypes found in the marker file will cause an error. 
 #' @return  a list is returned with elements \code{file_exists} and \code{num_genotypes_per_row}. \code{num_genotypes_per_row}
 #'          will be \code{NULL} unless the \code{check_num_geno_in_row} parameter has been set to \code{TRUE}.
-#' @seealso \code{\link{read.genotypes}}
-check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
+#' @seealso \code{\link{ReadMarkerData}}
+CheckMarkerData <- function(fnameIN=NULL, dirPath=getwd(),
                            columnwise= TRUE, 
                            AA=NULL,
                            AB=NULL,
@@ -666,10 +666,15 @@ check.genofile <- function(fnameIN=NULL, dirPath=getwd(),
   }  ## end if checkrownum
 
 
+
+
+
+
+
   ## Has AA, AB, BB been assigned numeric values
   if(is.null(AA) |  is.null(BB))
   {
-     stop(" AA and BB must be assigned a numeric value \n")
+     stop(" AA and BB must be assigned numeric values. Set their value to the corresponding numeric value that is being used in the marker file for the genotypes. \n")
   }
 
   if(!is.numeric(AA) | !is.numeric(BB))
@@ -1130,7 +1135,7 @@ if(!is.null(file_phenotype))
 #' missing values, and these covariates are used by \code{\link{multiple_locus_am}}, then  
 #' \code{\link{multiple_locus_am}} will return an error.  \code{NA} values are allowed in the 
 #' trait values. See \code{\link{multiple_locus_am}} for details. 
-#' @seealso \code{\link{read.genotypes}}
+#' @seealso \code{\link{ReadMarkerData}}
 #' @return 
 #' a data frame is returned of the phenotypic data. If \code{header} is true, the 
 #' names of the columns will be as specified by the first row of the phenotypic file. If \code{header} is \code{FALSE}, 
@@ -1203,7 +1208,7 @@ cat("\n Warning: if the column classes are incorrect, these will need to be chan
 #'
 #' The order of the markers in this file must match the column order of the genotype file because 
 #' the genotype file does not contain marker names. 
-#' @seealso \code{\link{read.genotypes}}
+#' @seealso \code{\link{ReadMarkerData}}
 #' @return 
 #' a data frame is returned of the map data. 
 #'
@@ -1300,7 +1305,9 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' @title Read  marker genotype file.
 #' 
 #' @description
-#' \code{read.genotypes} reads in the genotypes from the marker genoytpe file.
+#' \code{ReadMarkerData} reads in space or comma separated genotype data from a file. We assume the three genotypes are 
+#' AA, AB, and BB but the AB genotype may not be present if individuals are inbred. 
+#' \code{ReadMarkerData} reads in the genotypes from the marker genoytpe file.
 #' @param path  character vector containing the directory path to where the marker genotype file is located.
 #' @param bin_path  character vector containing the directory path to where the binary converted marker genotype files are to be located. 
 #' @param columnwise a logical value. When \code{TRUE},  each row contains an individuals genotypes and each 
@@ -1312,7 +1319,7 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' @param AB       integer value corresponding to the AB genotype in the marker genotype file. This can be left unspecified  if there are no hets. 
 #' @param BB       integer value corresponding to the BB genotype in the marker genotype file. This must be specified. 
 #' @param file_genotype character vector containing the name of the marker genotype file.
-#' @param  check  a logical value. If \code{TRUE}, then \code{\link{check.genofile}} is run to check the marker genotype file
+#' @param  check  a logical value. If \code{TRUE}, then \code{\link{CheckMarkerData}} is run to check the marker genotype file
 #'         for errors. 
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). This should be set to be as large as possible.  
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. 
@@ -1321,7 +1328,7 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #'
 #' @details
 #'
-#' \code{read.genotypes} reads the marker genoytpes from file and converts it into two binary files:
+#' \code{ReadMarkerData} reads the marker genoytpes from file and converts it into two binary files:
 #' a binary M file and a binary Mt file. The binary M file is where the rows are the individuals and 
 #' the columns are the marker loci.  The binary Mt file is where the rows are the marker loci and the columns
 #' are the individuals.  This is true regardless of the value of \code{columnwise}. 
@@ -1330,7 +1337,7 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' each column contains the genotypes for a marker locus (\code{columnwise} = \code{TRUE}) or 
 #' each row contains the genotypes for a marker locus (\code{columnwise} =  \code{FALSE}).
 #'
-#' The two binary files created by \code{read.genotypes} are called M.bin and Mt.bin and they are created in 
+#' The two binary files created by \code{ReadMarkerData} are called M.bin and Mt.bin and they are created in 
 #' directory \code{bin_path}. 
 #'
 #' It is assumed that the marker genotype file is a space separated ASCII file but csv files can also 
@@ -1369,7 +1376,7 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #'   # and 1 values are being treated as genoytpe BB. There are no heterozygotes so AB is not specified. 
 #'   # 3 Gbytes of memory has been specified. The file is space separated with the rows the individuals
 #'   # and the columns the snp loci.
-#'   geno.list <- read.genotypes(path=dirname(complete.name.Cwise), columnwise=TRUE, AA=0, BB=1, 
+#'   geno.list <- ReadMarkerData(path=dirname(complete.name.Cwise), columnwise=TRUE, AA=0, BB=1, 
 #'                  file_genotype=basename(complete.name.Cwise),  availmemGb=8) 
 #'    
 #'
@@ -1381,12 +1388,12 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #'
 #'   # read in the same ASCII marker genotype file but where the rows are the snp loci and 
 #'   # the individuals are the columns.
-#'   geno.list <- read.genotypes(path=dirname(complete.name.Rwise), columnwise=FALSE, AA=0, BB=1, 
+#'   geno.list <- ReadMarkerData(path=dirname(complete.name.Rwise), columnwise=FALSE, AA=0, BB=1, 
 #'                  file_genotype=basename(complete.name.Rwise),  availmemGb=8) 
 #'
 #'  print(geno.list)
-#' @seealso \code{\link{check.genofile}}
-read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE, 
+#' @seealso \code{\link{CheckMarkerData}}
+ReadMarkerData <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE, 
                            AA=NULL, AB=NULL, BB=NULL, 
                            file_genotype=NULL, check=FALSE, availmemGb=8, 
                            csv=FALSE, verbose=FALSE){
@@ -1414,7 +1421,7 @@ read.genotypes <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
 
  ## checking for a correct genotype file
  if(check)
-   check.genofile(fnameIN=file_genotype, dirPath=path, AA=AA, AB=AB, BB=BB, 
+   CheckMarkerData(fnameIN=file_genotype, dirPath=path, AA=AA, AB=AB, BB=BB, 
                   check_num_geno_in_row=TRUE, check_genotypes=TRUE, csv=csv)
 
  if(.Platform$OS.type == "unix") {
