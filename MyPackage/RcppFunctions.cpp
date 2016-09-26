@@ -121,14 +121,14 @@ std::string
 
 
 
-//get number of rows and columns in genotype file
+//get number of rows and columns in marker file
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // [[Rcpp::export]]
 std::vector<long>   getRowColumn(std::string fname, 
                                  bool csv)
 {
-  // Purpose:  to open the ascii file where the genotypes are kept
-  //           an error will be produced if the file cannot be found.
+  // Purpose:  to open the marker file where the marker data are kept.
+  //           An error will be produced if the file cannot be found.
   //           I am assuming no row or column names
  int 
    genoval;
@@ -180,7 +180,7 @@ std::vector<long>   getRowColumn(std::string fname,
  fileIN.close();
  if(fileIN.bad())
  {
-    os << "\n\nERROR:  There was a problem with reading the genotype file - possibly strange ASCII characters.\n\n";
+    os << "\n\nERROR:  There was a problem with reading the marker file - possibly strange ASCII characters.\n\n";
     Rcpp::stop(os.str() );
 }
 return dimen;
@@ -191,9 +191,248 @@ return dimen;
 
 
 
+
 // recode ascii as packed binary file
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+void  CreatePackedBinary_PLINK(std::string fname, std::string binfname, std::vector<long> dims,
+                         bool verbose)
+{
+long 
+   indx_packed = 0,
+   indx_packed_long_vec = 0,
+   colindx = 0, 
+   n_of_long = dims[1]/(bits_in_ulong/2),
+   n_extra=0,
+   n_total=0;
 
+
+int
+  n_of_cols_in_geno = (dims[1] -6)/2.0;
+
+
+short
+    genovec( n_of_cols_in_geno ); // holds entire row of genotypes 
+
+char
+   tmp,
+   alleles [ 2 ][ n_of_cols_in_geno ];  // holds alleles  
+
+
+std::vector<char>
+     rowvec( dims[1] - 6 );  // holds allelic information from PLINK file
+
+
+
+std::string
+   token,
+   line;
+
+char 
+   sep = ' ';
+
+
+ ostringstream 
+      os;
+
+
+std::bitset <bits_in_ulong>
+     packed(0);
+
+
+// check that number of bits to long is even
+if ( (bits_in_ulong % 2)!=0){
+  os << "\n\nERROR: Number of bits to a ulong is not even.\n\n";
+  Rcpp::stop(os.str() );
+}
+
+// check if number of columns in file will fill n longs completely
+if(dims[1] % (bits_in_ulong/2) != 0){
+   n_extra = 1 ;  // an extra long is required to the extra columns
+}
+
+// number of longs needed to store a complete row of the ascii file
+// where genotypes are being packed into 2 bits. 
+n_total = n_of_long + n_extra;
+
+// Vector that is to be packed 
+std::vector<unsigned long int> packed_long_vec (n_total);
+
+
+
+// open ascii genotype  file
+std::ifstream fileIN(fname.c_str());
+if(!fileIN.good()) {
+  os << "\n\nERROR: ASCii genotype file could not be opened with filename  " << fname << "\n\n" << std::endl;
+  Rcpp::stop(os.str() );
+}
+
+// open binary file that is to hold packed genotype data
+std::ofstream fileOUT(binfname.c_str(), ios::binary );
+ if (verbose){
+ Rcpp::Rcout << " " << std::endl;
+ Rcpp::Rcout << " Reading Marker (Genotype) File  " << std::endl;
+ Rcpp::Rcout << " " << std::endl;
+ Rcpp::Rcout << " Loading file .";
+ }
+long  counter = 0;
+while(getline(fileIN, line ))
+{
+  if (verbose){
+     if (counter % 10 == 0)
+         Rcpp::Rcout << "." ;
+  }
+
+  istringstream streamA(line);
+  indx_packed = 0;
+   indx_packed_long_vec = 0;
+  packed.reset();
+
+
+ for(long i=0; i < dims[1] ; i++){
+    // assign allelic info to rowvec ignoring first 6 columns of input
+    if(i <= 5){
+       streamA >> tmp;
+    } else {
+       streamA >> rowvec[i-6];
+    }
+ }
+
+ // initialize alleles structure to first row of PLINK info
+ if (counter == 0) {
+     for(long i=0; i < n_of_cols_in_geno ; i++){
+        alleles[ 0 ][ i ] =  rowvec[ (2*i - 1) ];
+        alleles[ 1 ][ i ] =  rowvec[ (2*i) ];
+     }
+ }
+
+
+ // turn allelic info from PLINK into genotype 0,1,2 data
+ // also do some checks for more than 2 alleles, and 0 and - for missing data
+ for(long i=0; i < n_of_cols_in_geno; i++){
+    // Checking for missing allelic information in PLINK file
+    if( rowvec[ (2*i ) ] == "0" ||  rowvec[ (2*i + 1) == "0" || rowvec[ (2*i ) ] == "-" ||  rowvec[ (2*i + 1) == "-"){
+        Rcpp::Rcout << std::endl;
+        Rcpp::Rcout << std::endl;
+        Rcpp::Rcout << "Error:  PLINK file cannot contain missing alleles (i.e. 0 or - ) " << max_memory_in_Gbytes << std::endl;
+        Rcpp::Rcout << "        Please impute missing marker information before running AMplus." << std::endl;
+        Rcpp::Rcout << "        The error has occurred at the " << i << " snp locus for individual " << counter+1 << std::endl;
+        Rcpp::Rcout << std::endl;
+        Rcpp::Rcout << std::endl;
+        os << " ReadMarkerData has terminated with errors\n" << std::endl;
+         Rcpp::stop(os.str() );
+    }   
+
+    // Check if allele has been seen before in allele file. 
+    // If so, make sure alleles doesn't already  contain two alleles - otherwise generate error message
+    for(j = 1; j >= 0; --j){ // looping over the two alleles with indexes 0 and 1
+       if (rowvec[ (2*i + j) ] != alleles[ 0 ][ i ] || rowvec[ (2*i + j) ] != alleles[ 1 ][ i ]){
+          if (alleles[ 0 ][ i ] == alleles[ 1 ][ i ] ){
+            // this is okay. alleles only contains a single allele at the moment. Re-initialise alleles
+            alleles[ 1 ][ i ] = rowvec[ (2*i - j);
+          } else {
+             // Error - we have more than two alleles segregating at a locus
+           Rcpp::Rcout << std::endl;
+           Rcpp::Rcout << std::endl;
+           Rcpp::Rcout << "Error:  PLINK file cannot contain more than two alleles at a locus." << max_memory_in_Gbytes << std::endl;
+           Rcpp::Rcout << "        The error has occurred at the " << i << " snp locus for individual " << counter+1 << std::endl;
+           Rcpp::Rcout << std::endl;
+           Rcpp::Rcout << std::endl;
+           os << " ReadMarkerData has terminated with errors\n" << std::endl;
+            Rcpp::stop(os.str() );
+         } // end inner if else
+    }  // end if
+
+    }
+
+
+    // set genovec
+    if (rowvec[ (2*i + 1) ] !=   rowvec[ (2*i) ){
+      genovec[i] = 1 ;  // AB
+    } else {
+      if (rowvec[ (2*i ) ] == alleles[ 0 ][ i ] )  // matches first allele
+        genovec[i] = 0;  // AA
+
+      if (rowvec[ (2*i ) ] == alleles[ 1 ][ i ] )  // matches second allele
+        genovec[i] = 2;  // BB
+
+    }
+
+ }  // end for long i  We now have genovec containing converted information. 
+
+ 
+
+ // Here, BB is coded into 2 when bit packed, 
+ //       AB is coded into 1, 
+ //       AA is coded into 0. 
+  int
+     AA = 0, 
+     AB = 1,
+     BB = 2;
+
+  for(long i=0; i< dims[1] ; i++){
+  //   streamA >> rowvec[i];
+
+
+//     getline(streamA, token, sep);
+//     rowvec[i] = atoi(token.c_str());
+ 
+     if(genovec[i] == BB){
+          packed[indx_packed*2+1] = 1;
+          packed[indx_packed*2] = 0;
+     } else if (genovec[i] == AB) {
+          packed[indx_packed*2+1] = 0;
+          packed[indx_packed*2] = 1;
+     } else if (genovec[i] == AA) {
+          packed[indx_packed*2+1] = 0;
+          packed[indx_packed*2] = 0;
+     } else {
+          os << "\n\nERROR: Genotype file contains genotypes that are not 0,1, or 2. For example " << genovec[i] << "\n\n";
+          Rcpp::stop(os.str() );
+     } 
+
+     if(  ( ((indx_packed+1)  % ( bits_in_ulong/2))==0) | (dims[1]-1) == i ) { 
+        indx_packed = 0;
+        packed_long_vec[indx_packed_long_vec]  =  packed.to_ulong();
+        indx_packed_long_vec++;
+        packed.reset();  // set bits back to 0
+     } else  {
+       indx_packed++;
+    } 
+
+
+
+  }
+
+
+    // want to begin with a fresh long when we read in a new line
+    // writing binary values to disk.
+    fileOUT.write((char *)(&packed_long_vec[0]), packed_long_vec.size() * sizeof(unsigned long int));
+
+  counter++;
+
+
+  }
+  if (verbose) Rcpp::Rcout << "\n" << std::endl;
+
+
+
+
+
+
+// close files
+fileIN.close();
+fileOUT.close();
+
+
+}
+
+
+
+
+
+
+// recode ascii as packed binary file
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void  CreatePackedBinary(std::string fname, std::string binfname, std::vector<long> dims,
                          int AA, 
                          int AB, 
@@ -332,6 +571,11 @@ fileOUT.close();
 
 
 }
+
+
+
+
+
 
 Eigen::MatrixXd  ReadBlock(std::string binfname, 
                            long start_row,
@@ -500,24 +744,6 @@ for(long i=0;i < v.size(); i++)
 
 
 
-
-
-
-
-
-
-
-
-
-
-//-----------------------------------------
-//               Main 
-//-----------------------------------------
-
-
-
-
-
 // [[Rcpp::export]]
 void  createMt_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
                               int AA, 
@@ -628,6 +854,10 @@ int
 
    // read a line of data from ASCII file
    istringstream streamA(line);
+
+
+
+
 
 
 
@@ -804,6 +1034,8 @@ if (verbose){
 fileOUTbin.close();
 
 }
+
+
 
 
 
@@ -1298,6 +1530,76 @@ Rcout << "vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt " << endl;
 
 
 // [[Rcpp::export]]
+void createM_PLINK_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
+                  double  max_memory_in_Gbytes,  std::vector <long> dims,
+                  bool verbose) 
+{
+  // Rcpp function to create binary packed file from PLINK file
+
+size_t found;
+
+
+
+std::string 
+   line; 
+
+
+ofstream
+   fileOUT;
+
+int 
+   genoval;
+
+std::string 
+     fname = Rcpp::as<std::string>(f_name),
+     fnamebin = Rcpp::as<std::string>(f_name_bin);
+
+
+
+//-----------------------------------
+// Calculate amount of memory needed
+//-----------------------------------
+// its  (num cols - 6)/2 to get number of columns needed for M matrix
+double 
+  memory_needed_in_Gb =  (dims[0] *  ((dims[1]-6)/2.0)  *   sizeof(double) )/( (double) 1000000000) ;
+
+
+
+//-------------------------------------------
+// convert PLINK file into packed binary file
+//-----------------------------------------
+// Here, we do not need to worry about the amount of memory because 
+// we are processing a line of the file at a time. This is not the case when 
+// creating a binary packed Mt because we have to read in blocks before we can 
+// transpose. 
+CreatePackedBinary_PLINK(fname, fnamebin, dims, verbose);
+
+
+//--------------------------------------
+// Summary of Genotype File
+//--------------------------------------
+
+Rcpp::Rcout <<  "\n\n                    SUMMARY OF GENOTYPE FILE  " << std::endl;
+found=fname.find_last_of("/\\");
+Rcpp::Rcout <<  " file location(path):         "  <<  fname.substr(0, found) << std::endl;
+Rcpp::Rcout <<  " file name:                    " << fname.substr(found+1) << std::endl;
+Rcpp::Rcout <<  " packed binary file location: " << fnamebin << std::endl;
+Rcpp::Rcout <<  " packed binary file name:     " << "M.bin"  << std::endl;
+Rcpp::Rcout <<  " number of rows:              "     << dims[0] << std::endl;
+Rcpp::Rcout <<  " number of columns:           "  << dims[1] << std::endl;
+Rcpp::Rcout.precision(2);
+Rcpp::Rcout <<  " file size (Gbytes)           "  << memory_needed_in_Gb << std::endl;
+Rcpp::Rcout <<  " max memory size (Gbytes)     " << std::endl;
+Rcpp::Rcout <<  "   set to :                   " << max_memory_in_Gbytes  << std::endl;
+Rcpp::Rcout << "\n\n" << std::endl;
+
+
+}
+
+
+
+
+// [[Rcpp::export]]
 void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
                   int AA,
                   int AB, 
@@ -1306,7 +1608,7 @@ void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin,
                   bool csv, 
                   bool verbose) 
 {
-  // Rcpp function to create binary packed file of ASCII marker genotype file.
+  // Rcpp function to create binary packed file of ASCII and PLINK ped marker genotype file.
 
 size_t found;
 
@@ -1332,19 +1634,35 @@ std::string
 // Calculate amount of memory needed
 //-----------------------------------
 double 
-  memory_needed_in_Gb =  (dims[0] *  dims[1] *   sizeof(double) )/( (double) 1000000000) ;
+  memory_needed_in_Gb;
+
+  if (R_IsNA(AA)){
+  // this is a PLINK ped file. Hence, we need to adjust the dims[1] to get the 
+  // size of the genotype file in R land. 
+    memory_needed_in_Gb =  (dims[0] *  (dims[1]-6.0)/2.0  *   sizeof(double) )/( (double) 1000000000) ;
+  } else {
+    // ASCII file
+    memory_needed_in_Gb =  (dims[0] *  dims[1] *   sizeof(double) )/( (double) 1000000000) ;
+  }
+
+  if (R_IsNA(AA)){
+     //------------------------------------
+     // convert PLINK ped file into packed binary file
+     //----------------------------------------------
+      CreatePackedBinary_PLINK(fname, fnamebin, dims, verbose);
 
 
+   }  else {
 
-//-------------------------------------------
-// convert ascii file into packed binary file
-//-----------------------------------------
-// Here, we do not need to worry about the amount of memory because 
-// we are processing a line of the file at a time. This is not the case when 
-// creating a binary packed Mt because we have to read in blocks before we can 
-// transpose. 
-CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB, csv, verbose);
-
+      //-------------------------------------------
+      // convert ascii file into packed binary file
+      //-----------------------------------------
+      // Here, we do not need to worry about the amount of memory because 
+      // we are processing a line of the file at a time. This is not the case when 
+      // creating a binary packed Mt because we have to read in blocks before we can 
+      // transpose. 
+      CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB, csv, verbose);
+   }  // end if R_IsNA
 
 //--------------------------------------
 // Summary of Genotype File

@@ -9,6 +9,19 @@
 ## 2. need to test A reps - whyc GPU different to CPU
 ## 3. 
 
+
+
+## internal function to get absolute path name under unix and windows
+fullpath <- function(fname){
+  if(.Platform$OS.type == "unix") {
+    filen <- paste(getwd(), "/", fname, sep="")
+  } else {
+   filen <- paste(getwd(), "\\", fname, sep="")
+  }
+  return(fname)
+}
+
+
 ##-------------------------------------
 ##  EMMA code 
 ##------------------------------------
@@ -1045,8 +1058,8 @@ calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MM
 
 
 
-check.inputs <- function(numcores=NULL, availmemGb=NULL, path=NULL, 
-                         bin_path=NULL, file_genotype=NULL, 
+check.inputs <- function(numcores=NULL, availmemGb=NULL, 
+                         file_genotype=NULL, 
                          file_phenotype=NULL, alpha=NULL)
 {
 
@@ -1080,21 +1093,13 @@ if(!is.null(availmemGb))
     stop(" availmemGb cannot be zero or a a negative number.")
 }
 
-if(!is.null(path))
-  if(!file.exists(path))
-    stop(" path directory does not exist.")
-
-
-if(!is.null(bin_path))
-  if(!file.exists(bin_path))
-      stop(" bin_path directory does not exist.")
 
 if(!is.null(file_genotype))
 {
   if(.Platform$OS.type == "unix") {
-    genofile <- paste(path, "/", file_genotype, sep="")
+    genofile <- paste(getwd(), "/", file_genotype, sep="")
   } else {
-   genofile <- paste(path, "\\", file_genotype, sep="")
+   genofile <- paste(getwd(), "\\", file_genotype, sep="")
   }
   if(!file.exists(genofile)){
     msg <- paste(" Cannot find genotype file ", genofile, sep="")
@@ -1106,9 +1111,9 @@ if(!is.null(file_genotype))
 if(!is.null(file_phenotype))
 { 
   if(.Platform$OS.type == "unix") {
-    phenofile <- paste(path, "/", file_phenotype, sep="")
+    phenofile <- paste(getwd(), "/", file_phenotype, sep="")
   } else {
-   phenofile <- paste(path, "\\", file_phenotype, sep="")
+   phenofile <- paste(getwd(), "\\", file_phenotype, sep="")
   }
 
   if(!file.exists(phenofile)){
@@ -1252,48 +1257,39 @@ return(map)
 
 
 
-create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB, 
-                         availmemGb, dim_of_bin_M, csv, verbose){
+create.bin  <- function(file_genotype,  AA, AB, BB, 
+                         availmemGb, dim_of_bin_M, csv, verbose, type){
  ## an Rcpp function to create the packed binary file of the genotype data M and Mt
- ## from genotype data that may be saved row or column wise in terms of the markers.
+ ## from marker data. The marker data may be from an ASCII file or PLINK ped file.
  ## Args
  ## file_genotype    absolute path and file name of genotype file
- ## bin_path         path name for where binary files are to be stored. 
- ## columnwise       logical value. If TRUE, then the cols of the  genotype data are the markers. 
  ## AA, AB, BB       numeric codes for associated genotypes in marker genotype file
  ## availmemGb     available memory for converstion to packed binary
  ## dim_of_bin_M             row, column dimensions of M.  
+ ## type            where file type is ASCII or PLINK
 
- if(columnwise){
-    ## Here, M.bin can be created without transposing
-    binMfile <- paste(bin_path, "M.bin", sep="") ## file name for binary packed Mt file.
+ binMfile <- fullpath("M.bin")
+ binMtfile <- fullpath("Mt.bin")
 
+if (!is.null(AA) && !is.null(AB) && !is.null(BB)){
+    ## ASCII genotype file
     createM_rcpp(f_name = file_genotype, f_name_bin = binMfile, AA = AA, AB = AB, BB = BB,
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv = csv,
                verbose = verbose)
 
-    ## Mt.bin is created by transposing ASCII data
-    binMtfile <- paste(bin_path, "Mt.bin", sep="") ## file name for binary packed Mt file.
-
     createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,  AA = AA, AB = AB, BB = BB,
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, csv=csv, verbose = verbose )
+} else {
+    ## PLINK ped file
+    createM_rcpp(f_name = file_genotype, f_name_bin = binMfile,  AA=NA, 
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , verbose = verbose)
 
- } else {
-   ## Here, Mt.bin can be created without transposing
-   binMtfile <- paste(bin_path, "Mt.bin", sep="") ## file name for binary packed Mt file.
+    createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,   AA=NA, 
+                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, verbose = verbose )
 
-   createM_rcpp(f_name = file_genotype, f_name_bin = binMtfile, AA = AA, AB = AB, BB = BB,
-               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv = csv, 
-               verbose = verbose )
 
-    ## Here, M.bin is created by transposing data
-    binMfile <- paste(bin_path, "M.bin", sep="") ## file name for binary packed Mt file.
 
-    createMt_rcpp(f_name = file_genotype, f_name_bin = binMfile,  AA = AA, AB = AB, BB = BB,
-                  max_memory_in_Gbytes=availmemGb,  
-                  dims = c(dim_of_bin_M[2], dim_of_bin_M[1]), csv=csv,
-                  verbose = verbose )
- }
+}  ## end if else type
 
  return(NULL)
 
@@ -1308,17 +1304,10 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' \code{ReadMarkerData} reads in space or comma separated genotype data from a file. We assume the three genotypes are 
 #' AA, AB, and BB but the AB genotype may not be present if individuals are inbred. 
 #' \code{ReadMarkerData} reads in the genotypes from the marker genoytpe file.
-#' @param path  character vector containing the directory path to where the marker genotype file is located.
-#' @param bin_path  character vector containing the directory path to where the binary converted marker genotype files are to be located. 
-#' @param columnwise a logical value. When \code{TRUE},  each row contains an individuals genotypes and each 
-#'           column contains a marker locus\' genotypes. When \code{FALSE}, each row contains a marker locus\'s
-#'           genotypes and each  column contains an individual\'s genotypes. 
-#'                    When \code{FALSE}, a row contains the data from a marker locus. 
-
+#' @param file_genotype character vector containing the name of the marker genotype file.
 #' @param AA       integer value corresponding to the AA genotype in the marker genotype file. This must be specified. 
 #' @param AB       integer value corresponding to the AB genotype in the marker genotype file. This can be left unspecified  if there are no hets. 
 #' @param BB       integer value corresponding to the BB genotype in the marker genotype file. This must be specified. 
-#' @param file_genotype character vector containing the name of the marker genotype file.
 #' @param  check  a logical value. If \code{TRUE}, then \code{\link{CheckMarkerData}} is run to check the marker genotype file
 #'         for errors. 
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). This should be set to be as large as possible.  
@@ -1338,7 +1327,7 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' each row contains the genotypes for a marker locus (\code{columnwise} =  \code{FALSE}).
 #'
 #' The two binary files created by \code{ReadMarkerData} are called M.bin and Mt.bin and they are created in 
-#' directory \code{bin_path}. 
+#' the current directory (the directory from which R is being run from).
 #'
 #' It is assumed that the marker genotype file is a space separated ASCII file but csv files can also 
 #' be read by setting \code{csv} to \code{TRUE}.
@@ -1346,7 +1335,6 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' Missing values are not allowed. If present, this will cause and error. Such values should be replaced by their 
 #' imputed values. 
 #'
-#' The \code{path} and \code{bin_path} parameters, if not set, will default to the current directory. 
 #'
 #' The parameters \code{AA} and \code{BB} must be specified to their associated numeric values in the marker 
 #' genotype file.  If there are no heterozygous genotypes (i.e., it is an inbred population), 
@@ -1356,27 +1344,23 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #' genotype file is too large for the available memory, then it converted, chunk-wise,  into a single binary packed file.  
 #' The consequences of reading the marker genotype file chunk- or block-wise is a longer processing time. 
 #'
-#' @return  a list is returned with elements \code{binfileM} , \code{binfileMt}, \code{dim_of_bin_M}, and \code{columnwise}. 
+#' @return  a list is returned with elements \code{binfileM} , \code{binfileMt}, and \code{dim_of_bin_M} . 
 #' which is the absolute path and file name of the binary file for the marker genotype data, 
 #' the absolute path and file name of the binary file for the transpose of the marker genotype data, 
-#' the number of rows and columns in the binary M genotype file, and if the 
-#' marker data has been stored column-wise or row-wise, respectively.
+#' the number of rows and columns in the binary M genotype file, 
 #' 
 #' @examples
 #'   # find the full location of the genotype data that has been 
-#'   # organized with marker data in columns. Data contained in ./inst/extdata/. 
+#'   # Data contained in ./inst/extdata/.  
 #'   complete.name.Cwise <- system.file("extdata", "genoexampleCwise.txt", package="AMplus")
 #'
-#'   # find the full location of the genotype data that has been
-#'   # organized with marker data in rows. Data contained in ./inst/extdata/.
-#'   complete.name.Rwise <- system.file("extdata", "genoexampleRwise.txt", package="AMplus")
 #'
 #'   
 #'   # read in the ASCII marker genotype data where 0 values are being treated as genotype AA 
 #'   # and 1 values are being treated as genoytpe BB. There are no heterozygotes so AB is not specified. 
 #'   # 3 Gbytes of memory has been specified. The file is space separated with the rows the individuals
 #'   # and the columns the snp loci.
-#'   geno.list <- ReadMarkerData(path=dirname(complete.name.Cwise), columnwise=TRUE, AA=0, BB=1, 
+#'   geno.list <- ReadMarkerData(AA=0, BB=1, 
 #'                  file_genotype=basename(complete.name.Cwise),  availmemGb=8) 
 #'    
 #'
@@ -1386,33 +1370,98 @@ create.bin  <- function(file_genotype, bin_path, columnwise, AA, AB, BB,
 #'   # and a vector containing the number of rows and columns in the marker gentoype file. 
 #'   print(geno.list)
 #'
-#'   # read in the same ASCII marker genotype file but where the rows are the snp loci and 
-#'   # the individuals are the columns.
-#'   geno.list <- ReadMarkerData(path=dirname(complete.name.Rwise), columnwise=FALSE, AA=0, BB=1, 
-#'                  file_genotype=basename(complete.name.Rwise),  availmemGb=8) 
 #'
 #'  print(geno.list)
 #' @seealso \code{\link{CheckMarkerData}}
-ReadMarkerData <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE, 
+
+ReadMarkerData <- function( filename=NULL,
                            AA=NULL, AB=NULL, BB=NULL, 
-                           file_genotype=NULL, check=FALSE, availmemGb=8, 
-                           csv=FALSE, verbose=FALSE){
+                           check=FALSE, availmemGb=8, 
+                           csv = FALSE,
+                           verbose=FALSE){
 
- ## check of parameters
- check.inputs(path=path, bin_path=bin_path, file_genotype=file_genotype, availmemGb=availmemGb)
 
- ## checking that AA, AB, and BB have been specified. 
+ if (nargs() == 0){
+   ## checks if M.RData which contains list object geno, Mt.bin, and M.bin exist. IF so, it returns list object geno
+
+   if(file.exists(fullpath("M.RData")))
+   {
+       # check that M.bin and Mt.bin exist in this directory
+       if(!file.exists(fullpath("M.bin"))){
+         cat(" The binary file M.bin could not be found in directory ", getwd(), "\n")
+         cat(" ReadMarkerData needs to be run where either an ASCII file or PLINK ped file, containing the marker data, is supplied as input. \n")
+         cat(" Type  help(ReadMarkerData) for more detals \n")
+         stop(" ReadMarkerData has terminated with errors \n")
+       }
+
+       if(!file.exists(fullpath("Mt.bin"))){
+         cat(" The binary file M.bin could not be found in directory ", getwd(), "\n")
+         cat(" ReadMarkerData needs to be run where either an ASCII file or PLINK ped file, containing the marker data, is supplied as input. \n")
+         cat(" Type  help(ReadMarkerData) for more detals \n")
+         stop(" ReadMarkerData has terminated with errors \n")
+       }
+
+       ## looks like everything is good. Return geno list object
+       cat(" The files M.RData, M.bin, and Mt.bin, in directory ", getwd(), " have been found and will be used for the association mapping analysis. \n")
+       return(geno)
+
+   } else {
+     cat(" M.RData could not be found in directory ", getwd(),   "\n")
+     cat(" ReadMarkerData needs to be run where either an ASCII file or PLINK ped file, containing the marker data, is supplied as input. \n")
+     cat(" Type  help(ReadMarkerData) for more detals \n")
+     stop(" ReadMarkerData has terminated with errors \n")
+   }
+
+ }  else {
+    ## If  no AA, AB, or BB has been specified, assuming this is a PLINK ped file
+    if (is.null(AA) && is.null(AB) && is.null(BB)) {
+       cat(" Since AA, AB, and BB have not been set to numeric genotype values, a PLINK ped file is being assumed. \n")
+
+       ## checking if a PLINK file has been specified. 
+       if (is.null(filename)){
+            cat(" The name of the PLINK ped file is missing. \n")
+            cat("  Run ReadMarkerData with filename  set to the name of the PLINK ped input file. \n")
+            stop(" ReadMarkerData has terminated with errors \n")
+       }
+       if (!file.exists(fullpath(filename) )){
+            cat(" The PLINK ped file ", filename, " could not be found in the current directory ", getwd(), "\n")
+            stop(" ReadMarkerData has terminated with errors \n")
+       }
+
+       ## Rcpp function to get dimensions of PLINK ped  file
+       dim_of_bin_M <- getRowColumn(fname=fullpath(filename), csv=FALSE )
+
+       ## Rcpp function to create binary packed M and Mt file 
+       create.bin(fullpath(filename), availmemGb, dim_of_bin_M,  verbose  )
+
+       binfileM <- fullpath("M.bin")
+       binfileMt <- fullpath("Mt.bin")
+
+
+
+   }  else {
+      ## Assuming an ASCII file that may be comma separated with numeric genotypes that need to be mapped onto AA, AB, and BB. 
+      ## check of parameters
+      check.inputs(file_genotype=filename, availmemGb=availmemGb)
+
  ## Has AA, AB, BB been assigned numeric values
-  if(is.null(AA) |  is.null(BB))
-  {
-     stop(" AA and BB must be assigned a numeric value \n")
+  if(is.null(AA) ||  is.null(BB))
+  { 
+     cat(" The function parameters AA and BB be assigned a numeric value since an ASCII file is being assumed. \n")
+     cat(" Type help(ReadMarkerData) for help on how to input data. \n")
+     stop(" ReadMarkerData has terminated with errors \n")
   }
 
-  if(!is.numeric(AA) | !is.numeric(BB))
-     stop(" AA and/or BB must be an integer value corresponding to the AA and/or BB genotype, respectively,  in the marker genotype file. ")
-  if(!is.null(AB))
-     if(!is.numeric(AB))
-       stop(" AB must be an integer value corresponding to the AB genotype in the marker genotype file. ")
+  if(!is.numeric(AA) || !is.numeric(BB)){
+     cat(" AA and/or BB must be an integer value corresponding to the AA and/or BB genotype, respectively,  in the ASCII marker genotype file. \n")
+     stop(" ReadMarkerData has terminated with errors \n")
+  }
+  if(!is.null(AB)){
+     if(!is.numeric(AB)){
+     cat(" AB must be an integer value corresponding to the AB genotype in the ASCII marker genotype file. ")
+     stop(" ReadMarkerData has terminated with errors \n")
+     }
+  }
   ## if there are no hets. 
   if(is.null(AB))
      AB <- 18923282  ## no hets so setting it to something weird
@@ -1421,46 +1470,27 @@ ReadMarkerData <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
 
  ## checking for a correct genotype file
  if(check)
-   CheckMarkerData(fnameIN=file_genotype, dirPath=path, AA=AA, AB=AB, BB=BB, 
+   CheckMarkerData(fnameIN=filename, dirPath=path, AA=AA, AB=AB, BB=BB, 
                   check_num_geno_in_row=TRUE, check_genotypes=TRUE, csv=csv)
 
- if(.Platform$OS.type == "unix") {
-    genofile <- paste(path, "/", file_genotype, sep="")
-  } else {
-   genofile <- paste(path, "\\", file_genotype, sep="")
-  }
+ genofile <- fullpath( filename) 
 
-
- if(.Platform$OS.type == "unix") {
-    bin_path <- paste(bin_path, "/",  sep="")
-  } else {
-   bin_path <- paste(bin_path, "\\",  sep="")
-  }
 
 
   ## Rcpp function to get dimensions of ASCII genotype file
-  if (columnwise){
-    dim_of_bin_M <- getRowColumn(fname=genofile, csv=csv )
-  } else {
-    dim_of_bin_M <- getRowColumn(fname=genofile, csv=csv )
-    dim_of_bin_M <- c(dim_of_bin_M[2], dim_of_bin_M[1])
-  }
-
-
+  dim_of_bin_M <- getRowColumn(fname=genofile, csv=csv )
 
 
   ## Rcpp function to create binary packed M and Mt file from 
   ## columnwise or non-columnwise data
-  create.bin(genofile, bin_path, columnwise, AA, AB, BB, availmemGb, 
+  create.bin(genofile, AA, AB, BB, availmemGb, 
                         dim_of_bin_M, csv, verbose  )
   
-  if(.Platform$OS.type == "unix") {
-    binfileM <- paste(bin_path, "/", "M.bin", sep="")
-    binfileMt <- paste(bin_path, "/", "Mt.bin", sep="")
-  } else {
-   binfileM <- paste(bin_path, "\\", "M.bin", sep="")
-   binfileMt <- paste(bin_path, "\\", "Mt.bin", sep="")
-  }
+    binfileM <- fullpath("M.bin")
+    binfileMt <- fullpath("Mt.bin")
+
+ 
+  }  ## end if else nargs()==1  (PLINK case)
 
 
   return(list("binfileM"=binfileM, "binfileMt"=binfileMt, 
@@ -1468,7 +1498,11 @@ ReadMarkerData <- function(path=getwd(), bin_path=getwd(), columnwise=TRUE,
               "columnwise"=columnwise) )
 
 
-}
+
+
+  } ## end if else nargs()==0
+
+}  ## end function call ReadMarkerData
 
 
 
