@@ -1,11 +1,10 @@
-.form_results <- function(trait, selected_loci, map, colname.trait, colname.feffects, bin_path, indxNA,
+.form_results <- function(trait, selected_loci, map, colname.trait, colname.feffects, indxNA,
                            numcores, availmemGb, verbose, herit, extBIC )
 {
   if (length(selected_loci) > 1){
    sigres <- list(trait=trait,
                     colname.trait = colname.trait, 
                     colname.feffects = colname.feffects,
-                    bin_path = bin_path,
                     indxNA = indxNA,
                     Mrk=map[[1]][selected_loci], 
                     Chr=map[[2]][selected_loci], 
@@ -20,7 +19,6 @@
    sigres <- list(trait=trait,
                     colname.trait = colname.trait, 
                     colname.feffects = colname.feffects,
-                    bin_path = bin_path,
                     indxNA = indxNA,
                     Mrk=NA,
                     Chr=NA,
@@ -217,10 +215,9 @@ if(!is.matrix(Xmat))
     if (verbose)
          cat(" Calculating BLUPs and their variances for full model. \n")
     ## not enough memory for this ......
-    bin_path <- dirname(geno[["binfileM"]])
      gc()
      ## load("everything.RData")   ## just for testing ... 
-     a_and_vara  <- calculate_a_and_vara(bin_path=bin_path,  maxmemGb=availmemGb, 
+     a_and_vara  <- calculate_a_and_vara(maxmemGb=availmemGb, 
                                             dims=geno[["dim_of_bin_M"]],
                                             selectedloci = selected_loci,
                                             invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
@@ -247,7 +244,7 @@ if(!is.matrix(Xmat))
 
 #' @title multiple locus association mapping 
 #' @description \code{multiple_locus_am} is used to perform multiple locus 
-#' association mapping via multi-locus whole-genome  association mapping (AMplus)
+#' association mapping via multi-locus whole-genome  association mapping (AMplusTEST)
 #' @param numcores a numeric value for the number of cores that are available for distributed computing. 
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). This 
 #' should be set to the maximum practical value of available memory for the analyis. 
@@ -315,26 +312,26 @@ if(!is.matrix(Xmat))
 #' @examples
 #'   # READ MAP INFORMATION
 #'   map.file.loc <- system.file("extdata", "mapexample.txt", 
-#'                                    package="AMplus")
-#'   map.df <- read.map(path=dirname(map.file.loc),  
-#'                       file_map=basename(map.file.loc)) 
+#'                                    package="AMplusTEST")
+#'   map.df <- read.map(
+#'                       filename=map.file.loc) 
 #'
 #'
 #'   # READ GENOTYPE INFORMATION
 #'   #  0,1 genotypes
 #'   #  column wise marker data
 #'   gen.file.loc <- system.file("extdata", "genoexampleCwise.txt", 
-#'                                      package="AMplus")
-#'   geno.list <- ReadMarkerData(path=dirname(gen.file.loc), 
-#'                               columnwise=TRUE, AA=0, BB=1, 
-#'                               file_genotype=basename(gen.file.loc),  
+#'                                      package="AMplusTEST")
+#'   geno.list <- ReadMarkerData(
+#'                               AA=0, BB=1, 
+#'                               filename=gen.file.loc,  
 #'                               availmemGb=8) 
 #'  
 #'   # READ PHENOTYPIC INFORMATION
-#' phen.file.loc <- system.file("extdata", "phenoexample.csv", package="AMplus")
+#' phen.file.loc <- system.file("extdata", "phenoexample.csv", package="AMplusTEST")
 #'   
-#' phenodf <- read.phenotypes(path=dirname(phen.file.loc),  
-#'                              file_phenotype=basename(phen.file.loc), 
+#' phenodf <- read.phenotypes(
+#'                              filename=phen.file.loc, 
 #'                              csv=TRUE) 
 #'                                
 #'  # PERFORM Whole-Genome Multi-locus Association Mapping
@@ -389,13 +386,9 @@ multiple_locus_am <- function(numcores=1,availmemGb=8,
 
   if(ngpu > 0 ){
 # library(rcppMagmaSYEVD)
-## caters for the two ways data can be inputed into AMplus
-if(geno[["columnwise"]]){
+## caters for the two ways data can be inputed into AMplusTEST
      cat(" oooooooooooooooo \n")
        rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
-    } else {
-       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][2],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
-    } 
   }
 
 
@@ -422,7 +415,6 @@ currentX <- do.call(.build_design_matrix, Args)
 
    ## based on selected_locus, form model matrix X
   currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus,
-                          bin_path = dirname(geno[["binfileM"]]),
                           dim_of_bin_M=geno[["dim_of_bin_M"]],
                           indxNA = indxNA,
                           map=map, availmemGb = availmemGb)  
@@ -483,7 +475,7 @@ currentX <- do.call(.build_design_matrix, Args)
      .print_header()
      .print_final(selected_loci, map, herit, extBIC)
      sigres <- .form_results(trait, selected_loci, map, colname.trait, colname.feffects, 
-                     dirname(geno[["binfileM"]]), indxNA, numcores, availmemGb, verbose, herit, extBIC )   
+                     indxNA, numcores, availmemGb, verbose, herit, extBIC )   
    }  ## end if else
 
 
@@ -496,7 +488,7 @@ currentX <- do.call(.build_design_matrix, Args)
          ## under this new model. 
          .print_final(selected_loci[-length(selected_loci)], map, herit, extBIC)
          sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map, colname.trait, colname.feffects, 
-                     dirname(geno[["binfileM"]]), indxNA, numcores, availmemGb, verbose, herit, extBIC )   
+                     indxNA, numcores, availmemGb, verbose, herit, extBIC )   
     }
  
   }  ## end while continue

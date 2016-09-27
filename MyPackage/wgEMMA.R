@@ -12,11 +12,15 @@
 
 
 ## internal function to get absolute path name under unix and windows
+## but only if absolute path has not already been specified. 
 fullpath <- function(fname){
-  if(.Platform$OS.type == "unix") {
-    filen <- paste(getwd(), "/", fname, sep="")
-  } else {
-   filen <- paste(getwd(), "\\", fname, sep="")
+ ## check if full path has been given
+  if (! (length(grep("/", fname)) > 0 || length(grep("[\\]", fname)) > 0 ) ){
+     if(.Platform$OS.type == "unix") {
+       filen <- paste(getwd(), "/", fname, sep="")
+     } else {
+      filen <- paste(getwd(), "\\", fname, sep="")
+     }
   }
   return(fname)
 }
@@ -474,7 +478,7 @@ if(!is.list(geno)){
 }
 
 nms <- names(geno)
-indx <- match(nms, c("binfileM", "binfileMt", "dim_of_bin_M", "columnwise"))
+indx <- match(nms, c("binfileM", "binfileMt", "dim_of_bin_M" ))
 if(any(is.na(indx))){
   cat(" Error: there is a problem with the list structure of the geno object. \n")
   cat("        It should contain the elements binfileM, binfileMt, and dim_of_bin_M. \n")
@@ -591,11 +595,6 @@ if(is.null(map)){
 #' @description
 #' \code{CheckMarkerData} performs various checks on the marker genotype file.
 #' @param fnameIN  character vector containing the name of the marker genotype file
-#' @param dirPath  character vector contain the directory path to where the marker genotype file is located. 
-#' @param columnwise a logical value. When \code{TRUE},  each row contains an individuals genotypes and each 
-#'           column contains a marker locus\' genotypes. When \code{FALSE}, each row contains a marker locus\'s
-#'           genotypes and each  column contains an individual\'s genotypes. 
-#'                    When \code{FALSE}, a row contains the data from a marker locus. 
 #' @param AA       integer value corresponding to the AA genotype in the marker genotype file. This must be specified. 
 #' @param AB       integer value corresponding to the AB genotype in the marker genotype file. This can be left unspecified 
 #'                  if there are no hets.
@@ -621,8 +620,7 @@ if(is.null(map)){
 #' @return  a list is returned with elements \code{file_exists} and \code{num_genotypes_per_row}. \code{num_genotypes_per_row}
 #'          will be \code{NULL} unless the \code{check_num_geno_in_row} parameter has been set to \code{TRUE}.
 #' @seealso \code{\link{ReadMarkerData}}
-CheckMarkerData <- function(fnameIN=NULL, dirPath=getwd(),
-                           columnwise= TRUE, 
+CheckMarkerData <- function(fnameIN=NULL, 
                            AA=NULL,
                            AB=NULL,
                            BB=NULL,
@@ -633,7 +631,6 @@ CheckMarkerData <- function(fnameIN=NULL, dirPath=getwd(),
  ## function to perform a series of tests on the genotype file
  ## Args
  ##      fnameIN     file name of ASCII genotype file (no header file handling yet)
- ##      dirPath     path to ASCII genotype file
  ##      check_num_geno_in_row  if TRUE, then count.fields is run to check that the 
  ##                             number of fields per row is the same. This can take a 
  ##                             long time if the file is large. 
@@ -642,15 +639,9 @@ CheckMarkerData <- function(fnameIN=NULL, dirPath=getwd(),
   res <- list(file_exists=TRUE, num_genotypes_per_row=NULL) 
 
 
-  if(.Platform$OS.type == "unix") {
-    dir_path  <- paste(dirPath, "/",  sep="")
-  } else {
-    dir_path    <- paste(dirPath, "\\",  sep="")
-  }
-
-  file_geno <- paste(dir_path, fnameIN, sep="")
 
 
+  file_geno <- fullpath(fnameIN)
 
   ## does the file exist
   if(!file.exists(file_geno))
@@ -897,13 +888,12 @@ return(a)
 
 
 
-mistake_calculate_reduced_a <- function(varG=NULL, bin_path=getwd(), P=NULL, y=NULL, availmemGb=8, dim_of_bin_M=NULL, 
+mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8, dim_of_bin_M=NULL, 
                                  selected_loci=NA, verbose = FALSE)
 {
  ## Rcpp function to calculate the BLUP (a) values under a dimension reduced model
  ## Args:
  ##    varG is a scalar value
- ##    bin_path  is bin director to Mt which is a p x n matrix
  ##    P   is a n x n matrix
  ##    y   is a n x 1 vector
  ##
@@ -932,15 +922,10 @@ mistake_calculate_reduced_a <- function(varG=NULL, bin_path=getwd(), P=NULL, y=N
 
   }
 
-if(.Platform$OS.type == "unix") {
-    bin_path  <- paste(bin_path, "/",  sep="")
-} else {
-   bin_path    <- paste(bin_path, "\\",  sep="")
-}
 
 
   ycolmat <- matrix(data=y, ncol=1)  ## makes it easier when dealing with this in Rcpp
-  fnamebin <- paste(bin_path, "Mt.bin", sep="")
+  fnamebin <- fullpath("Mt.bin")
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
   ar <- calculate_reduced_a_rcpp(f_name_bin = fnamebin, varG=varG, P=P, 
                                  y=ycolmat, max_memory_in_Gbytes=availmemGb, 
@@ -961,7 +946,7 @@ return(ar)
 
 
 
-calculate_a_and_vara <- function(bin_path=getwd(), maxmemGb=8, dims=NULL,
+calculate_a_and_vara <- function(maxmemGb=8, dims=NULL,
                          selectedloci = NA,
                          invMMtsqrt=NULL, transformed_a=NULL, transformed_vara=NULL,
                          verbose = FALSE,
@@ -970,8 +955,6 @@ calculate_a_and_vara <- function(bin_path=getwd(), maxmemGb=8, dims=NULL,
  ## an Rcpp function to take dimension reduced a (BLUP) values 
  ## and transform them into the original a (BLUP) values and their variances 
  ## Args:
- ##   bin_path         path to the location of the binary file containing the 
- ##                              transposed M matrix
  ##   maxmemGb         maximum available memory (in Gigabytes) that are available for use
  ##   dims             a 2 element numeric vector with the number of rows,columns in M 
  ##   invMMtsqrt       a matrix object of the form (M %*% M^T)^{-0.5}
@@ -982,16 +965,7 @@ calculate_a_and_vara <- function(bin_path=getwd(), maxmemGb=8, dims=NULL,
 
 
 
-if(.Platform$OS.type == "unix") {
-    bin_path  <- paste(bin_path, "/",  sep="")
-} else {
-   bin_path    <- paste(bin_path, "\\",  sep="")
-}
-
-
-
-  file_bin <- paste(bin_path, "Mt.bin",sep="")
-
+  file_bin <- fullpath("Mt.bin")
   if(!file.exists(file_bin)){
       cat("\n\n  ERROR: ", file_bin, " does not exist and it should have been created. \n\n")
       stop()
@@ -1096,11 +1070,8 @@ if(!is.null(availmemGb))
 
 if(!is.null(file_genotype))
 {
-  if(.Platform$OS.type == "unix") {
-    genofile <- paste(getwd(), "/", file_genotype, sep="")
-  } else {
-   genofile <- paste(getwd(), "\\", file_genotype, sep="")
-  }
+  genofile <- fullpath(file_genotype)
+
   if(!file.exists(genofile)){
     msg <- paste(" Cannot find genotype file ", genofile, sep="")
     stop(msg)
@@ -1110,11 +1081,7 @@ if(!is.null(file_genotype))
 
 if(!is.null(file_phenotype))
 { 
-  if(.Platform$OS.type == "unix") {
-    phenofile <- paste(getwd(), "/", file_phenotype, sep="")
-  } else {
-   phenofile <- paste(getwd(), "\\", file_phenotype, sep="")
-  }
+  phenofile <- fullpath(file_phenotype)
 
   if(!file.exists(phenofile)){
     msg <- paste(" Cannot find phenotype file ", phenofile, sep="")
@@ -1129,8 +1096,7 @@ if(!is.null(file_phenotype))
 
 #' @title Read phenotype file
 #' @description Read in the phenotypic data
-#' @param path  a character vector containing the absolute path for where the phenotype file is located.
-#' @param file_phenotype a character vector containgin the name of the phenotype file.
+#' @param filename a character vector containinig the name of the phenotype file.
 #' @param header a logical value. When \code{TRUE}, the first row of the file contains the names of the columns. 
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. 
 #' @details
@@ -1150,24 +1116,20 @@ if(!is.null(file_phenotype))
 #' # Read in  example phenotypic data from ./inst/extdata/
 #' 
 #' # find the full location of the phenotypic data 
-#' complete.name <- system.file("extdata", "phenoexample.csv", package="AMplus")
+#' complete.name <- system.file("extdata", "phenoexample.csv", package="AMplusTEST")
 #'   
 #' # read in phenotypic data which is in csv format
-#' phenodata <- read.phenotypes(path=dirname(complete.name),  
-#'                              file_phenotype=basename(complete.name), 
+#' phenodata <- read.phenotypes(filename=complete.name, 
 #'                              csv=TRUE) 
 #'                                
 #'  ## print a couple of lines of the data file
 #'  head(phenodata)
-read.phenotypes <- function(path=getwd() , file_phenotype = NULL, header=TRUE, csv=FALSE){
+read.phenotypes <- function(filename = NULL, header=TRUE, csv=FALSE){
 
-  check.inputs(path=path, file_phenotype=file_phenotype)
+  phenofile <- fullpath(filename)
+  check.inputs(file_phenotype=phenofile)
 
-  if(.Platform$OS.type == "unix") {
-    phenofile <- paste(path, "/", file_phenotype, sep="")
-  } else {
-   phenofile <- paste(path, "\\", file_phenotype, sep="")
-  }
+
   sep <- ""
   if(csv) sep=","
   phenos <- read.table(phenofile, header=header, sep=sep)
@@ -1198,8 +1160,7 @@ cat("\n Warning: if the column classes are incorrect, these will need to be chan
 
 #' @title Read map file
 #' @description Read in the marker map  data
-#' @param path  a character vector containing the absolute path for where the map file is located.
-#' @param file_map a character vector containing the name of the map file.
+#' @param filename a character vector containing the name of the map file.
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. 
 #' @details
 #' Here, \code{read.map} reads in map data into the package. A space  separated
@@ -1221,21 +1182,18 @@ cat("\n Warning: if the column classes are incorrect, these will need to be chan
 #' # Read in  example map data from ./inst/extdata/
 #' 
 #' # find the full location of the map data 
-#' complete.name <- system.file("extdata", "mapexample.txt", package="AMplus")
+#' complete.name <- system.file("extdata", "mapexample.txt", package="AMplusTEST")
 #'   
 #' # read in map data 
-#' mapdata <- read.map(path=dirname(complete.name),  
-#'                              file_map=basename(complete.name)) 
+#' mapdata <- read.map(
+#'                              filename=complete.name) 
 #'                                
-read.map  <- function(path=getwd(), file_map = NULL, csv=FALSE)
+read.map  <- function( filename = NULL, csv=FALSE)
 {
- check.inputs(path=path, file_phenotype=file_map)
+ mapfile <- fullpath(filename)
+ check.inputs(file_phenotype=filename)
 
-  if(.Platform$OS.type == "unix") {
-    mapfile <- paste(path, "/", file_map, sep="")
-  } else {
-   mapfile <- paste(path, "\\", file_map, sep="")
-  }
+
   sep=""
   if(csv) sep=","
   map <- read.table(mapfile, header=TRUE, sep=sep)
@@ -1304,7 +1262,7 @@ if (!is.null(AA) && !is.null(AB) && !is.null(BB)){
 #' \code{ReadMarkerData} reads in space or comma separated genotype data from a file. We assume the three genotypes are 
 #' AA, AB, and BB but the AB genotype may not be present if individuals are inbred. 
 #' \code{ReadMarkerData} reads in the genotypes from the marker genoytpe file.
-#' @param file_genotype character vector containing the name of the marker genotype file.
+#' @param filename character vector containing the name of the marker genotype file.
 #' @param AA       integer value corresponding to the AA genotype in the marker genotype file. This must be specified. 
 #' @param AB       integer value corresponding to the AB genotype in the marker genotype file. This can be left unspecified  if there are no hets. 
 #' @param BB       integer value corresponding to the BB genotype in the marker genotype file. This must be specified. 
@@ -1320,11 +1278,7 @@ if (!is.null(AA) && !is.null(AB) && !is.null(BB)){
 #' \code{ReadMarkerData} reads the marker genoytpes from file and converts it into two binary files:
 #' a binary M file and a binary Mt file. The binary M file is where the rows are the individuals and 
 #' the columns are the marker loci.  The binary Mt file is where the rows are the marker loci and the columns
-#' are the individuals.  This is true regardless of the value of \code{columnwise}. 
-#'
-#' \code{columnwise} allows genotype data to be read where the data may be organized as 
-#' each column contains the genotypes for a marker locus (\code{columnwise} = \code{TRUE}) or 
-#' each row contains the genotypes for a marker locus (\code{columnwise} =  \code{FALSE}).
+#' are the individuals.  
 #'
 #' The two binary files created by \code{ReadMarkerData} are called M.bin and Mt.bin and they are created in 
 #' the current directory (the directory from which R is being run from).
@@ -1352,7 +1306,7 @@ if (!is.null(AA) && !is.null(AB) && !is.null(BB)){
 #' @examples
 #'   # find the full location of the genotype data that has been 
 #'   # Data contained in ./inst/extdata/.  
-#'   complete.name.Cwise <- system.file("extdata", "genoexampleCwise.txt", package="AMplus")
+#'   complete.name.Cwise <- system.file("extdata", "genoexampleCwise.txt", package="AMplusTEST")
 #'
 #'
 #'   
@@ -1361,7 +1315,7 @@ if (!is.null(AA) && !is.null(AB) && !is.null(BB)){
 #'   # 3 Gbytes of memory has been specified. The file is space separated with the rows the individuals
 #'   # and the columns the snp loci.
 #'   geno.list <- ReadMarkerData(AA=0, BB=1, 
-#'                  file_genotype=basename(complete.name.Cwise),  availmemGb=8) 
+#'                  filename=complete.name.Cwise,  availmemGb=8) 
 #'    
 #'
 #'   # geno.list is a list with elements binfileM, binfileMt, and dim_of_bin_M
@@ -1470,7 +1424,7 @@ ReadMarkerData <- function( filename=NULL,
 
  ## checking for a correct genotype file
  if(check)
-   CheckMarkerData(fnameIN=filename, dirPath=path, AA=AA, AB=AB, BB=BB, 
+   CheckMarkerData(fnameIN=filename,  AA=AA, AB=AB, BB=BB, 
                   check_num_geno_in_row=TRUE, check_genotypes=TRUE, csv=csv)
 
  genofile <- fullpath( filename) 
@@ -1482,7 +1436,6 @@ ReadMarkerData <- function( filename=NULL,
 
 
   ## Rcpp function to create binary packed M and Mt file from 
-  ## columnwise or non-columnwise data
   create.bin(genofile, AA, AB, BB, availmemGb, 
                         dim_of_bin_M, csv, verbose  )
   
@@ -1494,8 +1447,8 @@ ReadMarkerData <- function( filename=NULL,
 
 
   return(list("binfileM"=binfileM, "binfileMt"=binfileMt, 
-               "dim_of_bin_M" = dim_of_bin_M,
-              "columnwise"=columnwise) )
+               "dim_of_bin_M" = dim_of_bin_M
+              ) )
 
 
 
@@ -1507,18 +1460,14 @@ ReadMarkerData <- function( filename=NULL,
 
 
 
-extract_geno <- function(bin_path=NULL, colnum=NULL, availmemGb=8, 
+extract_geno <- function(colnum=NULL, availmemGb=8, 
                           dim_of_bin_M=NULL, 
                           selected_locus=NA,
                           indxNA = NULL )
   {
     ## Rcpp function to extra a column of genotypes from a  binary packed file of M
 
-   if(.Platform$OS.type == "unix") {
-      binfileM <- paste(bin_path, "/", "M.bin", sep="")
-    } else {
-     binfileM <- paste(bin_path, "\\", "M.bin", sep="")
-    }
+    binfileM <- fullpath("M.bin")
     selected_locus <- colnum - 1  ## to be consistent with C++'s indexing starting from 0
     ## AWG if(!any(is.na(indxNA))) indxNA <- indxNA - 1
     if (!(length(indxNA)==0)) indxNA <- indxNA - 1
@@ -1533,7 +1482,7 @@ extract_geno <- function(bin_path=NULL, colnum=NULL, availmemGb=8,
 
 
 
-constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL, 
+constructX <- function(currentX=NULL, loci_indx=NULL, 
                        availmemGb=8, dim_of_bin_M=NULL,
                        indxNA = NULL , map=NULL)
   {
@@ -1547,7 +1496,7 @@ constructX <- function(currentX=NULL, loci_indx=NULL, bin_path=NULL,
    {
      return(currentX)
    } else {
-       genodat <- extract_geno(bin_path=bin_path, colnum=loci_indx, 
+       genodat <- extract_geno(colnum=loci_indx, 
                            availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M,
                            indxNA = indxNA)
       newX <- cbind(currentX, genodat)
