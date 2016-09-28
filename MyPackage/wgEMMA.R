@@ -1215,8 +1215,8 @@ return(map)
 
 
 
-create.bin  <- function(file_genotype,  AA, AB, BB, 
-                         availmemGb, dim_of_bin_M, csv, verbose, type){
+create.bin  <- function(file_genotype=NULL,  AA=NULL, AB=NULL, BB=NULL, 
+                         availmemGb=8, dim_of_bin_M=NULL, csv=FALSE, verbose=FALSE){
  ## an Rcpp function to create the packed binary file of the genotype data M and Mt
  ## from marker data. The marker data may be from an ASCII file or PLINK ped file.
  ## Args
@@ -1239,13 +1239,13 @@ if (!is.null(AA) && !is.null(AB) && !is.null(BB)){
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, csv=csv, verbose = verbose )
 } else {
     ## PLINK ped file
-    createM_rcpp(f_name = file_genotype, f_name_bin = binMfile,  AA=NA, 
-               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , verbose = verbose)
-
-    createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,   AA=NA, 
+    ## using -9 to indicate missing/null genotypes
+    createM_rcpp(f_name = file_genotype, f_name_bin = binMfile,  AA=-9,  AB=-9, BB=-9,
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv=csv, verbose = verbose)
+    createMt_PLINK_rcpp(f_name = file_genotype, f_name_bin = binMtfile,   
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, verbose = verbose )
 
-
+    print(" out of here")
 
 }  ## end if else type
 
@@ -1386,7 +1386,8 @@ ReadMarkerData <- function( filename=NULL,
        dim_of_bin_M <- getRowColumn(fname=fullpath(filename), csv=FALSE )
 
        ## Rcpp function to create binary packed M and Mt file 
-       create.bin(fullpath(filename), availmemGb, dim_of_bin_M,  verbose  )
+
+       create.bin(file_genotype=fullpath(filename), availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M,  verbose=verbose  )
 
        binfileM <- fullpath("M.bin")
        binfileMt <- fullpath("Mt.bin")
@@ -1436,8 +1437,8 @@ ReadMarkerData <- function( filename=NULL,
 
 
   ## Rcpp function to create binary packed M and Mt file from 
-  create.bin(genofile, AA, AB, BB, availmemGb, 
-                        dim_of_bin_M, csv, verbose  )
+  create.bin(file_genotype=genofile, AA=AA, AB=AB, BB=BB, availmemGb=availmemGb, 
+                        dim_of_bin_M=dim_of_bin_M, csv=csv, verbose=verbose  )
   
     binfileM <- fullpath("M.bin")
     binfileMt <- fullpath("Mt.bin")
@@ -1445,7 +1446,11 @@ ReadMarkerData <- function( filename=NULL,
  
   }  ## end if else nargs()==1  (PLINK case)
 
-
+  if(is.null(AA)){
+     ## PLINK ped file which has been converted into a geno file
+     ## need to adjust dim_of_bin_M[2]  -- columns
+     dim_of_bin_M[2]<- (dim_of_bin_M[2] - 6)/2  ## allelic info starts in col 8
+  }
   return(list("binfileM"=binfileM, "binfileMt"=binfileMt, 
                "dim_of_bin_M" = dim_of_bin_M
               ) )
