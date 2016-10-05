@@ -1,11 +1,10 @@
-useDynLib(AMplusTEST)
+useDynLib(AMplus)
 importFrom(Rcpp, evalCpp)
 import(RcppEigen,  matrixcalc, Matrix, data.table )
 
 export(
-   CheckMarkerData,
-   read.phenotypes,
-   ReadMarkerData,
-   read.map,
-   multiple_locus_am,
+   ReadPheno,
+   ReadMarker,
+   ReadMap,
+   AM,
    summarymlam)

@@ -1,4 +1,4 @@
-Package: AMplusTEST
+Package: AMplus
 Type: Package
 Title: Multiple Locus Association Mapping  on a Genome-Wide Scale
 Version: 1.0
@@ -6,7 +6,7 @@ Date: 2016-10-20
 Author: Andrew W. George
 Maintainer: Andrew W. George  <andrew.george@csiro.au>
 email: andrew.george@csiro.au
-Description: The aim of this R package is to make association mapping with sophisticated multiple-locus models on a genome-wide scale routine. To this end, this package only contains a few functions.  There is a function to read in the marker data (ReadMarkerData), a function to read in a marker map if available (ReadMap), a function to read in the phenotypic data (ReadPhenoData), and a function to perform the association mapping (AssocMap). Upon running AssocMap(), a set of snp is returned as the results. This set of snp are the loci in strongest linkage disequilibrium with the genes that are influencing a trait.  Our package can handle data sets larger than the memory capacity of a machine. Computations are also distributed across multiple CPU, implicitly,  if multiple CPU are available.  We have designed our package for unlocking the genetic secrets of quantitative traits but disease traits (affected/unaffected), can also be analysed if the trait is converted into a 0/1 data and if there is a reasonable number of affected and unaffected individuals.  
+Description: The aim of this R package is to make association mapping with sophisticated multiple-locus models on a genome-wide scale routine. To this end, this package only contains a few functions.  There is a function to read in the marker data (ReadMarker), a function to read in a marker map if available (ReadMap), a function to read in the phenotypic data (ReadPheno), and a function to perform the association mapping (AM). Upon running AssocMap(), a set of snp is returned as the results. This set of snp are the loci in strongest linkage disequilibrium with the genes that are influencing a trait.  Our package can handle data sets larger than the memory capacity of a machine. Computations are also distributed across multiple CPU, implicitly,  if multiple CPU are available.  We have designed our package for unlocking the genetic secrets of quantitative traits but disease traits (affected/unaffected), can also be analysed if the trait is converted into a 0/1 data and if there is a reasonable number of affected and unaffected individuals.  
 License: GPL (>= 2)
 Depends:
    R (>= 3.1.3)

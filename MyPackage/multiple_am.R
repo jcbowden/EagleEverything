@@ -1,30 +1,28 @@
-.form_results <- function(trait, selected_loci, map, colname.trait, colname.feffects, indxNA,
-                           numcores, availmemGb, verbose, herit, extBIC )
+.form_results <- function(trait, selected_loci, map,  feffects, indxNA,
+                           ncpu, availmemGb, verbose, herit, extBIC )
 {
   if (length(selected_loci) > 1){
    sigres <- list(trait=trait,
-                    colname.trait = colname.trait, 
-                    colname.feffects = colname.feffects,
+                    feffects = feffects,
                     indxNA = indxNA,
                     Mrk=map[[1]][selected_loci], 
                     Chr=map[[2]][selected_loci], 
                     Pos=map[[3]][selected_loci], 
                     Indx=selected_loci,
-                    numcores=numcores,
+                    ncpu=ncpu,
                     availmemGb=availmemGb,
                     verbose=verbose,
                     herit=herit, 
                     extBIC=extBIC)
   } else {
    sigres <- list(trait=trait,
-                    colname.trait = colname.trait, 
-                    colname.feffects = colname.feffects,
+                    feffects = feffects,
                     indxNA = indxNA,
                     Mrk=NA,
                     Chr=NA,
                     Pos=NA,
                     Indx=selected_loci,
-                    numcores=numcores,
+                    ncpu=ncpu,
                     availmemGb=availmemGb,
                     verbose=verbose,
                     herit=herit, 
@@ -34,7 +32,7 @@ return(sigres)
 }
 
 .print_title <- function(){
-    ## internal fuction: use only in multiple_locus_am function
+    ## internal fuction: use only in AM function
     ## title
     cat("\n\n\n\n")
     cat("            Multiple Locus Association Mapping via WGAM\n")
@@ -42,13 +40,13 @@ return(sigres)
 }
 
 
-.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, colname.feffects=NULL, verbose=FALSE  )
+.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, feffects=NULL, verbose=FALSE  )
 {
-   ## internal fuction: use only in multiple_locus_am function and summaryam function
-   ## build design matrix given character vector colname.feffects of column names
+   ## internal fuction: use only in AM function and summaryam function
+   ## build design matrix given character vector feffects of column names
 
    ## assign model matrix X
-   if(is.null(colname.feffects))
+   if(is.null(feffects))
    {  ## trait + intercept being fitted only
       if(length(indxNA) > 0){
          Xmat <- matrix(data=1, nrow=nrow(pheno[-indxNA,]), ncol=1)
@@ -61,7 +59,7 @@ return(sigres)
       ## trait + fixed effects being fitted. 
      if(length(indxNA)==0)
      {
-        mf <- paste(colname.feffects, collapse=" + ")
+        mf <- paste(feffects, collapse=" + ")
         mf <- paste(" ~ ", mf, sep="")
         mf <- as.formula(mf)
         Xmat <- model.matrix(mf, data=pheno)
@@ -69,12 +67,12 @@ return(sigres)
         # there is an issue with creating Xmat when it includes
         # factors that have some of their levels removed. 
         ph <- pheno[-indxNA,]
-        for(ii in colname.feffects){
+        for(ii in feffects){
            if(is.factor(ph[,ii])){
               ph[,ii] <- as.factor(as.character(ph[,ii]))
            }
         }  ## for    
-        mf <- paste(colname.feffects, collapse=" + ")
+        mf <- paste(feffects, collapse=" + ")
         mf <- paste(" ~ ", mf, sep="")
         mf <- as.formula(mf)
         Xmat <- model.matrix(mf, data=ph)
@@ -92,13 +90,13 @@ if(!is.matrix(Xmat))
 }
 
 
-.calcMMt <- function(geno, availmemGb, numcores, selected_loci, verbose, indxNA)
+.calcMMt <- function(geno, availmemGb, ncpu, selected_loci, verbose, indxNA)
   {
     ## internal function: used only in multilocus_loci_am and summaryam
     ## values passed by environments
     cat(" Inside calcMMt ... \n")
     MMt <- calculateMMt(geno=geno[["binfileM"]], availmemGb=availmemGb, 
-                           numcores=numcores, 
+                           ncpu=ncpu, 
                            dim_of_bin_M = geno[["dim_of_bin_M"]], 
                            selected_loci=selected_loci, verbose = verbose) 
     gc()
@@ -162,16 +160,16 @@ if(!is.matrix(Xmat))
        cat(" Significant marker-trait association found ... \n")
        cat(" Results after iteration ", itnum, "\n")
     }
-    cat(sprintf("%15s  %10s        %10s     %10s    %10s    %10s \n", 
-                 "SNP", "Chrm", "Map Pos",  "Col Number",     "Heritability" ,      "extBIC"))
+    cat(sprintf("%15s  %10s        %10s     %10s        %10s \n", 
+                 "SNP", "Chrm", "Map Pos",  "Col Number",       "extBIC"))
     for(ii in 1:length(selected_loci)){
        if(is.na(selected_loci[ii])){
-       cat(sprintf("%15s  %10s        %10s        %8s           %-4.2f       %-8.2f \n", 
-        "Null Model", " ", " ", " ", h[ii], extBIC[ii] ))
+       cat(sprintf("%15s  %10s        %10s        %8s           %-8.2f \n", 
+        "Null Model", " ", " ", " ", extBIC[ii] ))
        }  else {
-       cat(sprintf("%15s  %10s        %10s       %8s            %-4.2f       %-8.2f \n", 
+       cat(sprintf("%15s  %10s        %10s       %8s            %-8.2f \n", 
         map[[1]][selected_loci[ii]], map[[2]][selected_loci[ii]], as.character(map[[3]][selected_loci[ii]]), 
-             selected_loci[ii], h[ii],
+             selected_loci[ii], 
         extBIC[ii] ))
      }  ## end if else 
    }
@@ -181,9 +179,9 @@ if(!is.matrix(Xmat))
 
 
   .find_qtl <- function(geno, availmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
-                       currentX, error_checking, numcores, verbose, trait, ngpu )
+                       currentX, error_checking, ncpu, verbose, trait, ngpu )
   {
-    ##  internal function: use only with multiple_locus_am
+    ##  internal function: use only with AM
     if(verbose) cat(" Calculating H matrix   \n")
     H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg ) 
     if(verbose) cat(" Calculating P matrix - NOT GPU. \n")
@@ -243,37 +241,40 @@ if(!is.matrix(Xmat))
 }
 
 #' @title multiple locus association mapping 
-#' @description \code{multiple_locus_am} is used to perform multiple locus 
-#' association mapping via multi-locus whole-genome  association mapping (AMplusTEST)
-#' @param numcores a numeric value for the number of cores that are available for distributed computing. 
-#' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). This 
-#' should be set to the maximum practical value of available memory for the analyis. 
-#' @param colname.trait  the name of the column in the phenotypic data file that contains the trait data. The name is case sensitive. 
-#' @param colname.feffects   a character vector containing the column names of 
+#' @description \code{AM} is used for multiple locus association mapping. It can simultaneously 
+#' account for population stratification, familial relatedness, and nuisance fixed effects while 
+#' detecting and mapping multiple marker-trait associations. It doesn't require any parameters to be tuned,
+#' as with regularization technniques nor does it require a significance level or threshold to be set 
+#' Those snp in strongest association with a trait are reported in a table of results. These 
+#' snp map to the genomic regions containing the genes that are influencing the trait. 
+#' @param trait  the name of the column in the phenotypic data file that contains the trait data. The name is case sensitive and must match exactly the column name in the phenotypic data file. 
+#' @param feffects   a character vector containing the column names of 
 #'                        the explanatory/independent variables in the phenotypic data file. If
 #'                        not specified, only an overall mean will be fitted.
-#' @param map   the (data frame) object obtained from running \code{\link{read.map}}. If not specifed, a generic map will 
+#' @param map   the R object obtained from running \code{\link{ReadMap}}. If not specifed, a generic map will 
 #'              be assumed. 
-#' @param pheno  the (data frame) object  obtained  from running \code{\link{read.phenotypes}}.
-#' @param geno   the (list) object obtained from running \code{\link{ReadMarkerData}}.
-#' @param alpha  the type 1 error rate where setting \code{alpha} to 0.05 say is a 5\% error rate.
+#' @param pheno  the R  object  obtained  from running \code{\link{ReadPheno}}. This must be specified.
+#' @param geno   the R  object obtained from running \code{\link{ReadMarker}}. This must be specified. 
 #' @param  error_checking a logical value. When \code{TRUE}, 
 #' the numericial stability of the dimension reduction is checked. That is, individuals 
 #' with near identical marker genotypes can cause numerical issues, and are reported 
 #' when \code{error_checking} has been set to \code{TRUE}. 
+#' @param ncpu a numeric value for the number of cores that are available for distributed computing. 
+#' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). This 
+#' should be set to the maximum practical value of available memory for the analyis. 
 #' @param  verbose      a logical value. When \code{TRUE}, extra output is returned 
 #'  to the screen for monitoring progress. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
 #' qtl that are to be included in the model. 
 #' @param ngpu   a integer value for the number of GPU available for computation. 
 #' @details
-#' The steps to running \code{multiple_locus_am} are as follows:
+#' The steps to running \code{AM} are as follows:
 #' \itemize{
-#' \item{Step 1:}{ Read in  genotypic information. Use \code{\link{ReadMarkerData}} to read in the marker data.}
-#' \item{Step 2:}{ Read in phenotypic information.  Use \code{\link{read.phenotypes}} to read in the phenotypic data.}
-#' \item{Step 3:}{ Read in map information. Use \code{\link{read.map}} to read in 
+#' \item{Step 1:}{ Read in  genotypic information. Use \code{\link{ReadMarker}} to read in the marker data.}
+#' \item{Step 2:}{ Read in phenotypic information.  Use \code{\link{ReadPheno}} to read in the phenotypic data.}
+#' \item{Step 3:}{ Read in map information. Use \code{\link{ReadMap}} to read in 
 #'  the marker map. Omit this step if marker map is unknown. A generic map will be created.}
-#' \item{Step 4:}{ Perform WGAM analysis. Use \code{multiple_locus_am} to identify multiple 
+#' \item{Step 4:}{ Perform WGAM analysis. Use \code{AM} to identify multiple 
 #' significant marker-trait associations, simultaneously.}  
 #' }
 #'
@@ -284,15 +285,15 @@ if(!is.matrix(Xmat))
 #' cannot contain any missing data.  The phenotypic file is allowed to contain multiple traits
 #' and fixed effects.  
 #'  
-#' The trait data and fixed effects data are  specified by setting \code{colname.trait} 
-#'  and \code{colname.feffects}, respectively. \code{colname.trait} can only contain a single
-#'  character string for the trait name.  \code{colname.feffects} can be a character vector 
+#' The trait data and fixed effects data are  specified by setting \code{trait} 
+#'  and \code{feffects}, respectively. \code{trait} can only contain a single
+#'  character string for the trait name.  \code{feffects} can be a character vector 
 #'  if multiple fixed effects are to be included in the linear mixed model. Whether the 
 #'  fixed effects are treated as a covariate or factor is dependent upon the class of 
-#'  the associated data columns in the data frame obtained from \code{\link{read.phenotypes}}. 
+#'  the associated data columns in the data frame obtained from \code{\link{ReadPheno}}. 
 #'
 #'    STILL BEING WRITTEN .... 
-#' The \code{multiple_locus_am} function is an R/Rcpp implementation of multi-locus whole-genome 
+#' The \code{AM} function is an R/Rcpp implementation of multi-locus whole-genome 
 #'  association mapping. The method is a 
 #' multiple locus method that is a hybrid of whole-genome and multi-locus association mapping. 
 #' Briefly, a multiple locus model
@@ -305,79 +306,89 @@ if(!is.matrix(Xmat))
 #' NEEDS MORE  Add something about stopping rule
 #'
 #'
-#' @seealso \code{\link{ReadMarkerData}}, and \code{\link{read.phenotypes}}.
+#' @seealso \code{\link{ReadMarker}}, \code{\link{ReadPheno}}, and \code{\link{ReadMap}}
 #'
 #' @return
 #' something here .... 
 #' @examples
-#'   # READ MAP INFORMATION
-#'   map.file.loc <- system.file("extdata", "mapexample.txt", 
-#'                                    package="AMplusTEST")
-#'   map.df <- read.map(
-#'                       filename=map.file.loc) 
+#'   #---------------
+#'   # read the map 
+#'   #---------------
+#'   #
+#'   # File is a plain space separated text file with the first row 
+#'   # the column headings
+#'   complete.name <- system.file("extdata", "map.txt", 
+#'                                    package="AMplus")
+#'   map_obj <- ReadMap(filename=complete.name) 
 #'
+#'  # to look at the first few rows of the map file
+#'  head(map_obj)
 #'
-#'   # READ GENOTYPE INFORMATION
-#'   #  0,1 genotypes
-#'   #  column wise marker data
-#'   gen.file.loc <- system.file("extdata", "genoexampleCwise.txt", 
-#'                                      package="AMplusTEST")
-#'   geno.list <- ReadMarkerData(
-#'                               AA=0, BB=1, 
-#'                               filename=gen.file.loc,  
-#'                               availmemGb=8) 
+#'   #------------------
+#'   # read marker data
+#'   #------------------
+#'   # Reading in a PLINK ped file 
+#'   # and setting the available memory on the machine for the reading of the data to 8Gbytes
+#'   complete.name <- system.file("extdata", "geno.ped", 
+#'                                      package="AMplus")
+#'   geno_obj <- ReadMarker(filename=complete.name,  type="PLINK", availmemGb=8) 
 #'  
-#'   # READ PHENOTYPIC INFORMATION
-#' phen.file.loc <- system.file("extdata", "phenoexample.csv", package="AMplusTEST")
+#'   #----------------------
+#'   # read phenotypic data
+#'   #-----------------------
+#'
+#'   # Read in a plain text file with data on a single trait and two covariates
+#'   # The first row of the text file contains the column names "trait", "cov1", and "cov2". 
+#'   complete.name <- system.file("extdata", "pheno.txt", package="AMplus")
 #'   
-#' phenodf <- read.phenotypes(
-#'                              filename=phen.file.loc, 
-#'                              csv=TRUE) 
-#'                                
-#'  # PERFORM Whole-Genome Multi-locus Association Mapping
-#'   res <- multiple_locus_am(colname.trait = "trait1",
-#'                            colname.feffects = c("cov1","cov2", "fac"),
-#'                            map = map.df,
-#'                            pheno = phenodf,
-#'                            geno = geno.list, verbose=TRUE, availmemGb=8)
+#'   pheno_obj <- ReadPheno(filename=complete.name)
+#'            
+#'   #-------------------------------------------------------
+#'   # Perform multiple-locus genome-wide association mapping 
+#'   #-------------------------------------------------------                   
+#'   res <- AM(trait = "trait",
+#'                            feffects = c("cov1", "cov2"),
+#'                            map = map_obj,
+#'                            pheno = pheno_obj,
+#'                            geno = geno_obj, availmemGb=8)
 #'
 #'
 #'
 #'
 #'
-multiple_locus_am <- function(numcores=1,availmemGb=8, 
-                              colname.trait = NULL, 
-                              colname.feffects  = NULL,
+AM <- function(trait=NULL, 
+               feffects  = NULL,
                               map = NULL,
                               pheno=NULL, 
                               geno=NULL, 
-                              alpha=0.05, error_checking=FALSE, 
+                              ncpu=1,availmemGb=8, 
                               verbose=FALSE,
+                              error_checking=FALSE, 
                               maxit=20, ngpu=0){
+
  ## Core function for performing whole genome association mapping with EMMA
  ## Args
- ## numcores        number of cores available for computation
+ ## ncpu        number of cores available for computation
  ## memoryGb        maximum amount of working memory available for computation
  ## pheno           data frame 
  ##                 remaining columns are explanatory variables to include in the model. If a numeric vector, then it 
  ##                 is only a response to be fitted. 
- ## geno            if geno is a matrix or data frame, then the user has not ReadMarkerData and a bin packed file
+ ## geno            if geno is a matrix or data frame, then the user has not ReadMarker and a bin packed file
  ##                 has not been created. If it is a character string, then it is the file location of the binary packed files. 
- ## alpha           significance level at which to perform the likelihood ratio test
  ## error_checking  when true, it performs some checks of the calculations
  ## maxit           maximum number of qtl to include in the model
  ## ngpu            number of GPU available for computation
 
  ## check parameter inputs
- check.inputs.mlam(numcores, availmemGb, colname.trait, colname.feffects, 
-                     map, pheno, geno, alpha )
+ check.inputs.mlam(ncpu, availmemGb, trait, feffects, 
+                     map, pheno, geno )
  ## ADD CHECK TO MAKE SURE PHENO AND GENO NROWS ARE CORRECT - NOT BEING CHECKED AT THE MOMENT
  selected_loci <- NA
  new_selected_locus <- NA
  herit <- vector("numeric", 0)
  extBIC <- vector("numeric", 0)
  ## assign trait 
- trait <-  pheno[[colname.trait]]
+ trait <-  pheno[[trait]]
 
  ## check for NA's in trait
  indxNA <- check.for.NA.in.trait(trait=trait)
@@ -386,7 +397,7 @@ multiple_locus_am <- function(numcores=1,availmemGb=8,
 
   if(ngpu > 0 ){
 # library(rcppMagmaSYEVD)
-## caters for the two ways data can be inputed into AMplusTEST
+## caters for the two ways data can be inputed into AMplus
      cat(" oooooooooooooooo \n")
        rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
   }
@@ -399,7 +410,7 @@ multiple_locus_am <- function(numcores=1,availmemGb=8,
 
  ## build design matrix currentX
  cat(" Forming currentX \n")
- Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, colname.feffects=colname.feffects, verbose=verbose )
+ Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, feffects=feffects, verbose=verbose )
 currentX <- do.call(.build_design_matrix, Args) 
 
  ## print tile
@@ -423,7 +434,7 @@ currentX <- do.call(.build_design_matrix, Args)
 
     ## calculate Ve and Vg
     Args <- list(geno=geno,availmemGb=availmemGb,
-                    numcores=numcores,selected_loci=selected_loci,
+                    ncpu=ncpu,selected_loci=selected_loci,
                     verbose=verbose, indxNA=indxNA)
 
     if(itnum==1){
@@ -462,7 +473,7 @@ currentX <- do.call(.build_design_matrix, Args)
      ARgs <- list(geno=geno,availmemGb=availmemGb, indxNA=indxNA, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
-                 numcores=numcores, verbose=verbose, trait=trait, ngpu=ngpu)
+                 ncpu=ncpu, verbose=verbose, trait=trait, ngpu=ngpu)
       cat(" finding QTL ..,. \n")
       new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
      gc()
@@ -474,8 +485,8 @@ currentX <- do.call(.build_design_matrix, Args)
      continue <- FALSE
      .print_header()
      .print_final(selected_loci, map, herit, extBIC)
-     sigres <- .form_results(trait, selected_loci, map, colname.trait, colname.feffects, 
-                     indxNA, numcores, availmemGb, verbose, herit, extBIC )   
+     sigres <- .form_results(trait, selected_loci, map,  feffects, 
+                     indxNA, ncpu, availmemGb, verbose, herit, extBIC )   
    }  ## end if else
 
 
@@ -487,8 +498,8 @@ currentX <- do.call(.build_design_matrix, Args)
          ## need to remove the last selected locus since we don't go on and calucate its H and extBIC 
          ## under this new model. 
          .print_final(selected_loci[-length(selected_loci)], map, herit, extBIC)
-         sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map, colname.trait, colname.feffects, 
-                     indxNA, numcores, availmemGb, verbose, herit, extBIC )   
+         sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  feffects, 
+                     indxNA, ncpu, availmemGb, verbose, herit, extBIC )   
     }
  
   }  ## end while continue
@@ -499,7 +510,7 @@ currentX <- do.call(.build_design_matrix, Args)
 
 return( sigres )
 
-} ## end multiple_locus_am
+} ## end AM
 
 
 

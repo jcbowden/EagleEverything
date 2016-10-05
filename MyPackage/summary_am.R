@@ -20,19 +20,19 @@ GenomicRel = function(M){
 }
 
 
-## summarize findings from multiple_locus_am
+## summarize findings from AM
 ## produce p values and amount of variance explained. 
 
 
 #' @title Summary of multiple locus association mapping results
-#' @description A summary of the results from \code{\link{multiple_locus_am}}
-#' @param resam  the (list) object obtained from running \code{\link{multiple_locus_am}}.
-#' @param  pheno  the (data frame) object  obtained  from running \code{\link{read.phenotypes}}.
-#' @param geno   the (list) object obtained from running \code{\link{ReadMarkerData}}.
-#' @param map   the (data frame) object obtained from running \code{\link{read.map}}.  
+#' @description A summary of the results from \code{\link{AM}}
+#' @param resam  the (list) object obtained from running \code{\link{AM}}.
+#' @param  pheno  the (data frame) object  obtained  from running \code{\link{ReadPheno}}.
+#' @param geno   the (list) object obtained from running \code{\link{ReadMarker}}.
+#' @param map   the (data frame) object obtained from running \code{\link{ReadMap}}.  
 #' If not specifed, a generic map will be assumed. 
 #' @details
-#' \code{summarymlam} produces a summary table of the results from running \code{\link{multiple_locus_am}}. The 
+#' \code{summarymlam} produces a summary table of the results from running \code{\link{AM}}. The 
 #' summary table contains a separate row for each marker locus that is significantly associated with the trait.
 #' Each row of the table contains the marker name, which chromosome it resides, its position, the size of 
 #' the additive effect of the putative qtl that is in linkage disequilibrium with the marker locus, 
@@ -40,7 +40,7 @@ GenomicRel = function(M){
 #'
 #' The amount of phenotypic variance explained by the selected loci is also reported.    
 #'
-#' @seealso \code{\link{multiple_locus_am}}
+#' @seealso \code{\link{AM}}
 #'
 summarymlam <- function(resam=NULL, pheno=NULL, geno=NULL, map=NULL)
 {
@@ -67,7 +67,7 @@ summarymlam <- function(resam=NULL, pheno=NULL, geno=NULL, map=NULL)
 
   ## build enviornmental effects design matrix
   baseX <- .build_design_matrix(pheno=pheno,  indxNA=resam$indxNA, 
-                                    colname.feffects=resam$colname.feffects,
+                                    feffects=resam$feffects,
                                    verbose=resam$verbose)
 
 
@@ -75,13 +75,12 @@ summarymlam <- function(resam=NULL, pheno=NULL, geno=NULL, map=NULL)
   fullX <- baseX
   for(loc in resam$Indx){
         fullX <- constructX(currentX=fullX, loci_indx=loc,
-                               bin_path = resam$bin_path, 
                                dim_of_bin_M=geno[["dim_of_bin_M"]],
                                indxNA = resam$indxNA, map=map)
    }  ## end for loc
 
  ## calculate MMt
- MMt <- .calcMMt(geno, resam$workingmemGb, resam$numcores, resam$Indx, resam$verbose, resam$indxNA)
+ MMt <- .calcMMt(geno, resam$workingmemGb, resam$ncpu, resam$Indx, resam$verbose, resam$indxNA)
 
  ## calculate variance components of LMM
  eR <- emma.REMLE(y=resam$trait, X= fullX , K=MMt, llim=-100,ulim=100)

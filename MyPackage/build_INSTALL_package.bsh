@@ -82,10 +82,10 @@ mkdir ./AMplus/inst/extdata
 
 cd $DIR
 
-cp ./phenoexample.csv ./AMplus/inst/extdata/.
-cp ./genoexampleRwise.txt ./AMplus/inst/extdata/.
-cp ./genoexampleCwise.txt ./AMplus/inst/extdata/.
-cp ./mapexample.txt ./AMplus/inst/extdata/.
+cp ./pheno.txt ./AMplus/inst/extdata/.
+cp ./geno.txt ./AMplus/inst/extdata/.
+cp ./geno.ped ./AMplus/inst/extdata/.
+cp ./map.txt ./AMplus/inst/extdata/.
 
 cd $DIR
 

@@ -263,13 +263,12 @@ n_total = n_of_long + n_extra;
 // Vector that is to be packed 
 std::vector<unsigned long int> packed_long_vec (n_total);
 
-Rcout << "-------- PLINK --------" << n_of_cols_in_geno << " " << n_total << endl;
-return ;
 
-// open ascii genotype  file
+// open PLINK ped  file
 std::ifstream fileIN(fname.c_str());
 if(!fileIN.good()) {
-  os << "\n\nERROR: ASCii genotype file could not be opened with filename  " << fname << "\n\n" << std::endl;
+  Rcpp::Rcout << "\n\nERROR: PLINK ped file could not be opened with filename  " << fname <<  std::endl;
+  os << "\n\nERROR: ReadMarkerData has terminated with errors.  " << fname << "\n\n" << std::endl;
   Rcpp::stop(os.str() );
 }
 
@@ -277,24 +276,41 @@ if(!fileIN.good()) {
 std::ofstream fileOUT(binfname.c_str(), ios::binary );
  if (verbose){
  Rcpp::Rcout << " " << std::endl;
- Rcpp::Rcout << " Reading Marker (Genotype) File  " << std::endl;
+ Rcpp::Rcout << " Reading PLINK ped  File  " << std::endl;
  Rcpp::Rcout << " " << std::endl;
  Rcpp::Rcout << " Loading file .";
  }
 long  counter = 0;
+long  number_of_columns;
 while(getline(fileIN, line ))
 {
-  Rcout << "createM_PLINK reading line " << counter << endl;
-  if (verbose){
-     if (counter % 10 == 0)
-         Rcpp::Rcout << "." ;
-  }
 
-  istringstream streamA(line);
+  istringstream streamLine(line);
   indx_packed = 0;
    indx_packed_long_vec = 0;
   packed.reset();
 
+ // check number of columns for each line
+ number_of_columns = 0; 
+ while(streamLine >> tmp)
+      number_of_columns ++;
+ if (verbose)
+     Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
+
+
+ if (number_of_columns != dims[1] ){
+     Rcpp::Rcout << std::endl;
+     Rcpp::Rcout << std::endl;
+     Rcpp::Rcout << "Error:  PLINK file contains an unequal number of columns per row.  " << std::endl;
+     Rcpp::Rcout << "        The error has occurred at row " << counter+1 << " which contains " << number_of_columns << " but " << endl;
+     Rcpp::Rcout << "        it should contain " << dims[1] << " columns of data. "  << std::endl;
+     Rcpp::Rcout << std::endl;
+     Rcpp::Rcout << std::endl;
+     os << " ReadMarkerData has terminated with errors\n" << std::endl;
+     Rcpp::stop(os.str() );
+ } 
+
+ istringstream streamA(line);
 
  for(long i=0; i < dims[1] ; i++){
     // assign allelic info to rowvec ignoring first 6 columns of input
@@ -324,7 +340,7 @@ while(getline(fileIN, line ))
         Rcpp::Rcout << std::endl;
         Rcpp::Rcout << "Error:  PLINK file cannot contain missing alleles (i.e. 0 or - ) " << std::endl;
         Rcpp::Rcout << "        Please impute missing marker information before running AMplus." << std::endl;
-        Rcpp::Rcout << "        The error has occurred at the " << i << " snp locus for individual " << counter+1 << std::endl;
+        Rcpp::Rcout << "        The error has occurred at snp locus " << i << " for individual " << counter+1 << std::endl;
         Rcpp::Rcout << std::endl;
         Rcpp::Rcout << std::endl;
         os << " ReadMarkerData has terminated with errors\n" << std::endl;
@@ -343,7 +359,7 @@ while(getline(fileIN, line ))
            Rcpp::Rcout << std::endl;
            Rcpp::Rcout << std::endl;
            Rcpp::Rcout << "Error:  PLINK file cannot contain more than two alleles at a locus."  << std::endl;
-           Rcpp::Rcout << "        The error has occurred at the " << i << " snp locus for individual " << counter+1 << std::endl;
+           Rcpp::Rcout << "        The error has occurred at snp locus " << i << " for individual " << counter+1 << std::endl;
            Rcpp::Rcout << std::endl;
            Rcpp::Rcout << std::endl;
            os << " ReadMarkerData has terminated with errors\n" << std::endl;
@@ -364,11 +380,9 @@ while(getline(fileIN, line ))
         genovec[i] = 2;  // BB
       }
     }  // end outer if else rowvec
-//  if(counter == 18 && i==4997)
-//    Rcout << n_of_cols_in_geno << " " << genovec[4995] << " " << genovec[4996] << " " << genovec[4997] << endl;
-  
- }  // end for(long i=0; i < n_of_cols_in_geno; i++)
-//if(counter == 18) return ; 
+ } // end  for(long i=0; i < n_of_cols_in_geno; i++)
+
+
 
  // Here, BB is coded into 2 when bit packed, 
  //       AB is coded into 1, 
@@ -403,20 +417,35 @@ while(getline(fileIN, line ))
     }  // end if else  
 
 
-
   }  // end for(long i=0; i< n_of_cols_in_geno ; i++)
 
 
     // want to begin with a fresh long when we read in a new line
     // writing binary values to disk.
     fileOUT.write((char *)(&packed_long_vec[0]), packed_long_vec.size() * sizeof(unsigned long int));
-
   counter++;
 
 
   }  // end while(getline(fileIN, line ))
   if (verbose) Rcpp::Rcout << "\n" << std::endl;
 
+  // write out a few lines of the file if verbose
+  if(verbose){
+     // open PLINK ped  file
+     std::ifstream fileIN(fname.c_str());
+     counter = 0;
+     Rcout << " First 5 lines and 12 columns of the PLINK ped  file. " << endl;
+     while(getline(fileIN, line ) && counter < 5)
+     {
+       istringstream streamB(line);
+       for(int i=0; i < 12 ; i++){
+           streamB >> tmp;
+           Rcpp::Rcout << tmp << " " ;
+        }
+        Rcpp::Rcout << std::endl;
+        counter++;
+      }  // end  while(getline(fileIN, line ))
+  } // end if(verbose)
 
 
 
@@ -454,6 +483,7 @@ short
     rowvec[dims[1]]; // holds entire row worth of genotypes from ascii file
 
 std::string
+   tmp,
    token,
    line;
 
@@ -485,7 +515,6 @@ if(dims[1] % (bits_in_ulong/2) != 0){
 // number of longs needed to store a complete row of the ascii file
 // where genotypes are being packed into 2 bits. 
 n_total = n_of_long + n_extra;
-Rcout << "+++++++++++" << dims[1] << " " << n_total << endl;
 // Vector that is to be packed 
 std::vector<unsigned long int> packed_long_vec (n_total);
 
@@ -502,32 +531,55 @@ if(!fileIN.good()) {
 std::ofstream fileOUT(binfname.c_str(), ios::binary );
  if (verbose){
  Rcpp::Rcout << " " << std::endl;
- Rcpp::Rcout << " Reading Marker (Genotype) File  " << std::endl;
+ Rcpp::Rcout << " Reading text File  " << std::endl;
  Rcpp::Rcout << " " << std::endl;
  Rcpp::Rcout << " Loading file .";
  }
-long  counter = 0;
+long 
+   number_of_columns, 
+  counter = 0;
+
 while(getline(fileIN, line ))
 {
-  if (verbose){
-     if (counter % 10 == 0)
-         Rcpp::Rcout << "." ;
-  }
-  counter++;
 
-  istringstream streamA(line);
+  istringstream streamLine(line);
   indx_packed = 0;
    indx_packed_long_vec = 0;
   packed.reset();
+
+ // check number of columns for each line
+ number_of_columns = 0;
+ while(streamLine >> tmp)
+      number_of_columns ++;
+ if (verbose)
+     Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
+
+ if (number_of_columns != dims[1] ){
+     Rcpp::Rcout << std::endl;
+     Rcpp::Rcout << std::endl;
+     Rcpp::Rcout << "Error:  PLINK file contains an unequal number of columns per row.  " << std::endl;
+     Rcpp::Rcout << "        The error has occurred at row " << counter+1 << " which contains " << number_of_columns << " but " << endl;
+     Rcpp::Rcout << "        it should contain " << dims[1] << " columns of data. "  << std::endl;
+     Rcpp::Rcout << std::endl;
+     Rcpp::Rcout << std::endl;
+     os << " ReadMarkerData has terminated with errors\n" << std::endl;
+     Rcpp::stop(os.str() );
+ }
+
+
+
+
+
  // Here, BB is coded into 2 when bit packed, 
  //       AB is coded into 1, 
  //       AA is coded into 0. 
+  istringstream streamA(line);
   for(long i=0; i< dims[1] ; i++){
   //   streamA >> rowvec[i];
 
-
      getline(streamA, token, sep);
      rowvec[i] = atoi(token.c_str());
+   //   Rcout << "rowvec[i] = " << i << " " << rowvec[i] << endl;
  
      if(rowvec[i] == BB){
           packed[indx_packed*2+1] = 1;
@@ -560,9 +612,29 @@ while(getline(fileIN, line ))
     // want to begin with a fresh long when we read in a new line
     // writing binary values to disk.
     fileOUT.write((char *)(&packed_long_vec[0]), packed_long_vec.size() * sizeof(unsigned long int));
+    counter++;
+
   }
   if (verbose) Rcpp::Rcout << "\n" << std::endl;
 
+
+  // write out a few lines of the file if verbose
+  if(verbose){
+     // open PLINK ped  file
+     std::ifstream fileIN(fname.c_str());
+     counter = 0;
+     Rcout << " First 5 lines and 12 columns of the text file. " << endl;
+     while(getline(fileIN, line ) && counter < 5)
+     {
+       istringstream streamA(line);
+       for(int i=0; i < 12 ; i++){
+           streamA >> tmp;
+           Rcpp::Rcout << tmp << " " ;
+        }
+        Rcpp::Rcout << std::endl;
+        counter++;
+      }  // end  while(getline(fileIN, line ))
+  } // end if(verbose)
 
 
 
@@ -1070,7 +1142,7 @@ int
                             Rcpp::Rcout << std::endl;
                             Rcpp::Rcout << std::endl;
                             Rcpp::Rcout << "Error:  PLINK file cannot contain more than two alleles at a locus." << max_memory_in_Gbytes << std::endl;
-                            Rcpp::Rcout << "        The error has occurred at the " << i << " snp locus for individual " << counter+1 << std::endl;
+                            Rcpp::Rcout << "        The error has occurred at snp locus " << i << " for individual " << counter+1 << std::endl;
                             Rcpp::Rcout << std::endl;
                             Rcpp::Rcout << std::endl;
                             os << " ReadMarkerData has terminated with errors\n" << std::endl;
@@ -1952,6 +2024,7 @@ Rcout << "vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt " << endl;
 
 // [[Rcpp::export]]
 void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
+                  CharacterVector  type,
                   int AA,
                   int AB, 
                   int BB,
@@ -1975,6 +2048,7 @@ int
    genoval;
 
 std::string 
+     ftype = Rcpp::as<std::string>(type),
      fname = Rcpp::as<std::string>(f_name),
      fnamebin = Rcpp::as<std::string>(f_name_bin);
 
@@ -1986,46 +2060,46 @@ std::string
 double 
   memory_needed_in_Gb;
 
-  if (AA == -9 ){
+  if (ftype == "PLINK"  ){
   // this is a PLINK ped file. Hence, we need to adjust the dims[1] to get the 
   // size of the genotype file in R land. 
     memory_needed_in_Gb =  (dims[0] *  (dims[1]-6.0)/2.0  *   sizeof(double) )/( (double) 1000000000) ;
   } else {
-    // ASCII file
+    // text file
     memory_needed_in_Gb =  (dims[0] *  dims[1] *   sizeof(double) )/( (double) 1000000000) ;
   }
-  if (AA == -9 ){
+  if ( ftype == "PLINK"  ){
      //------------------------------------
      // convert PLINK ped file into packed binary file
      //----------------------------------------------
-    Rcout << "in createM_rcpp " << endl;
+      if(verbose)
+        Rcout << " A PLINK ped file is being assumed as the input data file type. " << std::endl;
       CreatePackedBinary_PLINK(fname, fnamebin, dims, verbose);
-    Rcout << " out createM_rcpp " << endl;
 
    }  else {
-       Rcout << " Should not be in here" << endl;
       //-------------------------------------------
-      // convert ascii file into packed binary file
+      // convert text file into packed binary file
       //-----------------------------------------
       // Here, we do not need to worry about the amount of memory because 
       // we are processing a line of the file at a time. This is not the case when 
       // creating a binary packed Mt because we have to read in blocks before we can 
       // transpose. 
+      if (verbose)
+          Rcout << " A text file is being assumed as the input data file type. " << std::endl;
       CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB, csv, verbose);
-   }  // end if AA==-9
+   }  // end if type == "PLINK" 
 
 //--------------------------------------
 // Summary of Genotype File
 //--------------------------------------
 
 Rcpp::Rcout <<  "\n\n                    SUMMARY OF GENOTYPE FILE  " << std::endl;
-found=fname.find_last_of("/\\");
-Rcpp::Rcout <<  " file location(path):         "  <<  fname.substr(0, found) << std::endl;
-Rcpp::Rcout <<  " file name:                    " << fname.substr(found+1) << std::endl;
-Rcpp::Rcout <<  " packed binary file location: " << fnamebin << std::endl;
-Rcpp::Rcout <<  " packed binary file name:     " << "M.bin"  << std::endl;
+Rcpp::Rcout <<  " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " << std::endl;
+Rcpp::Rcout <<  " file type:                   " << type  << std::endl;
+Rcpp::Rcout <<  " file name:                   " << fname << std::endl;
+Rcpp::Rcout <<  " packed binary file name:     " << fnamebin  << std::endl;
 Rcpp::Rcout <<  " number of rows:              "     << dims[0] << std::endl;
-if (AA == -9 ){
+if (ftype == "PLINK"  ){
     Rcpp::Rcout <<  " number of columns:           "  << (dims[1] -6)/2.0   << std::endl;
 } else {
     Rcpp::Rcout <<  " number of columns:           "  << dims[1] << std::endl;
@@ -2221,6 +2295,13 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
     Rcout << "Reading data ... " << endl;
     Eigen::MatrixXd genoMat = ReadBlock(fnamebin,  0, dims[1], dims[0] );
+
+    Rcout << " reading M ========================= " << endl;
+    Rcout << genoMat(0,0) << " " << genoMat(0,1) << " " << genoMat(0,2) << " " << genoMat(0,3) << endl;
+    Rcout << genoMat(1,0) << " " << genoMat(1,1) << " " << genoMat(1,2) << " " << genoMat(1,3) << endl;
+    Rcout << genoMat(2,0) << " " << genoMat(2,1) << " " << genoMat(2,2) << " " << genoMat(2,3) << endl;
+
+
     Rcout << " end of reading data ... " << endl;
    if(!R_IsNA(selected_loci(0))){
      // setting columns to 0
@@ -2235,14 +2316,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
    MMt.noalias() = genoMat * genoMat.transpose(); 
 
-     Rcout << " =================== genoMat ==================   " << endl;
-     Rcout << genoMat(0,4993) << genoMat(0,4994) << genoMat(0,4995) << genoMat(0,4996) << genoMat(0,4997) << endl;
-     Rcout << genoMat(1,4993) << genoMat(1,4994) << genoMat(1,4995) << genoMat(1,4996) << genoMat(1,4997) << endl;
-     Rcout << genoMat(2,4993) << genoMat(2,4994) << genoMat(2,4995) << genoMat(2,4996) << genoMat(2,4997) << endl;
-     Rcout << genoMat(3,4993) << genoMat(3,4994) << genoMat(3,4995) << genoMat(3,4996) << genoMat(3,4997) << endl;
-     Rcout << genoMat(0,4993) << genoMat(4,4994) << genoMat(4,4995) << genoMat(4,4996) << genoMat(4,4997) << endl;
-
-     Rcout << " Finished ... " << endl;
 
 
 } else {
