@@ -423,8 +423,8 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
 }
 
 
-   check.for.NA.in.trait <- function(trait=NULL)
-   {
+check.for.NA.in.trait <- function(trait=NULL)
+{
      ## internal function for AM 
      ## to return the positions of NA in a trait
 
@@ -435,6 +435,9 @@ emma.delta.REML.LL.wo.Z <-  function (logdelta, lambda, etas)
         } else {
           ## place in reverse order
           indxNA <- sort(indxNA, decreasing = TRUE)
+cat("\n\n Warning!!!! The individuals in rows ", indxNA, " either have missing trait data \n")
+cat("             and/or missing explanatory variable values. These individuals have \n")
+cat("             been removed from the analysis.  \n\n")
           if(any(is.na(indxNA))){
             cat("Error:  (internal).  indxNA contains NA values. \n")
             stop(" AM has terminated with errors. ")
@@ -1018,7 +1021,7 @@ for(ii in 1:ncol(phenos))
   cat(c( sprintf("%20s   %15s", names(phenos)[ii], class(phenos[[ii]]) ), "\n"))
 
 
-cat("\n Warning: if the column classes are incorrect, these will need to be changed by the user.\n\n\n")
+cat("\n Warning: if the column classes are incorrect, these will need to be changed manually.\n\n\n")
 
   return(phenos)
 
