@@ -38,7 +38,6 @@ R CMD BATCH ./tmp.R
 ## Replace generated NAMESPACE and DESCRIPTION with correct versions
 cp ./NAMESPACE.OLD ./AMplus/NAMESPACE
 cp ./DESCRIPTION.OLD ./AMplus/DESCRIPTION
-
 ## Modify ./AMplus/src/RcppExports.cpp
 
  cd $DIR/AMplus/src

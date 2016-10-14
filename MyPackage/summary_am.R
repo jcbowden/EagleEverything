@@ -26,10 +26,11 @@ GenomicRel = function(M){
 
 #' @title Summary of multiple locus association mapping results
 #' @description A summary of the results from \code{\link{AM}}
-#' @param resam  the (list) object obtained from running \code{\link{AM}}.
+#' @param  AMobj  the (list) object obtained from running \code{\link{AM}}.
 #' @param  pheno  the (data frame) object  obtained  from running \code{\link{ReadPheno}}.
 #' @param geno   the (list) object obtained from running \code{\link{ReadMarker}}.
-#' @param map   the (data frame) object obtained from running \code{\link{ReadMap}}.  
+#' @param map   the (data frame) object obtained from running \code{\link{ReadMap}}. The default is to assume 
+#'              a map object has not been supplied.  
 #' If not specifed, a generic map will be assumed. 
 #' @details
 #' \code{summarymlam} produces a summary table of the results from running \code{\link{AM}}. The 
@@ -42,63 +43,70 @@ GenomicRel = function(M){
 #'
 #' @seealso \code{\link{AM}}
 #'
-summarymlam <- function(resam=NULL, pheno=NULL, geno=NULL, map=NULL)
+SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
 {
 
- if(is.null(resam))
-    stop(" summarymlam function requires resam object to be specified.")
+ if(is.null(AMobj))
+    stop(" summarymlam function requires AMobj object to be specified.")
  if(is.null(pheno))
     stop(" summarymlam function requires pheno parameter to be specified.")
  if(is.null(geno))
     stop(" summarymlam function requires geno parameter to be specified.")
- if(is.null(map))
-    stop(" summarymlam function requires map parameter to be specified.")
 
- if(!is.list(resam))
-    stop(" summarymlam function requires resam object to be a list object.")
+ if(!is.list(AMobj))
+    stop(" summarymlam function requires AMobj object to be a list object.")
  if(!is.data.frame(pheno))
     stop(" summarymlam function requires pheno object to be a data.frame object.")
  if(!is.list(geno))
     stop(" summarymlam function requires geno object to be a list object.")
- if(!is.data.frame(map))
-   stop(" summarymlam function requires map to be a data.frame object.")
+
+ if(is.null(map)){
+   if(!quiet){
+     cat(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
+     cat(" It is only used for the reporting of results. \n")
+   }
+   ## map has not been supplied. Create own map
+   map <- data.frame(SNP=paste("M", 1:geno[["dim_of_bin_M"]][2], 
+                     Chr=rep(1, geno[[" "]][2]), 
+                     Pos=1:geno[["dim_of_bin_M"]][2])
+  }
 
 
 
   ## build enviornmental effects design matrix
-  baseX <- .build_design_matrix(pheno=pheno,  indxNA=resam$indxNA, 
-                                    feffects=resam$feffects,
-                                   verbose=resam$verbose)
+  baseX <- .build_design_matrix(pheno=pheno,  indxNA=AMobj$indxNA, 
+                                    feffects=AMobj$feffects,
+                                   quiet=AMobj$quiet)
 
 
   ## add genetic marker effects 
   fullX <- baseX
-  for(loc in resam$Indx){
+  for(loc in AMobj$Indx){
         fullX <- constructX(currentX=fullX, loci_indx=loc,
                                dim_of_bin_M=geno[["dim_of_bin_M"]],
-                               indxNA = resam$indxNA, map=map)
+                               indxNA = AMobj$indxNA, map=map)
    }  ## end for loc
 
  ## calculate MMt
- MMt <- .calcMMt(geno, resam$workingmemGb, resam$ncpu, resam$Indx, resam$verbose, resam$indxNA)
+ MMt <- .calcMMt(geno, AMobj$workingmemGb, AMobj$ncpu, AMobj$Indx, AMobj$quiet, AMobj$indxNA)
 
  ## calculate variance components of LMM
- eR <- emma.REMLE(y=resam$trait, X= fullX , K=MMt, llim=-100,ulim=100)
+ eR <- emma.REMLE(y=AMobj$trait, X= fullX , K=MMt, llim=-100,ulim=100)
 
  ## calculating p values of fixed marker effecs via Wald statistic
- pval <- vector("numeric", length(resam$Mrk))
- for(ii in resam$Mrk){
+ pval <- vector("numeric", length(AMobj$Mrk))
+ for(ii in AMobj$Mrk){
     indx <- which(colnames(fullX)==ii)
     L <- matrix(data=rep(0, ncol(fullX)), byrow=TRUE, nrow=1)
     L[indx] <- 1
     H <-  eR$vg * MMt + eR$ve * diag(1, nrow(MMt))
     Hinv <- try(solve(H))
-    beta <- try(solve( t(fullX) %*% Hinv %*% fullX) %*% t(fullX) %*% Hinv %*% matrix(data=resam$trait ,ncol=1)   )
+    beta <- try(solve( t(fullX) %*% Hinv %*% fullX) %*% t(fullX) %*% Hinv %*% matrix(data=AMobj$trait ,ncol=1)   )
     W <- t(L %*% beta) %*%
             solve( L %*% solve(t(fullX) %*% Hinv %*% fullX) %*% t(L) ) %*%
             (L %*% beta)
-   pval[which(ii==resam$Mrk)] <- 1 - pchisq(W, 1) 
- }  ## end for ii in resam$Mrk
+   pval[which(ii==AMobj$Mrk)] <- 1 - pchisq(W, 1) 
+ }  ## end for ii in AMobj$Mrk
 
  ## print Annova table of results
 
@@ -106,16 +114,16 @@ summarymlam <- function(resam=NULL, pheno=NULL, geno=NULL, map=NULL)
 cat("\n\n                       Summary of Association Mapping Results         \n\n")
 
  
-if(length(resam$Indx)==1 &  any(is.na(resam$Indx)))
+if(length(AMobj$Indx)==1 &  any(is.na(AMobj$Indx)))
 {
    cat(" No significant marker-trait associations have been found. \n\n")
 } else {
    cat(sprintf("%15s  %10s      %10s   %15s   %10s  %10s \n",
         "Mrk Name", "Chrm", "Map Pos", "Col Number", "Additive effect", "p-value"))
-   for(ii in resam$Indx)
+   for(ii in AMobj$Indx)
    {
       beta_indx <- which(colnames(fullX) == map[[1]][ii])
-      pval_indx <- which(ii==resam$Indx)
+      pval_indx <- which(ii==AMobj$Indx)
       if(length(beta_indx)==0)
          stop(" Internal error in summarymlam function. Marker name mismatch. Contact package author.")
 
@@ -130,11 +138,11 @@ if(length(resam$Indx)==1 &  any(is.na(resam$Indx)))
 
  MMt <- MMt/max(MMt) + 0.05 * diag(nrow(MMt))  
  # base model
- basemod <- emma.MLE(y=resam$trait, X=baseX, K=MMt, llim=-100,ulim=100)
+ basemod <- emma.MLE(y=AMobj$trait, X=baseX, K=MMt, llim=-100,ulim=100)
  base_logML <- basemod$ML
 
  # full model
- fullmod <- emma.MLE(y=resam$trait, X=fullX, K=MMt, llim=-100,ulim=100)
+ fullmod <- emma.MLE(y=AMobj$trait, X=fullX, K=MMt, llim=-100,ulim=100)
  full_logML <- fullmod$ML
  
  Rsq <- 1 - exp(-2/nrow(MMt) * (full_logML - base_logML))

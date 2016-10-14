@@ -1,13 +1,14 @@
-// Rcpp code for:
-//   1.  the calculation of M %*% t(M)
-//   2.  checking the genotypes of M are 0,1, & 2
+// This software is distributed under the GNU General Public License.
+//
+//This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. 
 
 
 // Author:   Andrew W. George
 // Purpose: to calculate M %*% t(M) when M may not fit into memory
 // Outline: 
-//          1. read data from ascii file. Assuming genotypes are 0,1,2. 
-//             An error is produced if other values are found. 
+//          1. read data from PLINK or text file
 //          2. convert genotypes into their binary values.
 //          3. pack binary values into unsigned long int (could be 32 bits or 64 bits 
 //             depending upon the system.
@@ -15,9 +16,6 @@
 //          5. read blocks of binarys to form submatrices of M.
 //          6. Perform M %*% t(M) as a block multiplication. 
 //
-// Inputs from R:
-//     1. file name of ASCII file with genotypes (not handling marker names yet, or different formats like cvs)
-//     2. max memory size in bytes
 #define EIGEN_USE_MKL_ALL
 
 // [[Rcpp::depends(RcppEigen)]]
@@ -274,16 +272,14 @@ if(!fileIN.good()) {
 
 // open binary file that is to hold packed genotype data
 std::ofstream fileOUT(binfname.c_str(), ios::binary );
- if (verbose){
- Rcpp::Rcout << " " << std::endl;
- Rcpp::Rcout << " Reading PLINK ped  File  " << std::endl;
- Rcpp::Rcout << " " << std::endl;
- Rcpp::Rcout << " Loading file .";
- }
 long  counter = 0;
 long  number_of_columns;
+Rcout << "\n Reading marker file " ;
 while(getline(fileIN, line ))
 {
+ if (counter % 10 == 0){
+    Rcout << "." ;  
+ }
 
   istringstream streamLine(line);
   indx_packed = 0;
@@ -427,16 +423,15 @@ while(getline(fileIN, line ))
 
 
   }  // end while(getline(fileIN, line ))
-  if (verbose) Rcpp::Rcout << "\n" << std::endl;
-
+  Rcout << "\n\n" << endl;
   // write out a few lines of the file if verbose
-  if(verbose){
-     // open PLINK ped  file
-     std::ifstream fileIN(fname.c_str());
-     counter = 0;
-     Rcout << " First 5 lines and 12 columns of the PLINK ped  file. " << endl;
-     while(getline(fileIN, line ) && counter < 5)
-     {
+ // open PLINK ped  file
+ std::ifstream fileIN_backtobeginning(fname.c_str());
+ counter = 0;
+ Rcout << " First 5 lines and 12 columns of the PLINK ped  file. " << endl;
+ while(getline(fileIN_backtobeginning, line ) && counter < 5)
+ {
+       Rcpp::Rcout << " " ;
        istringstream streamB(line);
        for(int i=0; i < 12 ; i++){
            streamB >> tmp;
@@ -444,8 +439,7 @@ while(getline(fileIN, line ))
         }
         Rcpp::Rcout << std::endl;
         counter++;
-      }  // end  while(getline(fileIN, line ))
-  } // end if(verbose)
+ }  // end  while(getline(fileIN, line ))
 
 
 
@@ -1788,7 +1782,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
 
 
-    Rcout << " Reading Mt ... " << endl;
     Eigen::MatrixXd Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
 
   // removing columns that correspond to individuals with no 
@@ -1817,11 +1810,8 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 std::clock_t    start;
 
 //   start = std::clock();
-    Rcout << "beginning ans_part1 = inv_MMt_sqrt * a" << endl;
     Eigen::MatrixXd  ans_part1 = inv_MMt_sqrt * a;
-    Rcout << "beginning Mt  * ans_part1 " << endl;
     ans.noalias() =   Mt  * ans_part1; 
-    Rcout << "end" << endl;
 
 //   Rcout << "Time2 Mtd *  inv_MMt_sqrt  * a : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
@@ -1838,26 +1828,20 @@ std::clock_t    start;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
 
 //     start = std::clock();
-    Rcout << " in   dim_reduced_vara * inv_MMt_sqrt " << endl;
     Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt;
-    Rcout << " in inv_MMt_sqrt * var_ans_tmp_part1 " << endl;
     var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1;
-    Rcout << " end ... " << endl;
 //     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
-  Rcout << " Beginning  Mt *  var_ans_tmp_part1 " << endl;
   var_ans_tmp.noalias()  =  Mt *  var_ans_tmp_part1;
   
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
 
   // Added 26 April
-  Rcout <<"Starting pragma .. " << endl;
   long i;
   #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
   for(i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
-  Rcout << "Ending pragma " << endl;
 
 
 
@@ -2072,8 +2056,6 @@ double
      //------------------------------------
      // convert PLINK ped file into packed binary file
      //----------------------------------------------
-      if(verbose)
-        Rcout << " A PLINK ped file is being assumed as the input data file type. " << std::endl;
       CreatePackedBinary_PLINK(fname, fnamebin, dims, verbose);
 
    }  else {
@@ -2093,22 +2075,20 @@ double
 // Summary of Genotype File
 //--------------------------------------
 
-Rcpp::Rcout <<  "\n\n                    SUMMARY OF GENOTYPE FILE  " << std::endl;
-Rcpp::Rcout <<  " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " << std::endl;
-Rcpp::Rcout <<  " file type:                   " << type  << std::endl;
-Rcpp::Rcout <<  " file name:                   " << fname << std::endl;
-Rcpp::Rcout <<  " packed binary file name:     " << fnamebin  << std::endl;
-Rcpp::Rcout <<  " number of rows:              "     << dims[0] << std::endl;
+Rcpp::Rcout <<  "\n\n                    Summary of Marker File  " << std::endl;
+Rcpp::Rcout <<  "                   ~~~~~~~~~~~~~~~~~~~~~~~~   " << std::endl;
+Rcpp::Rcout <<  " File type:                " << type  << std::endl;
+Rcpp::Rcout <<  " File name:                " << fname << std::endl;
+Rcpp::Rcout <<  " Packed binary file name:  " << fnamebin  << std::endl;
+Rcpp::Rcout <<  " Number of individuals:    "     << dims[0] << std::endl;
 if (ftype == "PLINK"  ){
-    Rcpp::Rcout <<  " number of columns:           "  << (dims[1] -6)/2.0   << std::endl;
+Rcpp::Rcout <<  " Number of loci:           "  << (dims[1] -6)/2.0   << std::endl;
 } else {
-    Rcpp::Rcout <<  " number of columns:           "  << dims[1] << std::endl;
-
+Rcpp::Rcout <<  " Number of loci:           "  << dims[1] << std::endl;
 }
 Rcpp::Rcout.precision(2);
-Rcpp::Rcout <<  " file size (Gbytes)           "  << memory_needed_in_Gb << std::endl;
-Rcpp::Rcout <<  " max memory size (Gbytes)     " << std::endl;
-Rcpp::Rcout <<  "   set to :                   " << max_memory_in_Gbytes  << std::endl;
+Rcpp::Rcout <<  " File size (Gbytes):       "  << memory_needed_in_Gb << std::endl;
+Rcpp::Rcout <<  " Available memory (Gbytes):" << max_memory_in_Gbytes  << std::endl;
 Rcpp::Rcout << "\n\n" << std::endl;
 
 
@@ -2285,7 +2265,6 @@ double
   memory_needed_in_Gb =  (dims[0]*dims[0]* sizeof(double)  + 2*(dims[0] *  dims[1] *   sizeof(double) ))/( (double) 1000000000) ;
 
 
-Rcpp::Rcout << "memory needed is " << memory_needed_in_Gb << endl;
 
 
 //-------------------------
@@ -2293,26 +2272,13 @@ Rcpp::Rcout << "memory needed is " << memory_needed_in_Gb << endl;
 //-------------------------
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
-    Rcout << "Reading data ... " << endl;
     Eigen::MatrixXd genoMat = ReadBlock(fnamebin,  0, dims[1], dims[0] );
-
-    Rcout << " reading M ========================= " << endl;
-    Rcout << genoMat(0,0) << " " << genoMat(0,1) << " " << genoMat(0,2) << " " << genoMat(0,3) << endl;
-    Rcout << genoMat(1,0) << " " << genoMat(1,1) << " " << genoMat(1,2) << " " << genoMat(1,3) << endl;
-    Rcout << genoMat(2,0) << " " << genoMat(2,1) << " " << genoMat(2,2) << " " << genoMat(2,3) << endl;
-
-
-    Rcout << " end of reading data ... " << endl;
    if(!R_IsNA(selected_loci(0))){
      // setting columns to 0
      for(long ii=0; ii < selected_loci.size() ; ii++) 
        genoMat.col(selected_loci(ii)).setZero(); 
    }
 
-
-     Rcout << "-------------------------- GPU C++ ---------------------------------- " << endl;
-     Rcout << "performing genoMat * genoMat.transpose() which should use GPU " << endl;
-     Rcout << "--------------------------------------------------------------- " << endl;
 
    MMt.noalias() = genoMat * genoMat.transpose(); 
 

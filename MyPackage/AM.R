@@ -1,5 +1,12 @@
+# This software is distributed under the GNU General Public License.
+#
+#This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. 
+
+
 .form_results <- function(trait, selected_loci, map,  feffects, indxNA,
-                           ncpu, availmemGb, verbose, herit, extBIC )
+                           ncpu, availmemGb, quiet, herit, extBIC )
 {
   if (length(selected_loci) > 1){
    sigres <- list(trait=trait,
@@ -11,7 +18,7 @@
                     Indx=selected_loci,
                     ncpu=ncpu,
                     availmemGb=availmemGb,
-                    verbose=verbose,
+                    quiet=quiet,
                     herit=herit, 
                     extBIC=extBIC)
   } else {
@@ -24,7 +31,7 @@
                     Indx=selected_loci,
                     ncpu=ncpu,
                     availmemGb=availmemGb,
-                    verbose=verbose,
+                    quiet=quiet,
                     herit=herit, 
                     extBIC=extBIC)
   }
@@ -35,12 +42,18 @@ return(sigres)
     ## internal fuction: use only in AM function
     ## title
     cat("\n\n\n\n")
-    cat("            Multiple Locus Association Mapping via WGAM\n")
-    cat("                       Version 1.0 \n\n")
+cat("                    Multiple-Locus Association Mapping\n")
+cat("                            Version 1.0 \n\n")
+cat(" \n")
+cat("   . ,-\"-.   ,-\"-. ,-\"-.   ,-\"-. ,-\"-. ,-\"-. ,-\"-.   ,-\"-. ,-\"-.    \n")  
+cat("    X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ /   \n")
+cat("   / \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X|   \n")
+cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-     \n")
+
 }
 
 
-.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, feffects=NULL, verbose=FALSE  )
+.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, feffects=NULL, quiet=FALSE  )
 {
    ## internal fuction: use only in AM function and summaryam function
    ## build design matrix given character vector feffects of column names
@@ -79,7 +92,7 @@ return(sigres)
      } ## if else (length(indxNA)==0)
    } 
 
- if (verbose){
+ if (quiet){
    cat("Dimension of design matrix, before addition of marker fixed effects is ", nrow(Xmat), "rows and ", ncol(Xmat), "columns.\n") 
  }
 
@@ -90,15 +103,14 @@ if(!is.matrix(Xmat))
 }
 
 
-.calcMMt <- function(geno, availmemGb, ncpu, selected_loci, verbose, indxNA)
+.calcMMt <- function(geno, availmemGb, ncpu, selected_loci, quiet, indxNA)
   {
     ## internal function: used only in multilocus_loci_am and summaryam
     ## values passed by environments
-    cat(" Inside calcMMt ... \n")
     MMt <- calculateMMt(geno=geno[["binfileM"]], availmemGb=availmemGb, 
                            ncpu=ncpu, 
                            dim_of_bin_M = geno[["dim_of_bin_M"]], 
-                           selected_loci=selected_loci, verbose = verbose) 
+                           selected_loci=selected_loci, quiet = quiet) 
     gc()
 
     if(length(indxNA)> 0 )
@@ -113,7 +125,6 @@ if(!is.matrix(Xmat))
 
   .calcVC <- function(trait, currentX, MMt, ngpu)
   {
-   cat(" performing emma.REMLE  ... \n")
     ## perform likelihood ratio test for variance component Var_g
     #res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100,ngpu=ngpu)
     res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, ngpu=ngpu)
@@ -121,7 +132,7 @@ if(!is.matrix(Xmat))
 
   }
 
- .calc_extBIC <- function(trait=NULL, currentX=NULL, MMt=NULL,  geno=NULL, verbose=FALSE)
+ .calc_extBIC <- function(trait=NULL, currentX=NULL, MMt=NULL,  geno=NULL, quiet=FALSE)
  {
    ## internal function: use in multiple_loucs_am only
    res_p <- emma.MLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
@@ -129,16 +140,18 @@ if(!is.matrix(Xmat))
 
    extBIC <- BIC + 2 * lchoose(geno$dim_of_bin_M[2], ncol(currentX) - 1)  
 
-   if(verbose){
+   if(quiet){
          cat(" new BIC = ", BIC, "\n")
          cat(" New extBIC = ", extBIC, "\n")
     }
     return(extBIC)
  }
 
+
+
  .print_header <- function(){
-   cat("\n\n\n                           FINAL MODEL  \n")
-   cat(" ------------------------------------------------------------------------------------------  \n")
+   cat("\n\n\n                           Final  Results  \n")
+   cat(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
  }
 
 .print_final  <- function(selected_loci, map, herit, extBIC )
@@ -148,7 +161,6 @@ if(!is.matrix(Xmat))
       cat("No significant marker-trait associations have been found. \n\n")
   }  else {
      .print_results(selected_loci=selected_loci, map=map, h=herit, extBIC=extBIC)
-     cat(" ------------------------------------------------------------------------------------------  \n")
           cat("\n\n")
   }   ## end if else
 
@@ -157,11 +169,14 @@ if(!is.matrix(Xmat))
 
  .print_results <- function(itnum=NULL, selected_loci, map,h, extBIC)
  {  if(!is.null(itnum)){ 
-       cat(" Significant marker-trait association found ... \n")
-       cat(" Results after iteration ", itnum, "\n")
+       cat(" Significant marker-trait association found. \n\n")
+       cat(" New results after iteration ", itnum, "are \n\n")
     }
     cat(sprintf("%15s  %10s        %10s     %10s        %10s \n", 
                  "SNP", "Chrm", "Map Pos",  "Col Number",       "extBIC"))
+    cat(sprintf("%15s  %10s        %10s     %10s        %10s \n", 
+                 "-----", "------", "---------",  "-----------",       "---------"))
+
     for(ii in 1:length(selected_loci)){
        if(is.na(selected_loci[ii])){
        cat(sprintf("%15s  %10s        %10s        %8s           %-8.2f \n", 
@@ -173,46 +188,35 @@ if(!is.matrix(Xmat))
         extBIC[ii] ))
      }  ## end if else 
    }
-    cat("\n")
+    cat("\n\n\n\n")
  }
 
 
 
   .find_qtl <- function(geno, availmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
-                       currentX, error_checking, ncpu, verbose, trait, ngpu )
+                       currentX, error_checking, ncpu, quiet, trait, ngpu )
   {
     ##  internal function: use only with AM
-    if(verbose) cat(" Calculating H matrix   \n")
     H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg ) 
-    if(verbose) cat(" Calculating P matrix - NOT GPU. \n")
     P <- calculateP(H=H, X=currentX ) 
     rm(H)
     gc()
  
-    if (verbose)
-              cat(" Calculating  square root of M %*% t(M) and it's inverse. \n")
     MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
                               ngpu=ngpu ) 
 
-    if (verbose)
-            cat(" Calculating BLUPs for dimension reduced model. \n")
     hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                       y=trait, verbose = verbose )   
+                       y=trait, quiet = quiet )   
      rm(P)
      gc()
 
 
-    if (verbose) 
-             cat(" Calculating variance of BLUPs for dimension reduced model. \n")
     var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
                                                 MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                                                verbose = verbose ) 
+                                                quiet = quiet ) 
 
    
-    if (verbose)
-         cat(" Calculating BLUPs and their variances for full model. \n")
-    ## not enough memory for this ......
      gc()
      ## load("everything.RData")   ## just for testing ... 
      a_and_vara  <- calculate_a_and_vara(maxmemGb=availmemGb, 
@@ -222,13 +226,13 @@ if(!is.matrix(Xmat))
                                             transformed_a=hat_a, 
                                             transformed_vara=var_hat_a,
                                             indxNA = indxNA,
-                                            verbose=verbose) 
+                                            quiet=quiet) 
 
 
 
   
     ## outlier test statistic
-    if (verbose) cat(" Calculating outlier test statistics. \n")
+    if (quiet) cat(" Calculating outlier test statistics. \n")
     tsq <- a_and_vara[["a"]]**2/a_and_vara[["vara"]]
     indx <- which(tsq == max(tsq, na.rm=TRUE))   ## index of largest test statistic. However, need to account for other loci 
                                          ## already having been removed from M which affects the indexing
@@ -260,7 +264,7 @@ if(!is.matrix(Xmat))
 #' @param ncpu a numeric value for the number of CPU that are available for distributed computing.  The default is to determine the number of CPU automatically. 
 #' @param ngpu   a integer value for the number of GPU available for computation.  The default
 #'               is to assume there are no gpu available. 
-#' @param  verbose      a logical value. When \code{TRUE}, extra output is returned 
+#' @param  quiet      a logical value. When \code{TRUE}, extra output is returned 
 #'  to the screen for monitoring progress. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
 #' genomic locations of interest that are to be identified. 
@@ -330,39 +334,34 @@ if(!is.matrix(Xmat))
 #' A table of results is printed to the screen and saved in the R object \code{res}. 
 #'}
 #'
-#' \subsection{Dealing with Missing Values}{
-#'  
+#' \subsection{Dealing with missing marker data}{
 #'
+#' In running \code{\link{AM}}, we assume there are no missing marker genotypes. 
+#' In fact, \code{ReadMarker} will generate errors if there are missing marker data.  
+#' However, most genome-wide data sets have missing genotypes (sometimes by design).  
+#' Ideally, a genotype imutation program such as  BEAGLE, MACH, fastPHASE, or PHASE2, should be 
+#' used to impute the missing marker data. 
+#'
+#'
+#' Alternately, for quick results, remove those loci with a high proportion of missing data (> 10\%) 
+#' and  replace the remaining missing marker genotypes with  heterozygote genotypes. 
+#' Since we assume an additive model in \code{AM}, this will not cause false positives but it 
+#' can reduce power. We found though that the loss in  power is minimal if the 
+#' proportion of missing data is low.  See ref for details.  
 #' }
-
-
-
-#' The genotypic file must not contain missing genotypes.
 #'
-#' The phenotypic file can contain missing information, coded as \code{NA}, but only 
-#' in the trait data. The fixed effects data (i.e. the explanatory variables)
-#' cannot contain any missing data.  The phenotypic file is allowed to contain multiple traits
-#' and fixed effects.  
-#'  
-#' The trait data and fixed effects data are  specified by setting \code{trait} 
-#'  and \code{feffects}, respectively. \code{trait} can only contain a single
-#'  character string for the trait name.  \code{feffects} can be a character vector 
-#'  if multiple fixed effects are to be included in the linear mixed model. Whether the 
-#'  fixed effects are treated as a covariate or factor is dependent upon the class of 
-#'  the associated data columns in the data frame obtained from \code{\link{ReadPheno}}. 
+#' \subsection{Dealing with missing trait data}{
 #'
-#'    STILL BEING WRITTEN .... 
-#' The \code{AM} function is an R/Rcpp implementation of multi-locus whole-genome 
-#'  association mapping. The method is a 
-#' multiple locus method that is a hybrid of whole-genome and multi-locus association mapping. 
-#' Briefly, a multiple locus model
-#' is built iteatively, by fitting a whole-genome model at each step. It differs from 
-#' whole-genome mapping methods because we
-#' get a parmonious set of marker loci that are in strongest association with a trait.  Also, it differs from multi-locus 
-#' association mapping methods because at each iteration of the model building process, we fit all snp loci 
-#' simultaneously, as opposed to fitting them one at a time. 
+#'  \code{AM} deals automatically with individuals with missing trait data. 
+#' These individuals are removed  from the analysis and a warning message is generated.
+#' }
+#' 
+#' \subsection{Dealing with missing explanatory variable values}{
 #'
-#' NEEDS MORE  Add something about stopping rule
+#' \code{AM} deals automatically with individuals with missing explanatory variable values. 
+#' These individuals are removed from the analysis and a warning message is generated
+#' }
+#'
 #'
 #'
 #' @seealso \code{\link{ReadMarker}}, \code{\link{ReadPheno}}, and \code{\link{ReadMap}}
@@ -423,7 +422,7 @@ AM <- function(trait=NULL,
                map = NULL,
                ncpu=detectCores(),
                ngpu=0,
-               verbose=FALSE,
+               quiet=TRUE,
                maxit=20,
                error_checking=FALSE 
                ){
@@ -444,7 +443,38 @@ AM <- function(trait=NULL,
  ## check parameter inputs
  check.inputs.mlam(ncpu, availmemGb, trait, feffects, 
                      map, pheno, geno )
- ## ADD CHECK TO MAKE SURE PHENO AND GENO NROWS ARE CORRECT - NOT BEING CHECKED AT THE MOMENT
+
+ ## checking if map is present. If not, generate a fake map. 
+ if(is.null(map)){
+   if(!quiet){
+     cat(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
+     cat(" It is only used for the reporting of results. \n")
+   }
+   ## map has not been supplied. Create own map
+   map <- data.frame(SNP=paste("M", 1:geno[["dim_of_bin_M"]][2], 
+                     Chr=rep(1, geno[[" "]][2]), 
+                     Pos=1:geno[["dim_of_bin_M"]][2])
+  }
+
+ ## check that the number of rows in the map file match the number of columns in the geno file
+ if (geno[["dim_of_bin_M"]][2] != nrow(map)){
+   cat(" Error: There is a differing number of loci read in by ReadMarker and ReadMap functions. \n")
+   cat("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_bin_M"]][2], "\n")
+   cat("        The number of marker loci in  the marker map is  ", nrow(map), "\n") 
+   stop(" AM has terminatated with errors.")
+ }
+
+
+ ## check that the number of rows in the phenotype file match the number of rows in the geno file
+ if (geno[["dim_of_bin_M"]][1] != nrow(pheno)){
+   cat(" Error: There is a differing number  of rows read in by ReadMarker and ReadPheno functions. \n")
+   cat("         The number of rows read in by ReadMarker() is ", geno[["dim_of_bin_M"]][1], "\n")
+   cat("        The number of rows  read in by ReadPheno is  ", nrow(map), "\n") 
+   stop(" AM has terminatated with errors.")
+ }
+
+
+
 
  selected_loci <- NA
  new_selected_locus <- NA
@@ -471,7 +501,6 @@ AM <- function(trait=NULL,
   if(ngpu > 0 ){
 # library(rcppMagmaSYEVD)
 ## caters for the two ways data can be inputed into AMplus
-     cat(" oooooooooooooooo \n")
        rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
   }
 
@@ -482,8 +511,7 @@ AM <- function(trait=NULL,
  }
 
  ## build design matrix currentX
- cat(" Forming currentX \n")
- Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, feffects=feffects, verbose=verbose )
+ Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, feffects=feffects, quiet=quiet )
 currentX <- do.call(.build_design_matrix, Args) 
 
  ## print tile
@@ -495,8 +523,7 @@ currentX <- do.call(.build_design_matrix, Args)
 
 
  while(continue){
-   cat(" Performing iteration ... ", itnum, "\n")
-
+  cat("\n\n Iteration" , itnum, ": Searching for most significant marker-trait association\n\n")
    ## based on selected_locus, form model matrix X
   currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus,
                           dim_of_bin_M=geno[["dim_of_bin_M"]],
@@ -508,12 +535,10 @@ currentX <- do.call(.build_design_matrix, Args)
     ## calculate Ve and Vg
     Args <- list(geno=geno,availmemGb=availmemGb,
                     ncpu=ncpu,selected_loci=selected_loci,
-                    verbose=verbose, indxNA=indxNA)
+                    quiet=quiet, indxNA=indxNA)
 
     if(itnum==1){
-         cat(" Calculate MMt \n")   
          MMt <- do.call(.calcMMt, Args)  
-
         invMMt <- chol2inv(chol(MMt))   ## doesn't use GPU
         gc()
     } 
@@ -524,8 +549,7 @@ currentX <- do.call(.build_design_matrix, Args)
 
 
     ## Calculate extBIC
-    cat(" Calculate extBIC ... \n")
-    new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, verbose) 
+    new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, quiet) 
     h <- best_vg/(best_vg + best_ve)
     gc()
 
@@ -538,28 +562,24 @@ currentX <- do.call(.build_design_matrix, Args)
 
    .print_results(itnum, selected_loci, map, herit, extBIC)
 
-   ## increased June 1, 2016 because it was stopping short. 
-   ## Select new locus if h > 0.01 | or extBIC is still decreasing 
-   ## if(h > 0.01 | which(extBIC==min(extBIC))==length(extBIC) ){
+   ## Select new locus if extBIC is still decreasing 
    if(which(extBIC==min(extBIC))==length(extBIC) ){  ## new way of stoppint based on extBIC only
      ## find QTL
      ARgs <- list(geno=geno,availmemGb=availmemGb, indxNA=indxNA, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  error_checking=error_checking,
-                 ncpu=ncpu, verbose=verbose, trait=trait, ngpu=ngpu)
-      cat(" finding QTL ..,. \n")
+                 ncpu=ncpu, quiet=quiet, trait=trait, ngpu=ngpu)
       new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
      gc()
      selected_loci <- c(selected_loci, new_selected_locus)
 
    }  else {
-     cat( " while terminating loop ... \n")
-     ## terminate while loop, h near 0
+     ## terminate while loop, 
      continue <- FALSE
-     .print_header()
-     .print_final(selected_loci, map, herit, extBIC)
-     sigres <- .form_results(trait, selected_loci, map,  feffects, 
-                     indxNA, ncpu, availmemGb, verbose, herit, extBIC )   
+#     .print_header()
+#     .print_final(selected_loci, map, herit, extBIC)
+#     sigres <- .form_results(trait, selected_loci, map,  feffects, 
+#                     indxNA, ncpu, availmemGb, quiet, herit, extBIC )   
    }  ## end if else
 
 
@@ -572,13 +592,34 @@ currentX <- do.call(.build_design_matrix, Args)
          ## under this new model. 
          .print_final(selected_loci[-length(selected_loci)], map, herit, extBIC)
          sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  feffects, 
-                     indxNA, ncpu, availmemGb, verbose, herit, extBIC )   
+                     indxNA, ncpu, availmemGb, quiet, herit, extBIC )   
     }
  
   }  ## end while continue
 
+if( itnum > maxit){
+    .print_header()
+    .print_final(selected_loci, map, herit, extBIC)
+    sigres <- .form_results(trait, selected_loci, map,  feffects, 
+                     indxNA, ncpu, availmemGb, quiet, herit, extBIC )   
 
-
+} else {
+    ## remove last selected_loci as for this locus, the extBIC went up
+    if(length(selected_loci)>1){
+        .print_header()
+        .print_final(selected_loci[-length(selected_loci)], 
+                     map, 
+                     herit[-length(selected_loci)], 
+                     extBIC[-length(selected_loci)])
+        sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  feffects, 
+                         indxNA, ncpu, availmemGb, quiet, herit[-length(selected_loci)], extBIC[-length(selected_loci)] )   
+    } else {
+        .print_header()
+        .print_final(selected_loci, map, herit, extBIC)
+        sigres <- .form_results(trait, selected_loci, map,  feffects, 
+                         indxNA, ncpu, availmemGb, quiet, herit, extBIC )   
+   }  ## end inner  if(lenth(selected_locus)>1){
+}  ## end if( itnum > maxit){
 
 
 return( sigres )

@@ -1,13 +1,87 @@
-### To run multiple CPU
-## salloc --ntasks-per-node=1  --ntasks-per-node=6 --mem=20gb --time=30:0 srun --pty bash
+# This software is distributed under the GNU General Public License.
+#
+#This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. 
 
-## To DO
-## 
-## read in M with rows as plants or  with rows as colums (as with  human data)
-## NEED TEST  DATA set to test changes to code.  Create M and Mt case. 
-## 1. add h=0.01 option to AM to allow h to be set by user
-## 2. need to test A reps - whyc GPU different to CPU
-## 3. 
+
+
+
+#' Package documentation
+#'
+#' @name AMplus-package
+#' @title A  package for genome-wide association mapping with multiple-locus models
+#' @docType package
+#' @author Andrew W. George \email{andrew.george@@csiro.au}
+#' @details See below
+#' @description A fully documented R package for performing association mapping with 
+#' multiple locus models on a genome-wide scale. 
+#' @section Motivation:  Data from genome-wide association studies are analysed, commonly, with single 
+#' locus models, that is,  on a locus-by-locus basis. Association mapping with multiple locus 
+#' models is more powerful but most multiple locus methods do not scale well with study size
+#' and can be difficult to implement in practice.  This package was designed to make 
+#' genome-wide association mapping with multiple-locus models simple and practical. 
+#' @section Purpose: This package was created to make 
+#' multiple locus association mapping on a genome-wide 
+#' scale practical. It is based on linear mixed models so is best suited for 
+#' traits which are continuous/ quantitative. However, 
+#' association mapping with binary traits is also possible.
+#'
+#'@section Reading in  marker data: Our package can accept genotype data in 
+#' plain text files and allelic data in PLINK ped files. These files can be 
+#' larger than the memory capacity of the machine. Other formats 
+#' can also be handled by using plink (with the \code{recode} option) to 
+#' convert them into ped files.  See \code{\link{ReadMarker}} for more details.
+#'
+#' @section Quick start guide:
+#' \itemize{
+#' \item{Step 1:}{Create a marker file (plain text or plink ped format) with no column 
+#' headings and where the rows are the individuals and the columns are the marker loci.}
+#' \item{Step 2:}{Create a map file (optional) that has three columns, the name of the 
+#' marker locus, the chromosome number, and the map location of the marker locus. 
+#' Column headings are optionsal.}
+#' \item{Step 3:}{Create a phenotype file with the trait data 
+#'    and if appropriate, explanatory variable data. Column headings are optional. The number
+#' of rows containing data must match the number of rows in the marker data file.}
+#' \item{Step 4:}{Input marker data with \code{\link{ReadMarker}} }
+#' \item{Step 5:}{Input the map file, if present, with\code{\link{ReadMap}}}
+#' \item{Step 6:}{Input the phenotypic data with \code{\link{ReadPheno}}}
+#' \item{Step 7:}{Perform genome wide association mapping with \code{\link{AM}}}    
+#' }
+#'
+#' @section Output: The aim of a GWAS is to identify those marker loci 
+#' closest to the genes that are influencing the trait. So, when the GWAS data are 
+#' analysed, a set of marker loci labels are returned as the output. These marker 
+#'  loci are closest to the genes underlying the trait and are found while simultaneously 
+#' accounting for multiple marker-trait associations, familial relatedness, and 
+#' fixed effects such as population structure (if included in the analysis).
+#' More detailed output such as the additive effect of the marker locus, its 
+#' significance in the multiple locus model ( measured by a p-value), and 
+#' an estimate of the amount of variation explained by the locus can be 
+#' obtained by running the summary function (\code{\link{SummaryAM})}.
+#'
+#'@section Where to get help: To see an overview of the package and its functions type
+#' \preformatted{
+#' library(, AMplus)
+#' }
+#'
+#' For detailed help on a function, type
+#'
+#' \preformatted{
+#' help(yourfunctionname)
+#' }
+#'
+#' where \emph{yourfunctionname}  is the name of the function.
+#'
+#' A YouTube quick start presentation can be found here ... 
+#'
+#' Powerpoint slides found here Website
+#'
+#' @references \url{data_blah.com}
+#' @keywords Association mapping, multiple locus models, linear mixed models.
+NULL
+
+
 
 
 
@@ -49,13 +123,11 @@ emma.delta.ML.dLL.w.Z <-  function (logdelta, lambda, etas.1, xi.1, n, etas.2.sq
         K <- K[vids, vids]
     }
     res <- K %*% crossprod(Z, Z)
-    cat(" in emma.eigen.L.w.Z \n")
     if(ngpu>0){
        eig <- rcppMagmaSYEVD::eigen_mgpu(res, symmetric=FALSE)
     } else {
        eig <- eigen(res, symmetric = FALSE, EISPACK = TRUE)
     }
-   cat(" out emma.eigen.L.w.Z \n")
     return(list(values = eig$values, vectors = qr.Q(qr(Z %*% 
         eig$vectors), complete = TRUE)))
 }
@@ -237,13 +309,12 @@ emma.delta.ML.LL.wo.Z <- function (logdelta, lambda, etas, xi)
 
 
 emma.eigen.L.wo.Z <- function (K, ngpu=0) 
-{  cat(" emma.eigen.L.wo.Z in \n")
+{  
     if(ngpu > 0){
        eig <- rcppMagmaSYEVD::eigen_mgpu(K, symmetric = TRUE)
      } else {
       eig <- eigen(K, symmetric = TRUE)
      }
-    cat(" emma.eigen.L.wo.Z out \n")
     return(list(values = eig$values, vectors = eig$vectors))
 }
 
@@ -254,13 +325,11 @@ emma.eigen.R.wo.Z <-  function (K, X, ngpu=0)
     dn <- diag(n)
     S <- dn - X %*% solve(crossprod(X, X)) %*% t(X)
     gc()
-    cat(" in emma.eigen.R.wo.Z \n") 
     if(ngpu > 0){
        eig <- rcppMagmaSYEVD::eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
     } else {
        eig <- eigen(S %*% (K + dn) %*% S, symmetric = TRUE)
     }
-    cat(" emma.eigen.R.wo.Z out \n")
     stopifnot(!is.complex(eig$values))
     return(list(values = eig$values[1:(n - q)] - 1, vectors = eig$vectors[, 
         1:(n - q)]))
@@ -575,7 +644,7 @@ if(is.null(map)){
 ##  library('matrixcalc')
 ##  library('Matrix')
 ## This builds a dll for the function
-## sourceCpp("/home/geo047/gitHUB_WMAM/MyPackage/RcppFunctions.cpp", rebuild=TRUE, verbose=TRUE)
+## sourceCpp("/home/geo047/gitHUB_WMAM/MyPackage/RcppFunctions.cpp", rebuild=TRUE, quiet=TRUE)
 ## source("/home/geo047/gitHUB_WMAM/MyPackage/wgEMMA.R")
 ## source("/home/geo047/gitHUB_WMAM/MyPackage/multiple_am.R")
 
@@ -585,7 +654,7 @@ if(is.null(map)){
 ##-------------------------------
 
 
-calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_bin_M=NULL, verbose = FALSE)
+calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_bin_M=NULL, quiet = FALSE)
 {
  ## R interface to Rcpp code to calculate M %*% t(M)
  ## Args
@@ -604,11 +673,10 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_b
     cat(" Error: The binary packed file ", geno, " cannot be found.\n")
     stop(" calculateMMt has terminated with errors.") 
    }
-  cat(" moving into calculateMMt_rcpp .... \n")
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
   MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
                                max_memory_in_Gbytes=availmemGb, num_cores=ncpu, 
-                               dims= dim_of_bin_M, verbose = verbose) 
+                               dims= dim_of_bin_M, quiet = quiet) 
   return(MMt)
 
 }  ## end function
@@ -622,7 +690,7 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_b
 
 
 calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, 
-                                           verbose = FALSE , ngpu=0)
+                                           quiet = FALSE , ngpu=0)
 {
   ## R function for calculating the square root of M * M^t
   ## and the inverse of the square root of MMt
@@ -736,7 +804,7 @@ calculateP  <- function(H=NULL, X=NULL, ngpu=0)
 }
 
 
-calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, verbose=FALSE)
+calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, quiet=FALSE)
 {
 
   if( !(nrow(P) ==  length(y))){
@@ -768,7 +836,7 @@ return(a)
 
 
 mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8, dim_of_bin_M=NULL, 
-                                 selected_loci=NA, verbose = FALSE)
+                                 selected_loci=NA, quiet = FALSE)
 {
  ## Rcpp function to calculate the BLUP (a) values under a dimension reduced model
  ## Args:
@@ -809,7 +877,7 @@ mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8,
   ar <- calculate_reduced_a_rcpp(f_name_bin = fnamebin, varG=varG, P=P, 
                                  y=ycolmat, max_memory_in_Gbytes=availmemGb, 
                                  dims=dim_of_bin_M , selected_loci = selected_loci , 
-                                 verbose = verbose )
+                                 quiet = quiet )
 
 
 
@@ -828,7 +896,7 @@ return(ar)
 calculate_a_and_vara <- function(maxmemGb=8, dims=NULL,
                          selectedloci = NA,
                          invMMtsqrt=NULL, transformed_a=NULL, transformed_vara=NULL,
-                         verbose = FALSE,
+                         quiet = FALSE,
                          indxNA = NULL)
 {
  ## an Rcpp function to take dimension reduced a (BLUP) values 
@@ -861,13 +929,13 @@ calculate_a_and_vara <- function(maxmemGb=8, dims=NULL,
                     max_memory_in_Gbytes=maxmemGb, 
                     dims=dimsMt, 
                     a = transformed_a, 
-                    verbose = verbose,
+                    quiet = quiet,
                     indxNA = indxNA) 
 
 }
 
 
-calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MMtsqrt=NULL, verbose=FALSE)
+calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MMtsqrt=NULL, quiet=FALSE)
 {
 ## Using var(\hat(a)) = simgaG - Cjj  where Cjj is the component from C^-1 (henerdsons 
 ##   mixed model equations coefficent matrix.   See Verbyla et al. TAG 2007.
@@ -966,23 +1034,54 @@ if(!is.null(file_phenotype))
 
 #' @title Read phenotype file
 #' @description Read in the phenotypic data
-#' @param filename the name of the phenotype file.
+#' @param filename contains the name of the phenotype  file. The file name needs to be in quotes.
 #' @param header a logical value. When \code{TRUE}, the first row of the file contains the names of the columns.  Default is \code{TRUE}.
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. Default
 #'              is \code{FALSE}.
 #' @param ... any other \code{\link{read.table}} formatting commands
-#' @details
-#' Here, \code{ReadPheno} reads in the phenotypic data. A space separated plain text file is assumed. Each row in this file 
+#' @details  
+#' 
+#' \code{ReadPheno} reads in the phenotypic data. A space separated plain text file is assumed. Each row in this file 
 #' corresponds to an individual. The number of rows in the phenotypic file must be the same as the number of rows in 
-#' the marker data file. Also, the ordering of the individuals must be the same in the two files. 
+#' the marker data file. Also, the ordering of the individuals must be the same in the two files.  A space separated file with 
+#' column headings is the default but can be changed with the \code{header} and \code{csv} options. 
 #'
 #' The phenotypic file may contain multiple traits and explanatory variables. 
 #'
-#' Missing values are allowed and should be coded NA. Traits with missing values do not cause any problems. However, 
-#' if the explanatory variables have missing values, and these explanatory variables are being used in \code{\link{AM}}, 
-#' then \code{\link{AM}} will return an error.   See \code{\link{AM}} for details. 
+#' Missing values are allowed and should be coded NA. 
+#
+#' As an example, suppose we have three individuals for which we have collected data on two quantitative traits (y1 and y2), and 
+#' four explanatory variables (var1, var2, var3, and var4). The data looks like  
+#' \tabular{cccccc}{
+#'     y1      \tab y2      \tab  var1  \tab var2 \tab   var3  \tab var4 \cr
+#'     112.02  \tab -3.123  \tab  10    \tab H1   \tab   M     \tab blue \cr
+#'     156.44  \tab 1.2     \tab  12    \tab H1   \tab   NA     \tab red  \cr
+#'     10.3    \tab NA   \tab  9     \tab H2   \tab   F     \tab green 
+#'}
 #'
-
+#' Then to load these data, we would use the command 
+#'
+#' \preformatted{pheno_obj <- ReadPhenr(filename="pheno.dat")}
+#'
+#' where "pheno.dat" is the name of the phenotype file, and \code{pheno_obj} is a dataframe.  
+#' The column headings of the dataframe are "y1", "y2", 
+#' "var1", "var2", "var3", and "var4" where "var2", "var3", and "var4" are read in as factors with the other columns treated as 
+#' numerics. 
+#'
+#'
+#' \subsection{Dealing with missing trait data}{
+#'
+#'  \code{AM} deals automatically with individuals with missing trait data. 
+#' These individuals are removed  from the analysis and a warning message is generated.
+#' }
+#' 
+#' \subsection{Dealing with missing explanatory variable values}{
+#'
+#' \code{AM} deals automatically with individuals with missing explanatory variable values. 
+#' These individuals are removed from the analysis and a warning message is generated
+#' }
+#'
+#'
 #' @seealso \code{\link{ReadMarker}} for reading in marker data, \code{\link{AM}} for performing association mapping.
 #' @return 
 #' a data frame is returned of the phenotypic data. If \code{header} is true, the 
@@ -1009,19 +1108,20 @@ ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, ...){
   sep <- ""
   if(csv) sep=","
   phenos <- read.table(phenofile, header=header, sep=sep, ...)
-cat("\n\n Reading Phenotype File \n\n")
-cat(" Loading file ....... \n\n")
-cat("               SUMMARY OF PHENOTYPE FILE  \n")
-cat(" file location(path):         ",  dirname(phenofile), "\n")
-cat(" file name:                   ",  basename(phenofile), "\n")
-cat(" number of rows:              ", nrow(phenos), "\n")
-cat(" number of columns:           ", ncol(phenos), "\n")
-cat("\n                    Column classes  \n")
+cat("\n\n Loading Pheotype file ... \n\n")
+cat("               Summary of Phenotype File  \n")
+cat("              ~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
+cat(" File name:                   ",  phenofile, "\n")
+cat(" Number of individuals:       ", nrow(phenos), "\n")
+cat(" Number of columns:           ", ncol(phenos), "\n\n")
+cat(" First 5 rows of the phenotype file are \n")
+print(head(phenos,n=5))
+cat("\n Column classes are  \n")
 for(ii in 1:ncol(phenos))
   cat(c( sprintf("%20s   %15s", names(phenos)[ii], class(phenos[[ii]]) ), "\n"))
 
 
-cat("\n Warning: if the column classes are incorrect, these will need to be changed manually.\n\n\n")
+cat("\n Warning: if the column classes are incorrect, these will need to be changed by the user.\n\n\n")
 
   return(phenos)
 
@@ -1036,21 +1136,24 @@ cat("\n Warning: if the column classes are incorrect, these will need to be chan
 
 #' @title Read map file
 #' @description Read in the marker map  data
-#' @param filename a character vector containing the name of the map file.
+#' @param filename contains the name of the map file. The file name needs to be in quotes.
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. 
 #' @details
-#' Here, \code{ReadMap} reads in map data into the package. A space  separated
-#' ASCII file with column headings is assumed. A csv file can also be read if \code{csv} is set to \code{TRUE}, 
+#' Unlike classical linkage mapping, association mapping does not require a map in order to analyse the data. 
+#' So, reading in a map file is optional. If a map file is read into our package, then the marker names are used when 
+#' results are reported from \code{\link{AM}}. If a map file is not supplied, then generic names M1, M2, ..., are given to the 
+#' marker loci in columns 1, 2, ...
+#' 
+#' A space separated text file with column headings is assumed as the default input. The map file can have three or four 
+#' columns. If the map file has three columns, then it is assmed that the three columns are the marker locus names, 
+#' the chromosome number, and the map position (in any units). If the map file has four columns as with a PLINK map file, 
+#' then the columns are assumed to be the marker locus names, the chromosome number, the map position in centimorgans, 
+#' and the map position in base pairs. 
+#'
 #' Missing values are not allowed. 
 #' 
-#' The order of the columns must be 
-#'   column 1:  marker name
-#'   column 2:  chromosome number
-#'   column 3:  map position 
-#'
-#' The order of the markers in this file must match the column order of the genotype file because 
-#' the genotype file does not contain marker names. 
-#' @seealso \code{\link{ReadMarker}}
+#' The order of the marker loci in this file is assumed to be in the same order as the loci in the marker data file. 
+#' @seealso \code{\link{ReadMarker}} and \code{\link{ReadPheno}}.
 #' @return 
 #' a data frame is returned of the map data. 
 #'
@@ -1076,16 +1179,15 @@ ReadMap  <- function( filename = NULL, csv=FALSE)
   sep=""
   if(csv) sep=","
   map <- read.table(mapfile, header=TRUE, sep=sep)
-cat("\n\n Reading Map File \n\n")
-cat(" Loading file ....... \n\n")
-cat("                    SUMMARY OF MAP FILE  \n")
-cat(" file location(path):         ",  dirname(mapfile), "\n")
-cat(" file name:                   ",  basename(mapfile), "\n")
-cat(" number of markers:           ", nrow(map), "\n")
-cat(" number of columns:           ", ncol(map), "\n")
-cat(" number of chromosomes:       ", length(unique(map[[2]])), "\n")
-cat(" first 10 markers of the map file ... \n")
-print(head(map, n=10))
+cat("\n\n Loading map file ... \n\n")
+cat("                    Summary of Map File  \n")
+cat("                   ~~~~~~~~~~~~~~~~~~~~~~ \n")
+cat(" File name:                   ",  mapfile, "\n")
+cat(" Number of marker loci:       ", nrow(map), "\n")
+cat(" Number of columns:           ", ncol(map), "\n")
+cat(" Number of chromosomes:       ", length(unique(map[[2]])), "\n\n")
+cat(" First 5 markers of the map file are \n")
+print(head(map, n=5))
 cat("\n\n")
 
 return(map)
@@ -1095,7 +1197,7 @@ return(map)
 
 
 create.bin  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB=NULL, 
-                         availmemGb=8, dim_of_bin_M=NULL, csv=FALSE, verbose=FALSE){
+                         availmemGb=8, dim_of_bin_M=NULL, csv=FALSE, quiet=FALSE){
  ## an Rcpp function to create the packed binary file of the genotype data M and Mt
  ## from marker data. The marker data may be from an ASCII file or PLINK ped file.
  ## Args
@@ -1112,17 +1214,17 @@ if (type=="text"){
     ## text genotype file
     createM_rcpp(f_name = file_genotype, type=type ,  f_name_bin = binMfile, AA = AA, AB = AB, BB = BB,
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv = csv,
-               verbose = verbose)
+               quiet = quiet)
 
     createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,  AA = AA, AB = AB, BB = BB,
-                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, csv=csv, verbose = verbose )
+                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, csv=csv, quiet = quiet )
 } else {
     ## PLINK ped file
     ## using -9 to indicate missing/null genotypes
     createM_rcpp(f_name = file_genotype, type=type,  f_name_bin = binMfile, AA =-9, AB = -9, BB = -9,
-               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv=csv, verbose = verbose)
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv=csv, quiet = quiet)
     createMt_PLINK_rcpp(f_name = file_genotype, f_name_bin = binMtfile,   
-                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, verbose = verbose )
+                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, quiet = quiet )
 
 
 }  ## end if else type
@@ -1138,18 +1240,19 @@ if (type=="text"){
 #' 
 #' @description
 #' A function for reading in marker data. Three different types of data can be read. 
-#' @param filename contains the name of the marker input file. Put the filename in quotes. 
+#' @param filename contains the name of the marker  file. The file name needs to be in quotes. 
 #' @param type  specify the type of file. Choices are "text" and "PLINK".
-#' @param AA     an  integer value corresponding to the AA genotype in the marker genotype file. This must be specified if the file type is "text". 
-#' @param AB     an  integer value corresponding to the AB genotype in the marker genotype file. This can be left unspecified 
-#'               if there are no heterozygote genotypes (i.e. the individuals are inbred). 
-#' @param BB       integer value corresponding to the BB genotype in the marker genotype file. This must be specified if the file type is "text".
+#' @param AA     the character(s) corresponding to the AA genotype in the marker genotype file. This must be specified if the file type is "text".  The character(s) must be in quotes.
+#' @param AB     the  character(s)  corresponding to the AB genotype in the marker genotype file. This can be left unspecified 
+#'               if there are no heterozygote genotypes (i.e. the individuals are inbred). If specified, the character(s) must 
+#'               be in quotes. 
+#' @param BB        the character(s) corresponding to the BB genotype in the marker genotype file. This must be specified if the file type is "text".  The character(s) must be in quotes.
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). 
 #'         This should be set to be as large as possible.  
 #' @param csv   a logical value. When \code{TRUE}, a comma separated text file is assumed. When \code{FALSE}, a space separated text file 
 #'         is assumed. Only type="text" files are permitted to be space or comma separated.  
 #'         PLINK ped files are assumed to be space separated.
-#' @param verbose  a logical value. When \code{TRUE}, additional information is displayed such as the first 5 rows of input data. 
+#' @param quiet  a logical value. When \code{TRUE}, additional information is displayed such as the first 5 rows of input data. 
 #'
 #' @details
 #' 
@@ -1270,6 +1373,24 @@ if (type=="text"){
 #' \preformatted{PLINK --bfile filename --recode --tab --out newfilename}
 #'  
 #'}
+#'
+#'
+#' \subsection{Dealing with missing marker data}{
+#'
+#' In running \code{\link{AM}}, we assume there are no missing marker genotypes. 
+#' In fact, \code{ReadMarker} will generate errors if there are missing marker data.  
+#' However, most genome-wide data sets have missing genotypes (sometimes by design).  
+#' Ideally, a genotype imutation program such as  BEAGLE, MACH, fastPHASE, or PHASE2, should be 
+#' used to impute the missing marker data. 
+#'
+#'
+#' Alternately, for quick results, remove those loci with a high proportion of missing data (> 10\%) 
+#' and  replace the remaining missing marker genotypes with  heterozygote genotypes. 
+#' Since we assume an additive model in \code{AM}, this will not cause false positives but it 
+#' can reduce power. We found though that the loss in  power is minimal if the 
+#' proportion of missing data is low.  See ref for details.  
+#' }
+#'
 #' @return  To allow \code{\link{AM}} to handle data larger than the memory capacity of a machine, \code{ReadMarker} doesn't load 
 #' the marker data into memory. Instead, it creates a packed binary file of the marker data and its transpose. The object returned by
 #' \code{ReadMarker} is a list object with the elements \code{binfileM} , \code{binfileMt}, and \code{dim_of_bin_M}  
@@ -1322,7 +1443,7 @@ ReadMarker <- function( filename=NULL, type="text",
                            AA=NULL, AB=NULL, BB=NULL, 
                            availmemGb=8, 
                            csv = FALSE,
-                           verbose=FALSE){
+                           quiet=FALSE){
 
 
  if (nargs() == 0){
@@ -1335,15 +1456,15 @@ ReadMarker <- function( filename=NULL, type="text",
        # check that M.bin and Mt.bin exist in this directory
        if(!file.exists(fullpath("M.bin"))){
          cat(" The binary file M.bin could not be found in current working directory ", getwd(), "\n")
-         cat(" ReadMarker needs to be run where either a text file or PLINK ped file, containing the marker data, is supplied as input. \n")
-         cat(" Type  help(ReadMarker) for more detals \n")
+         cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
+         cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
          stop(" ReadMarker has terminated with errors \n")
        }
 
        if(!file.exists(fullpath("Mt.bin"))){
          cat(" The binary file Mt.bin could not be found in current working directory ", getwd(), "\n")
-         cat(" ReadMarker needs to be run where either a text file or PLINK ped file, containing the marker data, is supplied as input. \n")
-         cat(" Type  help(ReadMarker) for more detals \n")
+         cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
+         cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
          stop(" ReadMarker has terminated with errors \n")
        }
        ## looks like everything is good. Return geno list object
@@ -1351,10 +1472,12 @@ ReadMarker <- function( filename=NULL, type="text",
        return(geno)
 
    } else {
-       cat(" M.RData could not be found in directory ", getwd(),   "\n")
-       cat(" ReadMarker needs to be run where either a text file or PLINK ped file, containing the marker data, is supplied as input. \n")
-       cat(" Type  help(ReadMarker) for more detals \n")
+
+       cat(" The R file M.RData could not be found in current working directory ", getwd(), "\n")
+       cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
+       cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
        stop(" ReadMarker has terminated with errors \n")
+
    }  ## end if(file.exists(fullpath("M.RData"))
 
  }  else {
@@ -1371,7 +1494,6 @@ ReadMarker <- function( filename=NULL, type="text",
 
     ## ------   PLINK ped file -------------------
     if (type=="PLINK"){
-       cat(" A PLINK ped file is being assumed. \n")
 
        ## checking if a PLINK file has been specified. 
        if (is.null(filename)){
@@ -1389,7 +1511,7 @@ ReadMarker <- function( filename=NULL, type="text",
 
        ## Rcpp function to create binary packed M and Mt file 
 
-       create.bin(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M,  verbose=verbose  )
+       create.bin(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M,  quiet=quiet  )
 
        binfileM <- fullpath("M.bin")
        binfileMt <- fullpath("Mt.bin")
@@ -1436,7 +1558,7 @@ ReadMarker <- function( filename=NULL, type="text",
 
   ## Rcpp function to create binary packed M and Mt file from 
   create.bin(file_genotype=genofile, type=type, AA=AA, AB=AB, BB=BB, availmemGb=availmemGb, 
-                        dim_of_bin_M=dim_of_bin_M, csv=csv, verbose=verbose  )
+                        dim_of_bin_M=dim_of_bin_M, csv=csv, quiet=quiet  )
   
     binfileM <- fullpath("M.bin")
     binfileMt <- fullpath("Mt.bin")
