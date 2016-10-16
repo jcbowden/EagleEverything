@@ -1,3 +1,4 @@
+# Warranty
 # This software is distributed under the GNU General Public License.
 #
 #This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -5,6 +6,15 @@
 #This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. 
 
 
+##-------------------------------------------------------
+## What checks have been performed on this code
+## 1. differing number of rows in pheno file and geno file.          x
+## 2. differing number of loci in map file and geno file.            x
+## 3. differing number of elements in a row for the genotype file    x
+## 4. genotype file not found
+## 5. genotype text file has funny characters
+## 5  phenotype file not found
+## 6  map file not found
 
 
 #' Package documentation
@@ -523,7 +533,7 @@ check.inputs.mlam <- function (ncpu, availmemGb, colname.trait, colname.feffects
 
 if(is.null(colname.trait)){
    cat(" Error: the name of the column containing the trait data must be given. \n")
-   stop(" AM has terminated with errors. ")
+   return(TRUE)
 }
 
 if(is.null(pheno)){
@@ -531,7 +541,7 @@ if(is.null(pheno)){
    cat("        Set this parameter to the object that contains \n")
    cat("        the phenotypic data. This object is the result of running  \n")
    cat("        ReadPheno. \n")
-   stop(" AM has terminated with errors.")
+   return(TRUE)
 }
 
 if(is.null(geno)){
@@ -539,7 +549,7 @@ if(is.null(geno)){
    cat("        Set this parameter to the object that contains \n")
    cat("        the phenotypic data. This object is the result of running  \n")
    cat("        ReadMarker. \n")
-   stop(" AM has terminated with errors.")
+   return(TRUE)
 }
 
 
@@ -547,7 +557,7 @@ if(is.null(geno)){
 if(!is.list(geno)){
   cat(" Error: the geno object is not a list object. \n")
   cat("       The geno object is obtained from running ReadMarker.\n")
-  stop(" AM has terminated with errors.")
+  return(TRUE)
 }
 
 nms <- names(geno)
@@ -555,7 +565,7 @@ indx <- match(nms, c("binfileM", "binfileMt", "dim_of_bin_M" ))
 if(any(is.na(indx))){
   cat(" Error: there is a problem with the list structure of the geno object. \n")
   cat("        It should contain the elements binfileM, binfileMt, and dim_of_bin_M. \n")
-  stop(" AM has terminated with errors.")
+  return(TRUE)
 }
 
 if(is.null(map)){
@@ -569,19 +579,19 @@ if(is.null(map)){
     cat("Error: the column name for the trait/response has not been specified.\n")
     cat("       Please set colname.trait to the column name of the trait data in \n")
     cat("       the phenotypic file. \n")
-    stop(" AM has terminated with errors.")
+    return(TRUE)
  }
 
  if(length(colname.trait)>1){
     cat("Error: multiple column names for the trait have been specified. \n")
     cat("       Only a single column name should be  assigned to colname.trait. \n")
-    stop(" AM has terminated with errors.")
+    return(TRUE)
  }
 
  indx <- match(colname.trait, names(pheno))
  if(any(is.na(indx))){
    cat("Error: the trait column name cannot be found. Check spelling. \n")
-   stop(" AM has terminated with errors.")
+   return(TRUE)
  }
 
 
@@ -595,7 +605,7 @@ if(is.null(map)){
  if(any(is.na(indx))){
    cat("Error: the paramater colname.feffects contains column names that do not \n")
    cat("       match any of the column names in the phenotypic file. Check spelling.\n")
-   stop(" AM has terminated with errors.")
+   return(TRUE)
  }
 
 
@@ -604,9 +614,9 @@ if(is.null(map)){
  if(nrow(pheno) !=  geno[["dim_of_bin_M"]][1])
  {
    cat("Error: the number of individuals specified in the phenotypic file is ", nrow(pheno),  "\n")
-   cat("       the number of individuals specified in the genotypic file is ", geno[["dim_of_bin_M"]][1], "\n")
+   cat("       the number of individuals specified in the genotypic file is ",  geno[["dim_of_bin_M"]][1], "\n")
    cat("       The number of individuals should be the same in the two files.\n")
-   stop(" AM has terminated with errors.")
+   return(TRUE)
  }
 
  ## check that map and geno contain the same number of snp
@@ -615,12 +625,12 @@ if(is.null(map)){
    cat("Error: the number of marker loci in the map file is ", nrow(map), "\n")
    cat("       The number of marker loci in the genotypic file is ", geno[["dim_of_bin_M"]][2], "\n")
    cat("       The number of marker loci in the two files should be the same. \n")
-   stop(" AM has terminated with errors.")
+   return(TRUE)
  }
 
 
 
-  return(NULL)
+  return(FALSE)
 
 }
 

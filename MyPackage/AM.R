@@ -441,8 +441,10 @@ AM <- function(trait=NULL,
  ## ngpu            number of GPU available for computation
 
  ## check parameter inputs
- check.inputs.mlam(ncpu, availmemGb, trait, feffects, 
+ error.code <- check.inputs.mlam(ncpu, availmemGb, trait, feffects, 
                      map, pheno, geno )
+ if(error.code)
+    stop("AM has terminted with errors.", call. = FALSE)
 
  ## checking if map is present. If not, generate a fake map. 
  if(is.null(map)){
@@ -451,7 +453,7 @@ AM <- function(trait=NULL,
      cat(" It is only used for the reporting of results. \n")
    }
    ## map has not been supplied. Create own map
-   map <- data.frame(SNP=paste("M", 1:geno[["dim_of_bin_M"]][2], 
+   map <- data.frame(SNP=paste("M", 1:geno[["dim_of_bin_M"]][2], sep=""), 
                      Chr=rep(1, geno[[" "]][2]), 
                      Pos=1:geno[["dim_of_bin_M"]][2])
   }
@@ -618,8 +620,8 @@ if( itnum > maxit){
         .print_final(selected_loci, map, herit, extBIC)
         sigres <- .form_results(trait, selected_loci, map,  feffects, 
                          indxNA, ncpu, availmemGb, quiet, herit, extBIC )   
-   }  ## end inner  if(lenth(selected_locus)>1){
-}  ## end if( itnum > maxit){
+   }  ## end inner  if(lenth(selected_locus)>1)
+}  ## end if( itnum > maxit)
 
 
 return( sigres )

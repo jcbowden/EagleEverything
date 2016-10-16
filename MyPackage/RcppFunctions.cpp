@@ -138,7 +138,7 @@ std::vector<long>   getRowColumn(std::string fname,
       os;
 
 
- std::vector<long> dimen(2)  ;  // dim[0] row number
+ std::vector<long> dimen(2,0)  ;  // dim[0] row number
                                // dim[1] col number 
 
  char 
@@ -172,9 +172,11 @@ std::vector<long>   getRowColumn(std::string fname,
   string 
     token ;
 
- while(getline(streamA , token , sep)){
-          dimen[1]++;
- }
+ while(streamA >> token)
+   dimen[1]++;
+ // while(getline(streamA , token , sep)){
+ //          dimen[1]++;
+//  }
  fileIN.close();
  if(fileIN.bad())
  {
@@ -194,7 +196,7 @@ return dimen;
 // recode ascii as packed binary file
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void  CreatePackedBinary_PLINK(std::string fname, std::string binfname, std::vector<long> dims,
-                         bool verbose)
+                         bool quiet)
 {
 long 
    indx_packed = 0,
@@ -290,7 +292,7 @@ while(getline(fileIN, line ))
  number_of_columns = 0; 
  while(streamLine >> tmp)
       number_of_columns ++;
- if (verbose)
+ if (quiet)
      Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
 
 
@@ -424,7 +426,7 @@ while(getline(fileIN, line ))
 
   }  // end while(getline(fileIN, line ))
   Rcout << "\n\n" << endl;
-  // write out a few lines of the file if verbose
+  // write out a few lines of the file if quiet
  // open PLINK ped  file
  std::ifstream fileIN_backtobeginning(fname.c_str());
  counter = 0;
@@ -464,7 +466,7 @@ void  CreatePackedBinary(std::string fname, std::string binfname, std::vector<lo
                          int AB, 
                          int BB,
                          bool csv, 
-                         bool verbose)
+                         bool quiet)
 {
 long 
    indx_packed = 0,
@@ -514,16 +516,16 @@ std::vector<unsigned long int> packed_long_vec (n_total);
 
 
 
-// open ascii genotype  file
+// open marker text  file
 std::ifstream fileIN(fname.c_str());
 if(!fileIN.good()) {
-  os << "\n\nERROR: ASCii genotype file could not be opened with filename  " << fname << "\n\n" << std::endl;
+  os << "\n\nERROR: Text file could not be opened with filename  " << fname << "\n\n" << std::endl;
   Rcpp::stop(os.str() );
 }
 
 // open binary file that is to hold packed genotype data
 std::ofstream fileOUT(binfname.c_str(), ios::binary );
- if (verbose){
+ if (quiet){
  Rcpp::Rcout << " " << std::endl;
  Rcpp::Rcout << " Reading text File  " << std::endl;
  Rcpp::Rcout << " " << std::endl;
@@ -545,13 +547,13 @@ while(getline(fileIN, line ))
  number_of_columns = 0;
  while(streamLine >> tmp)
       number_of_columns ++;
- if (verbose)
+ if (quiet)
      Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
 
  if (number_of_columns != dims[1] ){
      Rcpp::Rcout << std::endl;
      Rcpp::Rcout << std::endl;
-     Rcpp::Rcout << "Error:  PLINK file contains an unequal number of columns per row.  " << std::endl;
+     Rcpp::Rcout << "Error:  Marker text file contains an unequal number of columns per row.  " << std::endl;
      Rcpp::Rcout << "        The error has occurred at row " << counter+1 << " which contains " << number_of_columns << " but " << endl;
      Rcpp::Rcout << "        it should contain " << dims[1] << " columns of data. "  << std::endl;
      Rcpp::Rcout << std::endl;
@@ -585,7 +587,7 @@ while(getline(fileIN, line ))
           packed[indx_packed*2+1] = 0;
           packed[indx_packed*2] = 0;
      } else {
-          os << "\n\nERROR: Genotype file contains genotypes that are not 0,1, or 2. For example " << rowvec[i] << "\n\n";
+          os << "\n\nERROR: Marker text file contains genotypes that are not 0,1, or 2. For example " << rowvec[i] << "\n\n";
           Rcpp::stop(os.str() );
      } 
 
@@ -609,11 +611,11 @@ while(getline(fileIN, line ))
     counter++;
 
   }
-  if (verbose) Rcpp::Rcout << "\n" << std::endl;
+  if (quiet) Rcpp::Rcout << "\n" << std::endl;
 
 
-  // write out a few lines of the file if verbose
-  if(verbose){
+  // write out a few lines of the file if quiet
+  if(quiet){
      // open PLINK ped  file
      std::ifstream fileIN(fname.c_str());
      counter = 0;
@@ -628,7 +630,7 @@ while(getline(fileIN, line ))
         Rcpp::Rcout << std::endl;
         counter++;
       }  // end  while(getline(fileIN, line ))
-  } // end if(verbose)
+  } // end if(quiet)
 
 
 
@@ -816,7 +818,7 @@ for(long i=0;i < v.size(); i++)
 // [[Rcpp::export]]
 void  createMt_PLINK_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
                               double  max_memory_in_Gbytes,  std::vector <long> dims,
-                              bool verbose )
+                              bool quiet )
 {
 
 std::string
@@ -1045,7 +1047,7 @@ int
     //  Situation 2 
     //  Block approach needed due to lack of memory
 
-    if (verbose){
+    if (quiet){
            Rcpp::Rcout << " A block transpose is being performed due to lack of memory.  "  << std::endl;
            Rcpp::Rcout << " Memory parameter workingmemGb is set to " << max_memory_in_Gbytes << "Gbytes" << std::endl;
            Rcpp::Rcout << " If possible, increase workingmemGb parameter. " << std::endl;
@@ -1056,12 +1058,12 @@ int
     if (n_of_cols_in_geno  % n_of_cols_to_be_read != 0)
           n_blocks++;
 
-    if (verbose)  Rcpp::Rcout  << " Block Tranpose of ASCII genotype file beginning ... " << std::endl;
+    if (quiet)  Rcpp::Rcout  << " Block Tranpose of ASCII genotype file beginning ... " << std::endl;
 
     // Block read and transpose - requires n_blocks passes through the 
     // ASCII input file which could be slow if file is large and memory low
     for(long b=0; b < n_blocks; b++){
-         if (verbose) 
+         if (quiet) 
                Rcpp::Rcout << " Processing block ... " << b << " of a total number of blocks of " << n_blocks << std::endl;
 
          // want packed-block object that is a matrix of bitset values. 
@@ -1095,7 +1097,7 @@ int
          }
 
          long counter = 0;
-         if (verbose) {
+         if (quiet) {
             Rcpp::Rcout << std::endl;
             Rcpp::Rcout << std::endl;
          }
@@ -1235,7 +1237,7 @@ void  createMt_rcpp(CharacterVector f_name, CharacterVector f_name_bin,
                               int BB,
                               double  max_memory_in_Gbytes,  std::vector <long> dims,
                               bool csv,
-                              bool verbose )
+                              bool quiet )
 {
 
 std::string
@@ -1391,7 +1393,7 @@ int
 //  Situation 2 
 //  Block approach needed due to lack of memory
 
-if (verbose){
+if (quiet){
      Rcpp::Rcout << " A block transpose is being performed due to lack of memory.  "  << std::endl;
      Rcpp::Rcout << " Memory parameter workingmemGb is set to " << max_memory_in_Gbytes << "Gbytes" << std::endl;
      Rcpp::Rcout << " If possible, increase workingmemGb parameter. " << std::endl;
@@ -1401,13 +1403,13 @@ if (verbose){
   if (dims[1] % n_of_cols_to_be_read != 0)
       n_blocks++;
 
-    if (verbose)  Rcpp::Rcout  << " Block Tranpose of ASCII genotype file beginning ... " << std::endl;
+    if (quiet)  Rcpp::Rcout  << " Block Tranpose of ASCII genotype file beginning ... " << std::endl;
 
   // Block read and transpose - requires n_blocks passes through the 
   // ASCII input file which could be slow if file is large and memory low
    for(long b=0; b < n_blocks; b++){
   //for(long b=1; b < 2; b++){
-     if (verbose) Rcpp::Rcout << " Processing block ... " << b << " of a total number of blocks of " << n_blocks << std::endl;
+     if (quiet) Rcpp::Rcout << " Processing block ... " << b << " of a total number of blocks of " << n_blocks << std::endl;
 
 
      // want packed-block object that is a matrix of bitset values. 
@@ -1443,7 +1445,7 @@ if (verbose){
       Rcpp::stop(os.str() );
      }
     long counter = 0;
-    if (verbose) {
+    if (quiet) {
        Rcpp::Rcout << std::endl;
        Rcpp::Rcout << std::endl;
     }
@@ -1535,7 +1537,7 @@ MatrixXd calculate_reduced_a_rcpp ( CharacterVector f_name_bin, double varG,
                                            double max_memory_in_Gbytes,  
                                            std::vector <long> dims,
                                            Rcpp::NumericVector  selected_loci,
-                                           bool verbose)
+                                           bool quiet)
 {
   // function to calculate the BLUPs for the dimension reduced model. 
   // It is being performed in Rcpp because it makes use of Mt. 
@@ -1622,7 +1624,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
 
-      if (verbose){
+      if (quiet){
       Rprintf(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
       Rprintf(" Block multiplication necessary. \n");
       Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
@@ -1670,7 +1672,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
               counter++;
          }
 
-       if (verbose)  Rcpp::Rcout << "block done ... " << std::endl;
+       if (quiet)  Rcpp::Rcout << "block done ... " << std::endl;
       } // end for long
 
 
@@ -1727,7 +1729,7 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,
                                     double  max_memory_in_Gbytes,  
                                     std::vector <long> dims,
                                     Eigen::VectorXd  a,
-                                    bool verbose,
+                                    bool quiet,
                                     Rcpp::NumericVector indxNA)
 {
 // Purpose: to calculate the untransformed BLUP (a) values from the 
@@ -1769,7 +1771,7 @@ const size_t bits_in_integer = std::numeric_limits<int>::digits;
 //AWG  double mem_bytes_needed =   ( dims[0]   +  2*dims[1]   + 1 ) *  (dims[1] * sizeof(double) /( 1000000000));
  double mem_bytes_needed =   ( 4   *dims[1]  *  dims[0] * sizeof(double))/1000000000;
 
-if (verbose){
+if (quiet){
    Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
    Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
 }
@@ -1883,7 +1885,7 @@ std::clock_t    start;
       long num_blocks = dims[0]/num_rows_in_block;
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
-      if (verbose){
+      if (quiet){
       Rprintf(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
       Rprintf(" Block multiplication necessary. \n");
       Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
@@ -1981,7 +1983,7 @@ Rcout << "vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt " << endl;
                  counter++;
             }
     
-             if (verbose)  Rcpp::Rcout << "block done ... " << std::endl;
+             if (quiet)  Rcpp::Rcout << "block done ... " << std::endl;
 
 
       } // end for long
@@ -2014,7 +2016,7 @@ void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin,
                   int BB,
                   double  max_memory_in_Gbytes,  std::vector <long> dims,
                   bool csv, 
-                  bool verbose) 
+                  bool quiet) 
 {
   // Rcpp function to create binary packed file of ASCII and PLINK ped marker genotype file.
 
@@ -2043,7 +2045,6 @@ std::string
 //-----------------------------------
 double 
   memory_needed_in_Gb;
-
   if (ftype == "PLINK"  ){
   // this is a PLINK ped file. Hence, we need to adjust the dims[1] to get the 
   // size of the genotype file in R land. 
@@ -2056,7 +2057,7 @@ double
      //------------------------------------
      // convert PLINK ped file into packed binary file
      //----------------------------------------------
-      CreatePackedBinary_PLINK(fname, fnamebin, dims, verbose);
+      CreatePackedBinary_PLINK(fname, fnamebin, dims, quiet);
 
    }  else {
       //-------------------------------------------
@@ -2066,9 +2067,9 @@ double
       // we are processing a line of the file at a time. This is not the case when 
       // creating a binary packed Mt because we have to read in blocks before we can 
       // transpose. 
-      if (verbose)
+      if (quiet)
           Rcout << " A text file is being assumed as the input data file type. " << std::endl;
-      CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB, csv, verbose);
+      CreatePackedBinary(fname, fnamebin, dims, AA, AB, BB, csv, quiet);
    }  // end if type == "PLINK" 
 
 //--------------------------------------
@@ -2212,7 +2213,7 @@ return(column_of_genos);
 Eigen::MatrixXd  calculateMMt_rcpp(CharacterVector f_name_bin, 
                                    double  max_memory_in_Gbytes, int num_cores,
                                    Rcpp::NumericVector  selected_loci , std::vector<long> dims, 
-                                   bool verbose) 
+                                   bool quiet) 
 {
 // set multiple cores
 Eigen::initParallel();
