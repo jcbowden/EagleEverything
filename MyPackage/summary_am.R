@@ -98,18 +98,18 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL, quiet=FALSE)
 {
 
  if(is.null(AMobj))
-    stop(" summarymlam function requires AMobj object to be specified.")
+    stop(" SummaryAM function requires AMobj object to be specified.", call. = FALSE)
  if(is.null(pheno))
-    stop(" summarymlam function requires pheno parameter to be specified.")
+    stop(" SummaryAM function requires pheno parameter to be specified.", call. = FALSE)
  if(is.null(geno))
-    stop(" summarymlam function requires geno parameter to be specified.")
+    stop(" SummaryAM function requires geno parameter to be specified.", call. = FALSE)
 
  if(!is.list(AMobj))
-    stop(" summarymlam function requires AMobj object to be a list object.")
+    stop(" SummaryAM function requires AMobj object to be a list object.", call. = FALSE)
  if(!is.data.frame(pheno))
-    stop(" summarymlam function requires pheno object to be a data.frame object.")
+    stop(" SummaryAM function requires pheno object to be a data.frame object.", call. = FALSE)
  if(!is.list(geno))
-    stop(" summarymlam function requires geno object to be a list object.")
+    stop(" SummaryAM function requires geno object to be a list object.", call. = FALSE)
 
  if(is.null(map)){
    if(!quiet){

@@ -6,38 +6,38 @@
 #This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. 
 
 
-##-------------------------------------------------------
-## What checks have been performed on this code
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##              Checks 
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## 1. differing number of rows in pheno file and geno file.          x
 ## 2. differing number of loci in map file and geno file.            x
 ## 3. differing number of elements in a row for the genotype file    x
-## 4. genotype file not found
-## 5. genotype text file has funny characters
-## 5  phenotype file not found
-## 6  map file not found
-
+## 4. genotype file not found                                        x
+## 5a. genotype text file has funny characters                       x
+##     csv = TRUE
+## 5b  phenotype file not found                                      x
+## 6  map file not found                                             x
+## 7. checking if code runs with NAs in pheno                        x
 
 #' Package documentation
 #'
 #' @name AMplus-package
-#' @title A  package for genome-wide association mapping with multiple-locus models
+#' @title A package for genome-wide association mapping with multiple-locus models
 #' @docType package
 #' @author Andrew W. George \email{andrew.george@@csiro.au}
 #' @details See below
 #' @description A fully documented R package for performing association mapping with 
-#' multiple locus models on a genome-wide scale. 
+#' multiple-locus models on a genome-wide scale. 
 #' @section Motivation:  Data from genome-wide association studies are analysed, commonly, with single 
-#' locus models, that is,  on a locus-by-locus basis. Association mapping with multiple locus 
-#' models is more powerful but most multiple locus methods do not scale well with study size
+#' locus models, that is,  on a locus-by-locus basis. Association mapping with multiple-locus 
+#' models is more powerful but most multiple-locus methods do not scale well with study size
 #' and can be difficult to implement in practice.  This package was designed to make 
 #' genome-wide association mapping with multiple-locus models simple and practical. 
-#' @section Purpose: This package was created to make 
-#' multiple locus association mapping on a genome-wide 
-#' scale practical. It is based on linear mixed models so is best suited for 
+#' It is based on linear mixed models so is best suited for 
 #' traits which are continuous/ quantitative. However, 
 #' association mapping with binary traits is also possible.
 #'
-#'@section Reading in  marker data: Our package can accept genotype data in 
+#'@section Reading in  Marker Data: Our package can accept genotype data in 
 #' plain text files and allelic data in PLINK ped files. These files can be 
 #' larger than the memory capacity of the machine. Other formats 
 #' can also be handled by using plink (with the \code{recode} option) to 
@@ -45,18 +45,17 @@
 #'
 #' @section Quick start guide:
 #' \itemize{
-#' \item{Step 1:}{Create a marker file (plain text or plink ped format) with no column 
+#' \item{}{Create a marker file (plain text or PLINK ped format) with no column 
 #' headings and where the rows are the individuals and the columns are the marker loci.}
-#' \item{Step 2:}{Create a map file (optional) that has three columns, the name of the 
+#' \item{}{Create a map file (optional) that has three columns, the name of the 
 #' marker locus, the chromosome number, and the map location of the marker locus. 
-#' Column headings are optionsal.}
-#' \item{Step 3:}{Create a phenotype file with the trait data 
-#'    and if appropriate, explanatory variable data. Column headings are optional. The number
-#' of rows containing data must match the number of rows in the marker data file.}
-#' \item{Step 4:}{Input marker data with \code{\link{ReadMarker}} }
-#' \item{Step 5:}{Input the map file, if present, with\code{\link{ReadMap}}}
-#' \item{Step 6:}{Input the phenotypic data with \code{\link{ReadPheno}}}
-#' \item{Step 7:}{Perform genome wide association mapping with \code{\link{AM}}}    
+#' Column headings are required.}
+#' \item{}{Create a phenotype file with the trait data 
+#'    and if appropriate, explanatory variable data. Column headings are required. }
+#' \item{}{Input marker data with \code{\link{ReadMarker}} }
+#' \item{}{Input the map file, if present, with \code{\link{ReadMap}}}
+#' \item{}{Input the phenotypic data with \code{\link{ReadPheno}}}
+#' \item{}{Perform genome wide association mapping with \code{\link{AM}}}    
 #' }
 #'
 #' @section Output: The aim of a GWAS is to identify those marker loci 
@@ -66,7 +65,7 @@
 #' accounting for multiple marker-trait associations, familial relatedness, and 
 #' fixed effects such as population structure (if included in the analysis).
 #' More detailed output such as the additive effect of the marker locus, its 
-#' significance in the multiple locus model ( measured by a p-value), and 
+#' significance in the multiple-locus model ( measured by a p-value), and 
 #' an estimate of the amount of variation explained by the locus can be 
 #' obtained by running the summary function (\code{\link{SummaryAM})}.
 #'
@@ -78,17 +77,16 @@
 #' For detailed help on a function, type
 #'
 #' \preformatted{
-#' help(yourfunctionname)
+#' help(functionname)
 #' }
 #'
-#' where \emph{yourfunctionname}  is the name of the function.
+#' where \emph{functionname}  is the name of the function.
 #'
 #' A YouTube quick start presentation can be found here ... 
 #'
 #' Powerpoint slides found here Website
 #'
-#' @references \url{data_blah.com}
-#' @keywords Association mapping, multiple locus models, linear mixed models.
+#' @keywords Association mapping, multiple-locus models, linear mixed models.
 NULL
 
 
@@ -133,11 +131,11 @@ emma.delta.ML.dLL.w.Z <-  function (logdelta, lambda, etas.1, xi.1, n, etas.2.sq
         K <- K[vids, vids]
     }
     res <- K %*% crossprod(Z, Z)
-    if(ngpu>0){
-       eig <- rcppMagmaSYEVD::eigen_mgpu(res, symmetric=FALSE)
-    } else {
+ #   if(ngpu>0){
+ #      eig <- rcppMagmaSYEVD::eigen_mgpu(res, symmetric=FALSE)
+ #   } else {
        eig <- eigen(res, symmetric = FALSE, EISPACK = TRUE)
-    }
+ #   }
     return(list(values = eig$values, vectors = qr.Q(qr(Z %*% 
         eig$vectors), complete = TRUE)))
 }
@@ -320,11 +318,11 @@ emma.delta.ML.LL.wo.Z <- function (logdelta, lambda, etas, xi)
 
 emma.eigen.L.wo.Z <- function (K, ngpu=0) 
 {  
-    if(ngpu > 0){
-       eig <- rcppMagmaSYEVD::eigen_mgpu(K, symmetric = TRUE)
-     } else {
+ #   if(ngpu > 0){
+ #      eig <- rcppMagmaSYEVD::eigen_mgpu(K, symmetric = TRUE)
+ #    } else {
       eig <- eigen(K, symmetric = TRUE)
-     }
+ #    }
     return(list(values = eig$values, vectors = eig$vectors))
 }
 
@@ -335,11 +333,11 @@ emma.eigen.R.wo.Z <-  function (K, X, ngpu=0)
     dn <- diag(n)
     S <- dn - X %*% solve(crossprod(X, X)) %*% t(X)
     gc()
-    if(ngpu > 0){
-       eig <- rcppMagmaSYEVD::eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
-    } else {
+#    if(ngpu > 0){
+#       eig <- rcppMagmaSYEVD::eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
+#    } else {
        eig <- eigen(S %*% (K + dn) %*% S, symmetric = TRUE)
-    }
+#    }
     stopifnot(!is.complex(eig$values))
     return(list(values = eig$values[1:(n - q)] - 1, vectors = eig$vectors[, 
         1:(n - q)]))
@@ -519,7 +517,7 @@ cat("             and/or missing explanatory variable values. These individuals 
 cat("             been removed from the analysis.  \n\n")
           if(any(is.na(indxNA))){
             cat("Error:  (internal).  indxNA contains NA values. \n")
-            stop(" AM has terminated with errors. ")
+            stop(" AM has terminated with errors. ", call. = FALSE)
           }
         }
 
@@ -530,6 +528,8 @@ cat("             been removed from the analysis.  \n\n")
 check.inputs.mlam <- function (ncpu, availmemGb, colname.trait, colname.feffects, map, pheno, 
                   geno )
 {
+
+
 
 if(is.null(colname.trait)){
    cat(" Error: the name of the column containing the trait data must be given. \n")
@@ -681,7 +681,7 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_b
 
   if(!file.exists(geno)){
     cat(" Error: The binary packed file ", geno, " cannot be found.\n")
-    stop(" calculateMMt has terminated with errors.") 
+    stop(" calculateMMt has terminated with errors.", call. = FALSE) 
    }
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
   MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
@@ -717,20 +717,20 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
     cat("        information. Please remove individuals with indentical marker \n")
     cat("        information, remembering also to remove their associated phenotypic \n")
     cat("        information as well. \n")
-    stop(" Internal function: calculateMMt_sqrt_and_sqrtinv has terminated with errors.\n")
+    stop(" Internal function: calculateMMt_sqrt_and_sqrtinv has terminated with errors.\n", call. = FALSE)
   } 
    res <- list()
 
-   if(ngpu == 0){
+#   if(ngpu == 0){
       MMt.eigen <- eigen(MMt, symmetric=TRUE )
       sqrt_evals <- diag(sqrt(MMt.eigen$values))
       res[["sqrt"]] <- MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)
       rm(MMt.eigen, sqrt_evals)
       gc()
       res[["invsqrt"]] <- chol2inv(chol(res[["sqrt"]]))
-   }  else {
-      res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
-   } 
+#   }  else {
+#      res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
+#   } 
 
 
 
@@ -767,16 +767,16 @@ calculateH <- function(MMt=NULL, varE=NULL, varG=NULL )
   ## H matrix is returned. 
 
   if(!is.numeric(varE))
-    stop(" The varE (residual variance) must be numeric.")
+    stop(" The varE (residual variance) must be numeric.", call. = FALSE)
 
   if(varE < 0)
-    stop(" VarE cannot be negative.")
+    stop(" VarE cannot be negative.", call. = FALSE)
 
   if(!is.numeric(varG))
-    stop(" The varG (genotypic variance) must be numeric.")
+    stop(" The varG (genotypic variance) must be numeric.", call. = FALSE)
 
   if(varG < 0)
-    stop(" VarG cannot be negative.")
+    stop(" VarG cannot be negative.", call. = FALSE)
 
 
   if(is.null(MMt))
@@ -799,12 +799,12 @@ calculateP  <- function(H=NULL, X=NULL, ngpu=0)
   ##   matrix object P
 
   if(is.null(H))
-    stop(" H must be specified.")
+    stop(" H must be specified.", call. = FALSE)
   if(is.null(X))
-    stop(" A design matrix has not be specified. ")
+    stop(" A design matrix has not be specified. ", call. = FALSE)
 
    if(nrow(H) != nrow(X))
-      stop(" The number of rows in H and X are not the same.")
+      stop(" The number of rows in H and X are not the same.", call. = FALSE)
 
  Hinv <- chol2inv(chol(H))
  P <- Hinv - Hinv %*% X %*% solve( t(X) %*% Hinv %*% X )  %*% t(X) %*% Hinv
@@ -823,19 +823,19 @@ calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, quiet=F
     cat(" The dimensions are: \n")
     cat(" dim(P)      = ", dim(P), "\n")
     cat(" length(y)   = ", length(y), "\n")
-    stop()
+    stop(call. = FALSE)
 
   }
 
  if(is.null(varG))
-   stop(" VarG must be specified.")
+   stop(" VarG must be specified.", call. = FALSE)
 
   if(is.null(P))
-   stop(" P must be specified")
+   stop(" P must be specified", call. = FALSE)
 
 
   if(is.null(y))
-   stop(" y must be specified")
+   stop(" y must be specified", call. = FALSE)
 
     a <- varG * MMtsqrt %*% P %*% y
 
@@ -859,14 +859,14 @@ mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8,
  ##   a numeric vector of dimension reduced a values 
 
  if(is.null(varG))
-   stop(" VarG must be specified.")
+   stop(" VarG must be specified.", call. = FALSE)
 
   if(is.null(P))
-   stop(" P must be specified")
+   stop(" P must be specified", call. = FALSE)
 
  
   if(is.null(y))
-   stop(" y must be specified")
+   stop(" y must be specified", call. = FALSE)
 
  
   if( !(nrow(P) ==  length(y))){
@@ -875,7 +875,7 @@ mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8,
     cat(" The dimensions are: \n")
     cat(" dim(P)      = ", dim(P), "\n")
     cat(" length(y)   = ", length(y), "\n")
-    stop()  
+    stop(call. = FALSE)  
 
   }
 
@@ -924,8 +924,8 @@ calculate_a_and_vara <- function(maxmemGb=8, dims=NULL,
 
   file_bin <- fullpath("Mt.bin")
   if(!file.exists(file_bin)){
-      cat("\n\n  ERROR: ", file_bin, " does not exist and it should have been created. \n\n")
-      stop()
+      cat("\n\n  Error: ", file_bin, " does not exist and it should have been created. \n\n")
+      stop(call. = FALSE)
   }
 
   dimsMt <- c(dims[2], dims[1]) 
@@ -999,20 +999,27 @@ check.inputs <- function(ncpu=NULL, availmemGb=NULL,
 
 
 if(!is.null(ncpu)){
- if(!is.numeric(ncpu))
-   stop(" ncpu is not a numeric.")
-
- if(ncpu < 1)
-    stop(" ncpu cannot be zero or a negative number.")
+ if(!is.numeric(ncpu)){
+   cat("Error:  ncpu is not a numeric. It should be the number of cpu.\n")
+   return(TRUE)
+ }
+ if(ncpu < 1){
+    cat("Error: ncpu cannot be a  zero or a negative number. It should be the number of cpu. \n")
+    return(TRUE)
+ }
+    
 }
 
 if(!is.null(availmemGb))
 {
- if(!is.numeric(availmemGb))
-   stop(" availmemGb is not a numeric.")
-
- if(availmemGb <= 0)
-    stop(" availmemGb cannot be zero or a a negative number.")
+ if(!is.numeric(availmemGb)){
+   cat("Error: availmemGb is not a numeric. It should be the number of giggabytes of RAM available. \n")
+   return(TRUE)
+ }
+ if(availmemGb <= 0){
+    cat("Error: availmemGb cannot be zero or a a negative number.  It should be the number of giggabytes of RAM available. \n")
+    return(TRUE)
+  } 
 }
 
 
@@ -1021,8 +1028,8 @@ if(!is.null(file_genotype))
   genofile <- fullpath(file_genotype)
 
   if(!file.exists(genofile)){
-    msg <- paste(" Cannot find genotype file ", genofile, sep="")
-    stop(msg)
+    cat("Error: Cannot find marker file ", genofile, "\n")
+    return(TRUE)
   }
 }
 
@@ -1032,18 +1039,18 @@ if(!is.null(file_phenotype))
   phenofile <- fullpath(file_phenotype)
 
   if(!file.exists(phenofile)){
-    msg <- paste(" Cannot find phenotype file ", phenofile, sep="")
-    stop(msg)
+     cat("Error: Cannot find phenotype file ", phenofile, "\n")
+     return(TRUE)
   }
 }
 
-
+  return(FALSE)
 
 
 }
 
 #' @title Read phenotype file
-#' @description Read in the phenotypic data
+#' @description Read in the phenotypic data. The first row is assumed to contain the column headings. 
 #' @param filename contains the name of the phenotype  file. The file name needs to be in quotes.
 #' @param header a logical value. When \code{TRUE}, the first row of the file contains the names of the columns.  Default is \code{TRUE}.
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. Default
@@ -1112,8 +1119,9 @@ if(!is.null(file_phenotype))
 ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, ...){
 
   phenofile <- fullpath(filename)
-  check.inputs(file_phenotype=phenofile)
-
+  error.code <- check.inputs(file_phenotype=phenofile)
+  if(error.code)
+     stop(" ReadPheno has terminated with errors.", call. = FALSE)
 
   sep <- ""
   if(csv) sep=","
@@ -1145,7 +1153,7 @@ cat("\n Warning: if the column classes are incorrect, these will need to be chan
 
 
 #' @title Read map file
-#' @description Read in the marker map  data
+#' @description Read in the marker map  data. The first row is assumed to contain the column headings. 
 #' @param filename contains the name of the map file. The file name needs to be in quotes.
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. 
 #' @details
@@ -1183,8 +1191,9 @@ cat("\n Warning: if the column classes are incorrect, these will need to be chan
 ReadMap  <- function( filename = NULL, csv=FALSE)
 {
  mapfile <- fullpath(filename)
- check.inputs(file_phenotype=filename)
-
+ error.code <-  check.inputs(file_genotype=filename)
+ if(error.code)
+    stop(" ReadMap has terminated with errors.", call. = FALSE)
 
   sep=""
   if(csv) sep=","
@@ -1225,13 +1234,12 @@ if (type=="text"){
     createM_rcpp(f_name = file_genotype, type=type ,  f_name_bin = binMfile, AA = AA, AB = AB, BB = BB,
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv = csv,
                quiet = quiet)
-
     createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,  AA = AA, AB = AB, BB = BB,
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, csv=csv, quiet = quiet )
 } else {
     ## PLINK ped file
     ## using -9 to indicate missing/null genotypes
-    createM_rcpp(f_name = file_genotype, type=type,  f_name_bin = binMfile, AA =-9, AB = -9, BB = -9,
+    createM_rcpp(f_name = file_genotype, type=type,  f_name_bin = binMfile, AA ="-9", AB = "-9", BB = "-9",
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv=csv, quiet = quiet)
     createMt_PLINK_rcpp(f_name = file_genotype, f_name_bin = binMtfile,   
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, quiet = quiet )
@@ -1468,14 +1476,14 @@ ReadMarker <- function( filename=NULL, type="text",
          cat(" The binary file M.bin could not be found in current working directory ", getwd(), "\n")
          cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
          cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
-         stop(" ReadMarker has terminated with errors \n")
+         stop(" ReadMarker has terminated with errors \n", call. = FALSE)
        }
 
        if(!file.exists(fullpath("Mt.bin"))){
          cat(" The binary file Mt.bin could not be found in current working directory ", getwd(), "\n")
          cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
          cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
-         stop(" ReadMarker has terminated with errors \n")
+         stop(" ReadMarker has terminated with errors \n", call. = FALSE)
        }
        ## looks like everything is good. Return geno list object
        cat(" The files M.RData, M.bin, and Mt.bin, in current working directory ", getwd(), " have been found and will be used for the association mapping analysis. \n")
@@ -1486,7 +1494,7 @@ ReadMarker <- function( filename=NULL, type="text",
        cat(" The R file M.RData could not be found in current working directory ", getwd(), "\n")
        cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
        cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
-       stop(" ReadMarker has terminated with errors \n")
+       stop(" ReadMarker has terminated with errors \n", call. = FALSE)
 
    }  ## end if(file.exists(fullpath("M.RData"))
 
@@ -1495,11 +1503,11 @@ ReadMarker <- function( filename=NULL, type="text",
 
    if(is.null(type)){
       cat(" type must be set to \"text\" or \"PLINK\". \n")
-      stop(" ReadMarker has terminated with errors \n")
+      stop(" ReadMarker has terminated with errors \n", call. = FALSE)
    }
    if(!(type=="text" || type=="PLINK") ){
       cat(" type must be set to \"text\" or \"PLINK\". \n")
-      stop(" ReadMarker has terminated with errors \n")
+      stop(" ReadMarker has terminated with errors \n", call. = FALSE)
    }
 
     ## ------   PLINK ped file -------------------
@@ -1509,20 +1517,18 @@ ReadMarker <- function( filename=NULL, type="text",
        if (is.null(filename)){
             cat(" The name of the PLINK ped file is missing in current working directory ", getwd(), " \n")
             cat("  Run ReadMarker with filename  set to the name of the PLINK ped input file and set type=\"PLINK\". \n")
-            stop(" ReadMarker has terminated with errors \n")
+            stop(" ReadMarker has terminated with errors \n", call. = FALSE)
        }
        if (!file.exists(fullpath(filename) )){
             cat(" The PLINK ped file ", filename, " could not be found in the current directory ", getwd(), "\n")
-            stop(" ReadMarker has terminated with errors \n")
+            stop(" ReadMarker has terminated with errors \n", call. = FALSE)
        }
 
        ## Rcpp function to get dimensions of PLINK ped  file
        dim_of_bin_M <- getRowColumn(fname=fullpath(filename), csv=FALSE )
 
        ## Rcpp function to create binary packed M and Mt file 
-
        create.bin(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M,  quiet=quiet  )
-
        binfileM <- fullpath("M.bin")
        binfileMt <- fullpath("Mt.bin")
 
@@ -1531,29 +1537,20 @@ ReadMarker <- function( filename=NULL, type="text",
       ## ------------  text file -----------------------
       ## Assuming a text file that may be comma separated with numeric genotypes that need to be mapped onto AA, AB, and BB. 
       ## check of parameters
-      check.inputs(file_genotype=filename, availmemGb=availmemGb)
-
- ## Has AA, AB, BB been assigned numeric values
+      error.code <- check.inputs(file_genotype=filename, availmemGb=availmemGb)
+      if(error.code)
+          stop(" ReadMarker has terminated with errors.", call. = FALSE)
+ ## Has AA, AB, BB been assigned character values
   if(is.null(AA) ||  is.null(BB))
   { 
-     cat(" The function parameters AA and BB must be assigned a numeric value since a text file is being assumed. \n")
+     cat(" The function parameters AA and BB must be assigned a numeric or character  value since a text file is being assumed. \n")
      cat(" Type help(ReadMarker) for help on how to read in  data. \n")
-     stop(" ReadMarker has terminated with errors \n")
+     stop(" ReadMarker has terminated with errors \n", call. = FALSE)
   }
 
-  if(!is.numeric(AA) || !is.numeric(BB)){
-     cat(" AA and/or BB must be an integer value corresponding to the AA and/or BB genotype, respectively,  in the text marker genotype file. \n")
-     stop(" ReadMarker has terminated with errors \n")
-  }
-  if(!is.null(AB)){
-     if(!is.numeric(AB)){
-     cat(" AB must be an integer value corresponding to the AB genotype in the text marker genotype file. ")
-     stop(" ReadMarker has terminated with errors \n")
-     }
-  }
   ## if there are no hets. 
   if(is.null(AB))
-     AB <- 18923282  ## no hets so setting it to something weird
+     AB <- "NA"  ## no hets 
 
 
 
@@ -1565,11 +1562,9 @@ ReadMarker <- function( filename=NULL, type="text",
   ## Rcpp function to get dimensions of ASCII genotype file
   dim_of_bin_M <- getRowColumn(fname=genofile, csv=csv )
 
-
   ## Rcpp function to create binary packed M and Mt file from 
-  create.bin(file_genotype=genofile, type=type, AA=AA, AB=AB, BB=BB, availmemGb=availmemGb, 
-                        dim_of_bin_M=dim_of_bin_M, csv=csv, quiet=quiet  )
-  
+  create.bin(file_genotype=genofile, type=type, AA=as.character(AA), AB=as.character(AB), BB=as.character(BB), 
+              availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M, csv=csv, quiet=quiet  )
     binfileM <- fullpath("M.bin")
     binfileMt <- fullpath("Mt.bin")
 

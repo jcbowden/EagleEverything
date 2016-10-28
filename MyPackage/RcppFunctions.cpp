@@ -462,9 +462,9 @@ fileOUT.close();
 // recode ascii as packed binary file
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void  CreatePackedBinary(std::string fname, std::string binfname, std::vector<long> dims,
-                         int AA, 
-                         int AB, 
-                         int BB,
+                         std::string  AA, 
+                         std::string AB, 
+                         std::string BB,
                          bool csv, 
                          bool quiet)
 {
@@ -475,8 +475,12 @@ long
    n_of_long = dims[1]/(bits_in_ulong/2),
    n_extra=0,
    n_total=0;
-short 
-    rowvec[dims[1]]; // holds entire row worth of genotypes from ascii file
+// short 
+//     rowvec[dims[1]]; // holds entire row worth of genotypes from ascii file
+
+
+ std::string 
+     rowvec[dims[1]]; // holds entire row worth of genotypes from ascii file
 
 std::string
    tmp,
@@ -574,9 +578,7 @@ while(getline(fileIN, line ))
   //   streamA >> rowvec[i];
 
      getline(streamA, token, sep);
-     rowvec[i] = atoi(token.c_str());
-   //   Rcout << "rowvec[i] = " << i << " " << rowvec[i] << endl;
- 
+     rowvec[i] = token;
      if(rowvec[i] == BB){
           packed[indx_packed*2+1] = 1;
           packed[indx_packed*2] = 0;
@@ -587,9 +589,18 @@ while(getline(fileIN, line ))
           packed[indx_packed*2+1] = 0;
           packed[indx_packed*2] = 0;
      } else {
-          os << "\n\nERROR: Marker text file contains genotypes that are not 0,1, or 2. For example " << rowvec[i] << "\n\n";
-          Rcpp::stop(os.str() );
-     } 
+          if (AB=="NA"){
+              Rcpp::Rcout << "Error: Marker text file contains marker genotypes that are different to " << AA << " " << BB << endl;
+              Rcpp::Rcout << "       For example, " << rowvec[i] << endl;
+              os << "ReadMarker has terminated with errors\n\n"; 
+              Rcpp::stop(os.str() );
+          } else {
+              Rcpp::Rcout << "Error: Marker text file contains marker genotypes that are different to " << AA << " " << AB << " " << BB << endl;
+              Rcpp::Rcout << "       For example, " << rowvec[i] << endl;
+              os << "ReadMarker has terminated with errors\n\n"; 
+              Rcpp::stop(os.str() );
+         }
+     }  //end if else 
 
      if(  ( ((indx_packed+1)  % ( bits_in_ulong/2))==0) | (dims[1]-1) == i ) { 
         indx_packed = 0;
@@ -1232,9 +1243,9 @@ fileOUTbin.close();
 
 // [[Rcpp::export]]
 void  createMt_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
-                              int AA, 
-                              int AB, 
-                              int BB,
+                              string AA, 
+                              string AB, 
+                              string BB,
                               double  max_memory_in_Gbytes,  std::vector <long> dims,
                               bool csv,
                               bool quiet )
@@ -1258,7 +1269,7 @@ std::string
      fname = Rcpp::as<std::string>(f_name),
      fnamebin = Rcpp::as<std::string>(f_name_bin);
 
-short 
+std::string 
   rowvec[dims[1]];
 
 char 
@@ -1350,7 +1361,7 @@ int
    for(long i=0; i < dims[1]; i++){
 //     streamA >> rowvec[i];
        getline(streamA, token, sep); 
-   rowvec[i] = atoi(token.c_str());
+   rowvec[i] = token;
 
    // Here, BB is coded as 2 when bit packed,
    //       AB is coded as 1, 
@@ -2011,9 +2022,9 @@ Rcout << "vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt " << endl;
 // [[Rcpp::export]]
 void createM_rcpp(CharacterVector f_name, CharacterVector f_name_bin, 
                   CharacterVector  type,
-                  int AA,
-                  int AB, 
-                  int BB,
+                  string AA,
+                  string AB, 
+                  string BB,
                   double  max_memory_in_Gbytes,  std::vector <long> dims,
                   bool csv, 
                   bool quiet) 

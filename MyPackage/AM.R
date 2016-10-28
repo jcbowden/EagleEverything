@@ -6,7 +6,7 @@
 
 
 .form_results <- function(trait, selected_loci, map,  feffects, indxNA,
-                           ncpu, availmemGb, quiet, herit, extBIC )
+                           ncpu, availmemGb, quiet,  extBIC )
 {
   if (length(selected_loci) > 1){
    sigres <- list(trait=trait,
@@ -19,7 +19,6 @@
                     ncpu=ncpu,
                     availmemGb=availmemGb,
                     quiet=quiet,
-                    herit=herit, 
                     extBIC=extBIC)
   } else {
    sigres <- list(trait=trait,
@@ -32,7 +31,6 @@
                     ncpu=ncpu,
                     availmemGb=availmemGb,
                     quiet=quiet,
-                    herit=herit, 
                     extBIC=extBIC)
   }
 return(sigres)
@@ -154,20 +152,20 @@ if(!is.matrix(Xmat))
    cat(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
  }
 
-.print_final  <- function(selected_loci, map, herit, extBIC )
+.print_final  <- function(selected_loci, map,  extBIC )
 {
   if (length(selected_loci) == 1 & any(is.na(selected_loci)))
   {
       cat("No significant marker-trait associations have been found. \n\n")
   }  else {
-     .print_results(selected_loci=selected_loci, map=map, h=herit, extBIC=extBIC)
+     .print_results(selected_loci=selected_loci, map=map,  extBIC=extBIC)
           cat("\n\n")
   }   ## end if else
 
 
 }  ## end function print.finals
 
- .print_results <- function(itnum=NULL, selected_loci, map,h, extBIC)
+ .print_results <- function(itnum=NULL, selected_loci, map, extBIC)
  {  if(!is.null(itnum)){ 
        cat(" Significant marker-trait association found. \n\n")
        cat(" New results after iteration ", itnum, "are \n\n")
@@ -184,8 +182,7 @@ if(!is.matrix(Xmat))
        }  else {
        cat(sprintf("%15s  %10s        %10s       %8s            %-8.2f \n", 
         map[[1]][selected_loci[ii]], map[[2]][selected_loci[ii]], as.character(map[[3]][selected_loci[ii]]), 
-             selected_loci[ii], 
-        extBIC[ii] ))
+             selected_loci[ii], extBIC[ii] ))
      }  ## end if else 
    }
     cat("\n\n\n\n")
@@ -248,7 +245,7 @@ if(!is.matrix(Xmat))
 #' @description \code{AM} is used for multiple locus association mapping. It can simultaneously 
 #' account for population stratification, familial relatedness, and nuisance fixed effects while 
 #' detecting and mapping multiple marker-trait associations. It doesn't require any parameters to be tuned,
-#' as with regularization technniques nor does it require a significance level or threshold to be set 
+#' as with regularization technniques nor does it require a significance level or threshold to be set. 
 #' Those snp in strongest association with a trait are reported in a table of results. These 
 #' snp map to the genomic regions containing the genes that are influencing the trait. 
 #' @param trait  the name of the column in the phenotypic data file that contains the trait data. The name is case sensitive and must match exactly the column name in the phenotypic data file. 
@@ -263,7 +260,7 @@ if(!is.matrix(Xmat))
 #'              be assumed. 
 #' @param ncpu a numeric value for the number of CPU that are available for distributed computing.  The default is to determine the number of CPU automatically. 
 #' @param ngpu   a integer value for the number of GPU available for computation.  The default
-#'               is to assume there are no gpu available. 
+#'               is to assume there are no gpu available. This option is not yet implemented. 
 #' @param  quiet      a logical value. When \code{TRUE}, extra output is returned 
 #'  to the screen for monitoring progress. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
@@ -279,8 +276,8 @@ if(!is.matrix(Xmat))
 #' Suppose, 
 #' \itemize{
 #' \item{}{the snp data is contained in the file "geno.txt" which is a plain space separated
-#' text file with no column headings. The file is located in the current working directory or
-#' the default directory for your R session.It contains numeric genotype values 0,1, and 2 for 
+#' text file with no column headings. The file is located in the current working directory. 
+#' It contains numeric genotype values 0, 1, and 2 for 
 #' AA, AB, and BB, respectively}
 #' \item{}{the phenotypic data is contained in the file "pheno.txt" which is a plain space
 #' separated text file with a single trait and no explanatory variables. The file has the 
@@ -288,7 +285,7 @@ if(!is.matrix(Xmat))
 #' \item{}{there is no map data}
 #' }
 #'
-#'  To analyse these data, we would run the following:
+#'  To analyse these data, we would use the following functions:
 #' \preformatted{
 #'   geno_obj <-  ReadMarker(filename="geno.txt", AA=0, AB=1, BB=2, type="text")
 #'   
@@ -305,19 +302,19 @@ if(!is.matrix(Xmat))
 #' \itemize{
 #' \item{}{the snp data is contained in the file "geno.ped" which is a PLINK ped file. See
 #' \code{\link{ReadMarker}} for details. The file is located in /my/dir. Lets assume 
-#' the file is large but our machine has 32Gbytes of RAM.}
+#' the file is large but our machine has 32 Gbytes of RAM.}
 #' \item{}{the phenotypic data is contained in the file "pheno.txt" which is a plain space
 #' separated text file with  six columns. The first column is a trait and is labelled "y1".
 #' The second column is another trait and is laballed "y2". The third and fourth columns 
 #' are nuisance variables and are labelled "cov1" and "cov2". The fifth and sixth columns
 #' are the first two principal components to account for population substructure and are 
 #' labelled "pc1" and "pc2".
-#' The file is located in /my/dir}
-#' \item{}{the map data is contained in the file "map.txt" and is also located in 
-#'  /my/dir}
-#' \item{}{An AM analysis is performed where the trait of interest is "trait2", 
+#' The file is located in /my/dir.}
+#' \item{}{the map data is contained in the file "map.txt", is also located in 
+#'  /my/dir, and the first row has the column headings.}
+#' \item{}{An AM analysis is performed where the trait of interest is "y2", 
 #' the fixed effects to be included in the analysis are "cov1", "cov2", "pc1", and "pc2", 
-#' and the available memory is to be set to 32Gbytes.}
+#' and the available memory is to be set to 32 Gbytes.}
 #' } 
 #'
 #'  To analyse these data, we would run the following:
@@ -328,7 +325,7 @@ if(!is.matrix(Xmat))
 #'
 #'   map_obj   <- ReadMap(filename="/my/dir/map.txt")
 #'
-#'   res <- AM(trait="trait2", feffects=c("cov1", "cov2", "pc1", "pc2"), 
+#'   res <- AM(trait="y2", feffects=c("cov1", "cov2", "pc1", "pc2"), 
 #'             geno=geno_obj, pheno=pheno_obj, map=map_obj, availmemGb=32)
 #' }
 #' A table of results is printed to the screen and saved in the R object \code{res}. 
@@ -367,7 +364,22 @@ if(!is.matrix(Xmat))
 #' @seealso \code{\link{ReadMarker}}, \code{\link{ReadPheno}}, and \code{\link{ReadMap}}
 #'
 #' @return
-#' something here .... 
+#' A list with the following components:
+#' \describe{
+#'\item{trait}{column name of the trait being used by AM}
+#'\item{feffects}{column names of the explanatory variables being used by AM}
+#'\item{indxNA}{numeric vector containing the line numbers of those individuals with missing phenotypic data for the 
+#' trait and explanatory variables being used by AM}
+#' \item{Mrk}{character vector with the marker names of those loci found to be in significant association with the trait}
+#' \item{Chr}{character vector with the chromosome names for the loci found to be in significant association with the trait}
+#' \item{Pos}{numeric vector with the map positions of the loci found to be in  significant association with the trait}
+#' \item{Indx}{column number in the marker file of the loci found to be in  significant association with the trait}
+#' \item{ncpu}{number of cpu used for the calculations}
+#' \item{availmemGb}{amount of RAM in Gbytes that has been set by the user}
+#' \item{quiet}{the value of the logical flag \code{quiet}}
+#' \item{extBIC}{numeric vector with the extended BIC values for the loci  found to be in  significant association with the trait}
+#'}
+#'
 #' @examples
 #'   #---------------
 #'   # read the map 
@@ -441,8 +453,13 @@ AM <- function(trait=NULL,
  ## ngpu            number of GPU available for computation
 
  ## check parameter inputs
- error.code <- check.inputs.mlam(ncpu, availmemGb, trait, feffects, 
-                     map, pheno, geno )
+
+ ## print tile
+ .print_title()
+
+
+ error.code <- check.inputs.mlam(ncpu=ncpu , availmemGb=availmemGb, colname.trait=trait, colname.feffects=feffects, 
+                     map=map, pheno=pheno, geno=geno )
  if(error.code)
     stop("AM has terminted with errors.", call. = FALSE)
 
@@ -463,7 +480,7 @@ AM <- function(trait=NULL,
    cat(" Error: There is a differing number of loci read in by ReadMarker and ReadMap functions. \n")
    cat("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_bin_M"]][2], "\n")
    cat("        The number of marker loci in  the marker map is  ", nrow(map), "\n") 
-   stop(" AM has terminatated with errors.")
+   stop(" AM has terminatated with errors.", call. = FALSE)
  }
 
 
@@ -472,7 +489,7 @@ AM <- function(trait=NULL,
    cat(" Error: There is a differing number  of rows read in by ReadMarker and ReadPheno functions. \n")
    cat("         The number of rows read in by ReadMarker() is ", geno[["dim_of_bin_M"]][1], "\n")
    cat("        The number of rows  read in by ReadPheno is  ", nrow(map), "\n") 
-   stop(" AM has terminatated with errors.")
+   stop(" AM has terminatated with errors.", call. = FALSE)
  }
 
 
@@ -480,7 +497,6 @@ AM <- function(trait=NULL,
 
  selected_loci <- NA
  new_selected_locus <- NA
- herit <- vector("numeric", 0)
  extBIC <- vector("numeric", 0)
  ## assign trait 
  trait <-  pheno[[trait]]
@@ -500,11 +516,11 @@ AM <- function(trait=NULL,
 
 
 
-  if(ngpu > 0 ){
+##  if(ngpu > 0 ){
 # library(rcppMagmaSYEVD)
 ## caters for the two ways data can be inputed into AMplus
-       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
-  }
+## AWG 28/10/16       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
+##  }
 
 
  ## remove missing observations from trait
@@ -516,8 +532,6 @@ AM <- function(trait=NULL,
  Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, feffects=feffects, quiet=quiet )
 currentX <- do.call(.build_design_matrix, Args) 
 
- ## print tile
- .print_title()
 
  ## Initialization
  continue <- TRUE
@@ -552,18 +566,16 @@ currentX <- do.call(.build_design_matrix, Args)
 
     ## Calculate extBIC
     new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, quiet) 
-    h <- best_vg/(best_vg + best_ve)
     gc()
 
-    ## set vectors herit and extBIC
-    herit <- c(herit, h)
+    ## set vector extBIC
     extBIC <- c(extBIC, new_extBIC)
 
 
     ## Print findings to screen
-
-   .print_results(itnum, selected_loci, map, herit, extBIC)
-
+   cat(" In here .... \n")
+   .print_results(itnum, selected_loci, map,  extBIC)
+    cat(" out .. \n")
    ## Select new locus if extBIC is still decreasing 
    if(which(extBIC==min(extBIC))==length(extBIC) ){  ## new way of stoppint based on extBIC only
      ## find QTL
@@ -579,9 +591,9 @@ currentX <- do.call(.build_design_matrix, Args)
      ## terminate while loop, 
      continue <- FALSE
 #     .print_header()
-#     .print_final(selected_loci, map, herit, extBIC)
+#     .print_final(selected_loci, map, extBIC)
 #     sigres <- .form_results(trait, selected_loci, map,  feffects, 
-#                     indxNA, ncpu, availmemGb, quiet, herit, extBIC )   
+#                     indxNA, ncpu, availmemGb, quiet,  extBIC )   
    }  ## end if else
 
 
@@ -592,18 +604,18 @@ currentX <- do.call(.build_design_matrix, Args)
          .print_header()
          ## need to remove the last selected locus since we don't go on and calucate its H and extBIC 
          ## under this new model. 
-         .print_final(selected_loci[-length(selected_loci)], map, herit, extBIC)
+         .print_final(selected_loci[-length(selected_loci)], map, extBIC)
          sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  feffects, 
-                     indxNA, ncpu, availmemGb, quiet, herit, extBIC )   
+                     indxNA, ncpu, availmemGb, quiet,  extBIC )   
     }
  
   }  ## end while continue
 
 if( itnum > maxit){
     .print_header()
-    .print_final(selected_loci, map, herit, extBIC)
+    .print_final(selected_loci, map,  extBIC)
     sigres <- .form_results(trait, selected_loci, map,  feffects, 
-                     indxNA, ncpu, availmemGb, quiet, herit, extBIC )   
+                     indxNA, ncpu, availmemGb, quiet,  extBIC )   
 
 } else {
     ## remove last selected_loci as for this locus, the extBIC went up
@@ -611,15 +623,15 @@ if( itnum > maxit){
         .print_header()
         .print_final(selected_loci[-length(selected_loci)], 
                      map, 
-                     herit[-length(selected_loci)], 
                      extBIC[-length(selected_loci)])
         sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  feffects, 
-                         indxNA, ncpu, availmemGb, quiet, herit[-length(selected_loci)], extBIC[-length(selected_loci)] )   
+                         indxNA, ncpu, availmemGb, quiet, 
+                         extBIC[-length(selected_loci)] )   
     } else {
         .print_header()
-        .print_final(selected_loci, map, herit, extBIC)
+        .print_final(selected_loci, map, extBIC)
         sigres <- .form_results(trait, selected_loci, map,  feffects, 
-                         indxNA, ncpu, availmemGb, quiet, herit, extBIC )   
+                         indxNA, ncpu, availmemGb, quiet, extBIC )   
    }  ## end inner  if(lenth(selected_locus)>1)
 }  ## end if( itnum > maxit)
 
