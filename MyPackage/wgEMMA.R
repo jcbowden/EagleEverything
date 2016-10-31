@@ -9,15 +9,37 @@
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ##              Checks 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## 1. differing number of rows in pheno file and geno file.          x
-## 2. differing number of loci in map file and geno file.            x
-## 3. differing number of elements in a row for the genotype file    x
-## 4. genotype file not found                                        x
-## 5a. genotype text file has funny characters                       x
-##     csv = TRUE
-## 5b  phenotype file not found                                      x
-## 6  map file not found                                             x
-## 7. checking if code runs with NAs in pheno                        x
+##
+##  Phenotype data
+##     differing number of rows in pheno file and geno file.          x
+##     phenotype file not found                                       x
+##     checking if code runs with NAs in pheno                        x
+
+
+## Genotype data
+##     differing number of loci in map file and geno file.            x
+##     differing number of elements in a row for the genotype file    x
+##     genotype file not found                                        x
+##     genotype text file has funny characters                        x
+##     csv = TRUE                                                     x
+
+## Map file
+##     map file not found                                             x
+
+## AM
+##      not set pheno                                                 x
+##      not set geno                                                  x
+##      not set map                                                   x
+##      trait name incorrect                                          x
+##      trait name not given                                          x
+##      fixed effect names wrong                                      x
+##      pheno object misspecified                                     x
+##      test if objects supplied to AM exist                          x
+##      geno object not a list object                                 x
+##      pheno object not a data frame
+
+
+
 
 #' Package documentation
 #'
@@ -512,7 +534,7 @@ check.for.NA.in.trait <- function(trait=NULL)
         } else {
           ## place in reverse order
           indxNA <- sort(indxNA, decreasing = TRUE)
-cat("\n\n Warning!!!! The individuals in rows ", indxNA, " either have missing trait data \n")
+cat("\n\n WARNING!!!! The individuals in rows ", indxNA, " either have missing trait data \n")
 cat("             and/or missing explanatory variable values. These individuals have \n")
 cat("             been removed from the analysis.  \n\n")
           if(any(is.na(indxNA))){
@@ -532,79 +554,114 @@ check.inputs.mlam <- function (ncpu, availmemGb, colname.trait, colname.feffects
 
 
 if(is.null(colname.trait)){
-   cat(" Error: the name of the column containing the trait data must be given. \n")
+   cat("Error: the name of the column containing the trait data must be given. \n")
    return(TRUE)
 }
 
 if(is.null(pheno)){
-   cat(" Error: the pheno parameter has not been set. \n")
-   cat("        Set this parameter to the object that contains \n")
-   cat("        the phenotypic data. This object is the result of running  \n")
-   cat("        ReadPheno. \n")
+   cat("Error: the pheno parameter has not been set. \n")
+   cat("       Set this parameter to the object that contains \n")
+   cat("       the phenotypic data. This object is the result of running  \n")
+   cat("       ReadPheno. \n")
    return(TRUE)
 }
 
 if(is.null(geno)){
-   cat(" Error: the geno parameter has not been set. \n")
-   cat("        Set this parameter to the object that contains \n")
-   cat("        the phenotypic data. This object is the result of running  \n")
-   cat("        ReadMarker. \n")
+   cat("Error: the geno parameter has not been set. \n")
+   cat("       Set this parameter to the object that contains \n")
+   cat("       the phenotypic data. This object is the result of running  \n")
+   cat("       ReadMarker. \n")
+   return(TRUE)
+}
+
+
+if(class(try(class(geno), silent=TRUE)) == "try-error"){
+   cat("Error: the object supplied to the geno parameter does not exist. \n")
+   cat("       This object is set by running ReadMarker. Type help(ReadMarker) for help \n")
+   cat("       on running this command. \n")
+   return(TRUE)
+}
+
+
+if(class(try(class(pheno), silent=TRUE)) == "try-error"){
+   cat("Error: the object supplied to the pheno parameter does not exist. \n")
+   cat("       This object is set by running ReadPheno. Type help(ReadPheno) for help. \n")
+   cat("       on running this command. \n")
    return(TRUE)
 }
 
 
 ## checking list structure of geno
 if(!is.list(geno)){
-  cat(" Error: the geno object is not a list object. \n")
-  cat("       The geno object is obtained from running ReadMarker.\n")
+  cat("Error: the geno object is not a list object. \n")
+  cat("     The geno object is obtained from running ReadMarker.Type help(ReadMarker) for help. \n")
   return(TRUE)
 }
+
+## checking if pheno is a data frame 
+if(!is.data.frame(pheno)){
+  cat("Error: the pheno object is not a data frame. \n")
+  cat("      It is a ", class(pheno), "\n")
+  return(TRUE)
+}
+
+
 
 nms <- names(geno)
 indx <- match(nms, c("binfileM", "binfileMt", "dim_of_bin_M" ))
 if(any(is.na(indx))){
-  cat(" Error: there is a problem with the list structure of the geno object. \n")
-  cat("        It should contain the elements binfileM, binfileMt, and dim_of_bin_M. \n")
+  cat("Error: there is a problem with the list structure of the geno object. \n")
+  cat("       It should contain the elements binfileM, binfileMt, and dim_of_bin_M. \n")
+  cat("       The object supplied contains the elements ", names(geno), "\n")
   return(TRUE)
 }
 
 if(is.null(map)){
-    cat("\n\n  Warning: no map object has been specified. A generic map \n")
-    cat("          will be assumed.                                \n\n")
+    cat("WARNING: no map object has been specified. A generic map \n")
+    cat("         will be assumed.                                \n\n")
     map <- data.frame(Mrk= paste("M", 1:geno[["dim_of_bin_M"]][2]), Chrm=1, Pos=1:geno[["dim_of_bin_M"]][2])
 }
+
+
+
+
+
 
  ## checks for colname.trait
  if(is.null(colname.trait)){
     cat("Error: the column name for the trait/response has not been specified.\n")
-    cat("       Please set colname.trait to the column name of the trait data in \n")
-    cat("       the phenotypic file. \n")
+    cat("       Please set trait to the column name of the trait data in \n")
+    cat(" .     the phenotypic file. The allowable column names are ", names(pheno), "\n")
     return(TRUE)
  }
 
  if(length(colname.trait)>1){
     cat("Error: multiple column names for the trait have been specified. \n")
-    cat("       Only a single column name should be  assigned to colname.trait. \n")
+    cat("       Only a single column name should be  assigned to trait. \n")
     return(TRUE)
  }
 
  indx <- match(colname.trait, names(pheno))
  if(any(is.na(indx))){
-   cat("Error: the trait column name cannot be found. Check spelling. \n")
+   cat("Error: the trait column name does not match any of the column names in the phenotypic file. \n")
+   cat("       The name that has been supplied is ", pheno, "\n")
+   cat("       The column names of the phenotypic file are ", names(pheno), "\n")
    return(TRUE)
  }
 
 
  ## checks for colname.feffects
  if(is.null(colname.feffects)){
-    cat("Warning: no fixed effects have been specified. \n")
+    cat("\n\n WARNING: no fixed effects have been specified. \n\n")
  }
 
 
  indx <- match(colname.feffects, names(pheno))
  if(any(is.na(indx))){
-   cat("Error: the paramater colname.feffects contains column names that do not \n")
-   cat("       match any of the column names in the phenotypic file. Check spelling.\n")
+   cat("Error: the feffects option contains column names that do not \n")
+   cat("       match any of the column names in the phenotypic file. \n")
+   cat("       The column names in the phenotypic file are: \n")
+   cat(c("       ", names(pheno), "\n"))
    return(TRUE)
  }
 
@@ -1000,11 +1057,11 @@ check.inputs <- function(ncpu=NULL, availmemGb=NULL,
 
 if(!is.null(ncpu)){
  if(!is.numeric(ncpu)){
-   cat("Error:  ncpu is not a numeric. It should be the number of cpu.\n")
+   cat("Error:  ncpu is not a numeric value. It is of class ", class(ncpu), "It should be the number of cpu.\n")
    return(TRUE)
  }
  if(ncpu < 1){
-    cat("Error: ncpu cannot be a  zero or a negative number. It should be the number of cpu. \n")
+    cat("Error: ncpu cannot be a zero or a negative number. It should be the number of cpu. \n")
     return(TRUE)
  }
     
@@ -1013,7 +1070,7 @@ if(!is.null(ncpu)){
 if(!is.null(availmemGb))
 {
  if(!is.numeric(availmemGb)){
-   cat("Error: availmemGb is not a numeric. It should be the number of giggabytes of RAM available. \n")
+   cat("Error: availmemGb is not a numeric value. It is of class ", class(availmemGb), "It should be the number of giggabytes of RAM available. \n")
    return(TRUE)
  }
  if(availmemGb <= 0){
@@ -1029,6 +1086,9 @@ if(!is.null(file_genotype))
 
   if(!file.exists(genofile)){
     cat("Error: Cannot find marker file ", genofile, "\n")
+    cat("       This could be a problem with the name of the file and/or the location of the file. \n")
+    cat("       Perhaps specify the full name of the file (i.e. absolute directory path and file name) \n")
+    cat("       Type help(ReadMarker) and go to the examples section for an example of this. \n") 
     return(TRUE)
   }
 }
@@ -1039,8 +1099,11 @@ if(!is.null(file_phenotype))
   phenofile <- fullpath(file_phenotype)
 
   if(!file.exists(phenofile)){
-     cat("Error: Cannot find phenotype file ", phenofile, "\n")
-     return(TRUE)
+    cat("Error: Cannot find phenotype file ", phenofile, "\n")
+    cat("       This could be a problem with the name of the file and/or the location of the file. \n")
+    cat("       Perhaps specify the full name of the file (i.e. absolute directory path and file name) \n")
+    cat("       Type help(ReadPheno) and go to the examples section for an example of this. \n") 
+    return(TRUE)
   }
 }
 
@@ -1139,7 +1202,7 @@ for(ii in 1:ncol(phenos))
   cat(c( sprintf("%20s   %15s", names(phenos)[ii], class(phenos[[ii]]) ), "\n"))
 
 
-cat("\n Warning: if the column classes are incorrect, these will need to be changed by the user.\n\n\n")
+cat("\n WARNING: if the column classes are incorrect, these will need to be changed by the user.\n\n\n")
 
   return(phenos)
 
@@ -1543,8 +1606,8 @@ ReadMarker <- function( filename=NULL, type="text",
  ## Has AA, AB, BB been assigned character values
   if(is.null(AA) ||  is.null(BB))
   { 
-     cat(" The function parameters AA and BB must be assigned a numeric or character  value since a text file is being assumed. \n")
-     cat(" Type help(ReadMarker) for help on how to read in  data. \n")
+     cat("Error: The function parameters AA and BB must be assigned a numeric or character value since a text file is being assumed. \n")
+     cat("       Type help(ReadMarker) for help on how to read in the marker data. \n")
      stop(" ReadMarker has terminated with errors \n", call. = FALSE)
   }
 

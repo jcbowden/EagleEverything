@@ -1,4 +1,0 @@
-PKG_CPPFLAGS=-DEIGEN_USE_BLAS=1
-PKG_CXXFLAGS=-I${MKLROOT}/include
-PKG_LIBS=-L${MKLROOT}/lib/intel64 -lmkl_rt -lpthread -lm -ldl
-

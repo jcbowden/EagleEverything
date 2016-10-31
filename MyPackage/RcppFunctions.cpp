@@ -1577,9 +1577,10 @@ const size_t bits_in_double = std::numeric_limits<double>::digits;
    // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt))
 double mem_bytes_needed =   ( dims[0]*dims[1] + dims[0]*dims[0] + dims[0] ) *  ( sizeof(double)/( 1000000000));
 
-
-Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
-Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
+if (!quiet){
+    // Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
+    Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
+}
 
 if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
@@ -1782,8 +1783,8 @@ const size_t bits_in_integer = std::numeric_limits<int>::digits;
 //AWG  double mem_bytes_needed =   ( dims[0]   +  2*dims[1]   + 1 ) *  (dims[1] * sizeof(double) /( 1000000000));
  double mem_bytes_needed =   ( 4   *dims[1]  *  dims[0] * sizeof(double))/1000000000;
 
-if (quiet){
-   Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
+if (!quiet){
+//   Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
    Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
 }
 

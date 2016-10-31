@@ -5,6 +5,44 @@
 #This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. 
 
 
+doquiet <- function(dat, num_markers, lab){
+     ## a diagnostic function for printing the contents of matrix or vector
+     ## used for error checking
+     if(class(dat)=="matrix"){
+          ### if dat is a matrix
+
+         if(num_markers > 0){
+           cat(" Dimension of ", lab, " is", dim(dat), "\n")
+           cat(" First few rows and ", num_markers, "columns of ", lab, " are: \n")
+           if(nrow(dat) > 5 && ncol(dat) > num_markers)
+               print(dat[1:5, 1:num_markers])
+           if(nrow(dat) <=5  &&  ncol(dat) > num_markers)
+               print(dat[1:nrow(dat), 1:num_markers])
+           if(nrow(dat) > 5  &&  ncol(dat) <=  num_markers)
+               print(dat[1:5, 1:ncol(dat)])
+           if(nrow(dat) <= 5  &&  ncol(dat) <=  num_markers)
+               print(dat[1:nrow(dat), 1:ncol(dat)])
+           cat("\n\n")
+         }
+     } ## end if class(dat)
+
+     if(class(dat)=="numeric" || class(dat)=="vector"){
+       if(num_markers > 0){
+          cat(" Length of ", lab, "is", length(dat), "\n")
+          cat(" The first ", num_markers, "elements of the vector " lab, "are:\n")
+          if(length(dat) > num_markers)
+             print(dat[1:num_markers])
+          if(length(dat) <= num_markers)
+             print(dat[1:length(dat)])
+       cat("\n\n")
+       }
+    }
+
+    if(!(class(dat)=="matrix" || class(dat)=="vector" || class(dat)=="numeric"))
+      cat(" Internal error in doquiet. dat not matrix or vector or numeric. \n")
+
+}
+
 .form_results <- function(trait, selected_loci, map,  feffects, indxNA,
                            ncpu, availmemGb, quiet,  extBIC )
 {
@@ -46,7 +84,7 @@ cat(" \n")
 cat("   . ,-\"-.   ,-\"-. ,-\"-.   ,-\"-. ,-\"-. ,-\"-. ,-\"-.   ,-\"-. ,-\"-.    \n")  
 cat("    X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ /   \n")
 cat("   / \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X|   \n")
-cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-     \n")
+cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-     \n\n\n")
 
 }
 
@@ -90,7 +128,7 @@ cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-   
      } ## if else (length(indxNA)==0)
    } 
 
- if (quiet){
+ if (quiet > 0){
    cat("Dimension of design matrix, before addition of marker fixed effects is ", nrow(Xmat), "rows and ", ncol(Xmat), "columns.\n") 
  }
 
@@ -138,10 +176,6 @@ if(!is.matrix(Xmat))
 
    extBIC <- BIC + 2 * lchoose(geno$dim_of_bin_M[2], ncol(currentX) - 1)  
 
-   if(quiet){
-         cat(" new BIC = ", BIC, "\n")
-         cat(" New extBIC = ", extBIC, "\n")
-    }
     return(extBIC)
  }
 
@@ -191,31 +225,67 @@ if(!is.matrix(Xmat))
 
 
   .find_qtl <- function(geno, availmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
-                       currentX, error_checking, ncpu, quiet, trait, ngpu )
+                       currentX,  ncpu, quiet, trait, ngpu )
   {
     ##  internal function: use only with AM
+    if(quiet > 0){
+       cat(" quiet =", quiet, ": beginning calculation of H matrix. \n")
+    }
     H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg ) 
+    doquiet(dat=H, num_markers=quiet, lab="H")
+
+    if(quiet>0){
+       cat(" quiet =", quiet, ": beginning calculation of P matrix. \n")
+    }
     P <- calculateP(H=H, X=currentX ) 
+    doquiet(dat=P, num_markers=quiet, lab="P")
     rm(H)
     gc()
  
+    
+    if(quiet > 0){
+      cat(" quiet = ", quiet, ": beginning calculation of the square root of MMt and its inverse. \n")
+    }
+    ## artifact from old code but kept it anyway. Looks at the stability of the MMt calculation 
+    ## especially if there are near identical rows of data in M
+    error_checking <- FALSE
+    if (quiet > 0)
+       error_checking <- TRUE
     MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
                               ngpu=ngpu ) 
 
+    doquiet(dat=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], num_markers=quiet, lab="sqrt(M %*% M^t)")
+    doquiet(dat=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]], num_markers=quiet, lab="sqrt(M %*% M^t)^-1")
+
+    if(quiet > 0){
+      cat(" quiet =", quiet, ": beginning calculation of the BLUP estimates for dimension reduced model. \n")
+    }
     hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
                        y=trait, quiet = quiet )   
+    doquiet(dat=hat_a, num_markers=quiet, lab="BLUPs")
+
+
      rm(P)
      gc()
 
+    if(quiet > 0){
+      cat(" quiet = ", quiet, ": beginning calculation of the standard errors  of BLUP estimates for dimension reduced model. \n")
+    }
 
     var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
                                                 MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
                                                 quiet = quiet ) 
+    doquiet(dat=var_hat_a, num_markers=quiet, lab="SE of BLUPs")
+
 
    
      gc()
      ## load("everything.RData")   ## just for testing ... 
+    if(quiet > 0){
+      cat(" quiet = ", quiet, ": beginning calculation of BLUPS and their standard errors for full model. \n")
+    }
+
      a_and_vara  <- calculate_a_and_vara(maxmemGb=availmemGb, 
                                             dims=geno[["dim_of_bin_M"]],
                                             selectedloci = selected_loci,
@@ -225,12 +295,17 @@ if(!is.matrix(Xmat))
                                             indxNA = indxNA,
                                             quiet=quiet) 
 
+     doquiet(dat=a_and_vara[["a"]], num_markers=quiet, lab="BLUPs for full model")
+     doquiet(dat=a_and_vara[["vara"]], num_markers=quiet, lab="SE of BLUPs for full model")
 
 
   
     ## outlier test statistic
-    if (quiet) cat(" Calculating outlier test statistics. \n")
+    if (quiet > 0) 
+        cat(" quiet = ", quiet, ": beginning calculation of  outlier test statistics. \n")
     tsq <- a_and_vara[["a"]]**2/a_and_vara[["vara"]]
+    doquiet(dat=tsq, num_markers=quiet, lab="outlier test statistic")
+
     indx <- which(tsq == max(tsq, na.rm=TRUE))   ## index of largest test statistic. However, need to account for other loci 
                                          ## already having been removed from M which affects the indexing
 
@@ -241,7 +316,7 @@ if(!is.matrix(Xmat))
     return(orig_indx[indx])
 }
 
-#' @title multiple locus association mapping 
+#' @title multiple-locus association mapping 
 #' @description \code{AM} is used for multiple locus association mapping. It can simultaneously 
 #' account for population stratification, familial relatedness, and nuisance fixed effects while 
 #' detecting and mapping multiple marker-trait associations. It doesn't require any parameters to be tuned,
@@ -261,14 +336,10 @@ if(!is.matrix(Xmat))
 #' @param ncpu a numeric value for the number of CPU that are available for distributed computing.  The default is to determine the number of CPU automatically. 
 #' @param ngpu   a integer value for the number of GPU available for computation.  The default
 #'               is to assume there are no gpu available. This option is not yet implemented. 
-#' @param  quiet      a logical value. When \code{TRUE}, extra output is returned 
-#'  to the screen for monitoring progress. 
+#' @param  quiet      an integer value specifying the number of marker loci for which diagnostic information is 
+#' to be printed to the screen. This is useful for error checking. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
 #' genomic locations of interest that are to be identified. 
-#' @param  error_checking a logical value. When \code{TRUE}, 
-#' the numericial stability of the dimension reduction is checked. That is, individuals 
-#' with near identical marker genotypes can cause numerical issues, and are reported 
-#' when \code{error_checking} has been set to \code{TRUE}. 
 #' @details
 #'
 #' \subsection{How to perform a basic AM analysis}{
@@ -359,6 +430,17 @@ if(!is.matrix(Xmat))
 #' These individuals are removed from the analysis and a warning message is generated
 #' }
 #'
+#' \subsection{Error Checking}{
+#' \code{quiet} is a integer value. It specifies the number of marker loci for which diagnostic information 
+#' is to be printed to the screen.  When \code{quiet} is non-zero, the contents of important matrices and 
+#' vectors are printed. Setting \code{quiet} to an integer value can be useful for diagnosing problems with the 
+#' input data.  
+#'}
+#'
+#'
+#'
+#'
+#'
 #'
 #'
 #' @seealso \code{\link{ReadMarker}}, \code{\link{ReadPheno}}, and \code{\link{ReadMap}}
@@ -376,7 +458,7 @@ if(!is.matrix(Xmat))
 #' \item{Indx}{column number in the marker file of the loci found to be in  significant association with the trait}
 #' \item{ncpu}{number of cpu used for the calculations}
 #' \item{availmemGb}{amount of RAM in Gbytes that has been set by the user}
-#' \item{quiet}{the value of the logical flag \code{quiet}}
+#' \item{quiet}{the number of markers for which diagnostic information is to be printed.}
 #' \item{extBIC}{numeric vector with the extended BIC values for the loci  found to be in  significant association with the trait}
 #'}
 #'
@@ -434,9 +516,8 @@ AM <- function(trait=NULL,
                map = NULL,
                ncpu=detectCores(),
                ngpu=0,
-               quiet=TRUE,
+               quiet=0,
                maxit=20,
-               error_checking=FALSE 
                ){
 
  ## Core function for performing whole genome association mapping with EMMA
@@ -448,7 +529,6 @@ AM <- function(trait=NULL,
  ##                 is only a response to be fitted. 
  ## geno            if geno is a matrix or data frame, then the user has not ReadMarker and a bin packed file
  ##                 has not been created. If it is a character string, then it is the file location of the binary packed files. 
- ## error_checking  when true, it performs some checks of the calculations
  ## maxit           maximum number of qtl to include in the model
  ## ngpu            number of GPU available for computation
 
@@ -463,15 +543,18 @@ AM <- function(trait=NULL,
  if(error.code)
     stop("AM has terminted with errors.", call. = FALSE)
 
+
+
+
  ## checking if map is present. If not, generate a fake map. 
  if(is.null(map)){
-   if(!quiet){
+   if(quiet > 0){
      cat(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
      cat(" It is only used for the reporting of results. \n")
    }
    ## map has not been supplied. Create own map
    map <- data.frame(SNP=paste("M", 1:geno[["dim_of_bin_M"]][2], sep=""), 
-                     Chr=rep(1, geno[[" "]][2]), 
+                     Chr=rep(1, geno[["dim_of_bin_M"]][2]), 
                      Pos=1:geno[["dim_of_bin_M"]][2])
   }
 
@@ -523,9 +606,16 @@ AM <- function(trait=NULL,
 ##  }
 
 
+
  ## remove missing observations from trait
  if(length(indxNA)>0){
     trait <- trait[-indxNA]
+
+    if(quiet > 0){
+     cat(" The following rows are being removed from pheno due to missing data: \n")
+     cat("             ", indxNA, "\n\n")
+    }
+
  }
 
  ## build design matrix currentX
@@ -554,14 +644,25 @@ currentX <- do.call(.build_design_matrix, Args)
                     quiet=quiet, indxNA=indxNA)
 
     if(itnum==1){
+        if(quiet>0)
+           cat(" quiet=FALSE: calculating M %*% M^t. \n")
          MMt <- do.call(.calcMMt, Args)  
+         doquiet(dat=MMt, num_markers=quiet, lab="M%*%M^t")
         invMMt <- chol2inv(chol(MMt))   ## doesn't use GPU
         gc()
     } 
-      vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, ngpu=ngpu) 
+    if(quiet>0){
+      cat(" Calculating variance components for multiple-locus model. \n")
+    }
+    vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, ngpu=ngpu) 
     gc()
     best_ve <- vc[["ve"]]
     best_vg <- vc[["vg"]]
+
+   if(quiet>0){
+      cat(" Residual variance estimate is ", best_ve, "\n")
+      cat(" Polygenic variance estimate is ", best_vg, "\n")
+   }
 
 
     ## Calculate extBIC
@@ -573,15 +674,12 @@ currentX <- do.call(.build_design_matrix, Args)
 
 
     ## Print findings to screen
-   cat(" In here .... \n")
    .print_results(itnum, selected_loci, map,  extBIC)
-    cat(" out .. \n")
    ## Select new locus if extBIC is still decreasing 
    if(which(extBIC==min(extBIC))==length(extBIC) ){  ## new way of stoppint based on extBIC only
      ## find QTL
      ARgs <- list(geno=geno,availmemGb=availmemGb, indxNA=indxNA, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
-                 error_checking=error_checking,
                  ncpu=ncpu, quiet=quiet, trait=trait, ngpu=ngpu)
       new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
      gc()
