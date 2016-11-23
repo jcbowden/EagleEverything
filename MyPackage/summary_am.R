@@ -25,13 +25,12 @@ GenomicRel = function(M){
 #' @title Summary of multiple locus association mapping results
 #' @description    A summary function that provides additional information on the significant 
 #'     marker-trait associations found by \code{\link{AM}}
-#' @param  AMobj  the (list) object obtained from running \code{\link{AM}}.
-#' @param  pheno  the (data frame) object  obtained  from running \code{\link{ReadPheno}}.
-#' @param geno   the (list) object obtained from running \code{\link{ReadMarker}}.
+#' @param  AMobj  the (list) object obtained from running \code{\link{AM}}. Must be specified. 
+#' @param  pheno  the (data frame) object  obtained  from running \code{\link{ReadPheno}}. Must be specified. 
+#' @param geno   the (list) object obtained from running \code{\link{ReadMarker}}. Must be specified. 
 #' @param map   the (data frame) object obtained from running \code{\link{ReadMap}}. The default is to assume 
-#'              a map object has not been supplied.   If not specifed, a generic map will be assumed.
-#' @param  quiet a logical value. When \code{TRUE}, extra output is returned 
-#'               to the screen for monitoring progress. 
+#'              a map object has not been supplied.   Optional.
+
 #' @details
 #'
 #' \code{SummaryAM} produces two tables of results. First, a table of results is produced with 
@@ -94,7 +93,7 @@ GenomicRel = function(M){
 #' 
 #' @seealso \code{\link{AM}}
 #'
-SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL, quiet=FALSE)
+SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
 {
 
  if(is.null(AMobj))
@@ -112,7 +111,7 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL, quiet=FALSE)
     stop(" SummaryAM function requires geno object to be a list object.", call. = FALSE)
 
  if(is.null(map)){
-   if(!quiet){
+   if(AMobj$quiet > 0){
      cat(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
      cat(" It is only used for the reporting of results. \n")
    }

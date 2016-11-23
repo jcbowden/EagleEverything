@@ -44,7 +44,8 @@
 #' Package documentation
 #'
 #' @name AMplus-package
-#' @title A package for genome-wide association mapping with multiple-locus models
+#' @title A package for genome-wide association mapping with multiple-locus models and for populations of 
+#' arbitrary structure. 
 #' @docType package
 #' @author Andrew W. George \email{andrew.george@@csiro.au}
 #' @details See below
@@ -721,7 +722,7 @@ if(is.null(map)){
 ##-------------------------------
 
 
-calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_bin_M=NULL, quiet = FALSE)
+calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_bin_M=NULL, quiet = 0)
 {
  ## R interface to Rcpp code to calculate M %*% t(M)
  ## Args
@@ -757,7 +758,7 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_b
 
 
 calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, 
-                                           quiet = FALSE , ngpu=0)
+                                           quiet = 0 , ngpu=0)
 {
   ## R function for calculating the square root of M * M^t
   ## and the inverse of the square root of MMt
@@ -903,7 +904,7 @@ return(a)
 
 
 mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8, dim_of_bin_M=NULL, 
-                                 selected_loci=NA, quiet = FALSE)
+                                 selected_loci=NA, quiet = 0)
 {
  ## Rcpp function to calculate the BLUP (a) values under a dimension reduced model
  ## Args:
@@ -963,7 +964,7 @@ return(ar)
 calculate_a_and_vara <- function(maxmemGb=8, dims=NULL,
                          selectedloci = NA,
                          invMMtsqrt=NULL, transformed_a=NULL, transformed_vara=NULL,
-                         quiet = FALSE,
+                         quiet = 0,
                          indxNA = NULL)
 {
  ## an Rcpp function to take dimension reduced a (BLUP) values 
@@ -1143,7 +1144,8 @@ if(!is.null(file_phenotype))
 #'
 #' \preformatted{pheno_obj <- ReadPhenr(filename="pheno.dat")}
 #'
-#' where "pheno.dat" is the name of the phenotype file, and \code{pheno_obj} is a dataframe.  
+#' where "pheno.dat" is the name of the phenotype file, and \code{pheno_obj} is the R object that contains the 
+#' results from reading in the phenotypic data.    
 #' The column headings of the dataframe are "y1", "y2", 
 #' "var1", "var2", "var3", and "var4" where "var2", "var3", and "var4" are read in as factors with the other columns treated as 
 #' numerics. 
@@ -1166,7 +1168,15 @@ if(!is.null(file_phenotype))
 #' @return 
 #' a data frame is returned of the phenotypic data. If \code{header} is true, the 
 #' names of the columns will be as specified by the first row of the phenotypic file. If \code{header} is \code{FALSE}, 
-#' generic names are supplied by R in the form of V1, V2, etc.  
+#' generic names are supplied by R in the form of V1, V2, etc.  If no column headings are given, these 
+#' generic names will need to be used in the \code{trait} and \code{feffects} parameters in 
+#' \code{\link{AM}}.  You can print out the column names of the dataframe by using
+#'
+#' \preformatted{names(pheno_obj)}
+#'
+#'
+#'
+#'
 #'
 #' @examples
 #' # Read in  phenotypic data from ./extdata/
@@ -1323,17 +1333,19 @@ if (type=="text"){
 #' A function for reading in marker data. Three different types of data can be read. 
 #' @param filename contains the name of the marker  file. The file name needs to be in quotes. 
 #' @param type  specify the type of file. Choices are "text" and "PLINK".
-#' @param AA     the character(s) corresponding to the AA genotype in the marker genotype file. This must be specified if the file type is "text".  The character(s) must be in quotes.
-#' @param AB     the  character(s)  corresponding to the AB genotype in the marker genotype file. This can be left unspecified 
+#' @param AA     the character(s) or number corresponding to the AA genotype in the marker genotype file. 
+#' This must be specified if the file type is "text".  The character(s) must be in quotes.
+#' @param AB     the  character(s) or number  corresponding to the AB genotype in the marker genotype file. This can be left unspecified 
 #'               if there are no heterozygote genotypes (i.e. the individuals are inbred). If specified, the character(s) must 
 #'               be in quotes. 
-#' @param BB        the character(s) corresponding to the BB genotype in the marker genotype file. This must be specified if the file type is "text".  The character(s) must be in quotes.
+#' @param BB        the character(s) or number corresponding to the BB genotype in the marker genotype file. This must be specified if the file type is "text".  The character(s) must be in quotes.
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). 
 #'         This should be set to be as large as possible.  
 #' @param csv   a logical value. When \code{TRUE}, a comma separated text file is assumed. When \code{FALSE}, a space separated text file 
 #'         is assumed. Only type="text" files are permitted to be space or comma separated.  
 #'         PLINK ped files are assumed to be space separated.
-#' @param quiet  a logical value. When \code{TRUE}, additional information is displayed such as the first 5 rows of input data. 
+#' @param  quiet      an integer value specifying the number of marker loci for which diagnostic information is 
+#' to be printed to the screen. This is useful for error checking. 
 #'
 #' @details
 #' 
@@ -1346,9 +1358,12 @@ if (type=="text"){
 #'
 #' \preformatted{geno_obj <- ReadMarker()}
 #'
-#' where \code{geno_obj} is the name of the R object that contains the marker data.
+#' where \code{geno_obj} is the name of the user defined R object that is to contain the marker data. This can be 
+#' anything you want. 
 #'
-#' For this command to work without error, the working directory needs to remain the same between R sessions. You can check on what the 
+#' For this command to work without error, the working directory needs to 
+#' be the same as the working directory form which the \code{\link{ReadMarker}} was first run. 
+#' You can check on what the 
 #' current working directory is with the command 
 #' \preformatted{getwd()}
 #' and you can change your working directory with the command 
@@ -1469,7 +1484,7 @@ if (type=="text"){
 #' and  replace the remaining missing marker genotypes with  heterozygote genotypes. 
 #' Since we assume an additive model in \code{AM}, this will not cause false positives but it 
 #' can reduce power. We found though that the loss in  power is minimal if the 
-#' proportion of missing data is low.  See ref for details.  
+#' proportion of missing data is low.  See  George and Cavanagh (2015) for details.  
 #' }
 #'
 #' @return  To allow \code{\link{AM}} to handle data larger than the memory capacity of a machine, \code{ReadMarker} doesn't load 
@@ -1479,6 +1494,9 @@ if (type=="text"){
 #' for the transpose of the marker  data,  and a 2 element vector with the first element the number of individuals and the second 
 #' element the number of marker loci. 
 #' 
+#' @references George AW and Cavanagh C. 2015. Genome-wide Association Mapping in Plants. 
+#' Theorectical and Applied Genetics 128: 1163-1174.
+#'
 #' @examples
 #'   #--------------------------------
 #'   #  Example 1
@@ -1550,6 +1568,7 @@ ReadMarker <- function( filename=NULL, type="text",
        }
        ## looks like everything is good. Return geno list object
        cat(" The files M.RData, M.bin, and Mt.bin, in current working directory ", getwd(), " have been found and will be used for the association mapping analysis. \n")
+   load("M.RData")
        return(geno)
 
    } else {

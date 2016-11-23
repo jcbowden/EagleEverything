@@ -8,6 +8,10 @@
 doquiet <- function(dat, num_markers, lab){
      ## a diagnostic function for printing the contents of matrix or vector
      ## used for error checking
+
+     if(dim(dat)[1] == 1 || dim(dat)[2] ==1 )
+         dat <- as.numeric(dat)
+
      if(class(dat)=="matrix"){
           ### if dat is a matrix
 
@@ -29,7 +33,7 @@ doquiet <- function(dat, num_markers, lab){
      if(class(dat)=="numeric" || class(dat)=="vector"){
        if(num_markers > 0){
           cat(" Length of ", lab, "is", length(dat), "\n")
-          cat(" The first ", num_markers, "elements of the vector " lab, "are:\n")
+          cat(" The first ", num_markers, "elements of the vector are ", lab, "\n")
           if(length(dat) > num_markers)
              print(dat[1:num_markers])
           if(length(dat) <= num_markers)
@@ -415,7 +419,7 @@ if(!is.matrix(Xmat))
 #' and  replace the remaining missing marker genotypes with  heterozygote genotypes. 
 #' Since we assume an additive model in \code{AM}, this will not cause false positives but it 
 #' can reduce power. We found though that the loss in  power is minimal if the 
-#' proportion of missing data is low.  See ref for details.  
+#' proportion of missing data is low.  See George and Cavanagh (2015) for details.  
 #' }
 #'
 #' \subsection{Dealing with missing trait data}{
@@ -431,15 +435,21 @@ if(!is.matrix(Xmat))
 #' }
 #'
 #' \subsection{Error Checking}{
-#' \code{quiet} is a integer value. It specifies the number of marker loci for which diagnostic information 
+#'
+#' \code{quiet} specifies the number of marker loci for which diagnostic information 
 #' is to be printed to the screen.  When \code{quiet} is non-zero, the contents of important matrices and 
-#' vectors are printed. Setting \code{quiet} to an integer value can be useful for diagnosing problems with the 
-#' input data.  
+#' vectors are printed. This can be useful for diagnosing problems with the 
+#' input data, especially when you compare the contents of the matrices/vectors for data that loads correctly 
+#' to data that is causing errors. 
+#'
+#' Setting \code{quiet} to an integer value can also be useful for monitoring progress when analysing large 
+#' data sets.   
 #'}
 #'
 #'
 #'
-#'
+#' @references George AW and Cavanagh C. 2015. Genome-wide Association Mapping in Plants. 
+#' Theorectical and Applied Genetics 128: 1163-1174.
 #'
 #'
 #'
@@ -463,10 +473,13 @@ if(!is.matrix(Xmat))
 #'}
 #'
 #' @examples
-#'   #---------------
+#'   #-------------------------
+#'   #  Example  
+#'   #------------------------
+#'
 #'   # read the map 
-#'   #---------------
-#'   #
+#'   #~~~~~~~~~~~~~~
+#'   
 #'   # File is a plain space separated text file with the first row 
 #'   # the column headings
 #'   complete.name <- system.file("extdata", "map.txt", 
@@ -476,18 +489,16 @@ if(!is.matrix(Xmat))
 #'  # to look at the first few rows of the map file
 #'  head(map_obj)
 #'
-#'   #------------------
 #'   # read marker data
-#'   #------------------
+#'   #~~~~~~~~~~~~~~~~~~~~
 #'   # Reading in a PLINK ped file 
 #'   # and setting the available memory on the machine for the reading of the data to 8Gbytes
 #'   complete.name <- system.file("extdata", "geno.ped", 
 #'                                      package="AMplus")
 #'   geno_obj <- ReadMarker(filename=complete.name,  type="PLINK", availmemGb=8) 
 #'  
-#'   #----------------------
 #'   # read phenotypic data
-#'   #-----------------------
+#'   #~~~~~~~~~~~~~~~~~~~~~~~
 #'
 #'   # Read in a plain text file with data on a single trait and two covariates
 #'   # The first row of the text file contains the column names "trait", "cov1", and "cov2". 
@@ -495,17 +506,22 @@ if(!is.matrix(Xmat))
 #'   
 #'   pheno_obj <- ReadPheno(filename=complete.name)
 #'            
-#'   #-------------------------------------------------------
 #'   # Perform multiple-locus genome-wide association mapping 
-#'   #-------------------------------------------------------                   
+#'   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #'   res <- AM(trait = "trait",
 #'                            feffects = c("cov1", "cov2"),
 #'                            map = map_obj,
 #'                            pheno = pheno_obj,
 #'                            geno = geno_obj, availmemGb=8)
 #'
-#'
-#'
+#'  # Performing multiple-locus genome-wide association mapping with a model 
+#'  #    with no fixed effects except for an intercept. 
+#'  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#'  
+#'   res <- AM(trait = "trait",
+#'                            map = map_obj,
+#'                            pheno = pheno_obj,
+#'                            geno = geno_obj, availmemGb=8)
 #'
 #'
 AM <- function(trait=NULL, 
@@ -517,7 +533,7 @@ AM <- function(trait=NULL,
                ncpu=detectCores(),
                ngpu=0,
                quiet=0,
-               maxit=20,
+               maxit=20
                ){
 
  ## Core function for performing whole genome association mapping with EMMA
