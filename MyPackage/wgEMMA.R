@@ -154,11 +154,11 @@ emma.delta.ML.dLL.w.Z <-  function (logdelta, lambda, etas.1, xi.1, n, etas.2.sq
         K <- K[vids, vids]
     }
     res <- K %*% crossprod(Z, Z)
- #   if(ngpu>0){
- #      eig <- rcppMagmaSYEVD::eigen_mgpu(res, symmetric=FALSE)
- #   } else {
+    if(ngpu>0){
+       eig <- eigen_mgpu(res, symmetric=FALSE)
+    } else {
        eig <- eigen(res, symmetric = FALSE, EISPACK = TRUE)
- #   }
+    }
     return(list(values = eig$values, vectors = qr.Q(qr(Z %*% 
         eig$vectors), complete = TRUE)))
 }
@@ -341,11 +341,11 @@ emma.delta.ML.LL.wo.Z <- function (logdelta, lambda, etas, xi)
 
 emma.eigen.L.wo.Z <- function (K, ngpu=0) 
 {  
- #   if(ngpu > 0){
- #      eig <- rcppMagmaSYEVD::eigen_mgpu(K, symmetric = TRUE)
- #    } else {
+    if(ngpu > 0){
+       eig <- eigen_mgpu(K, symmetric = TRUE)
+     } else {
       eig <- eigen(K, symmetric = TRUE)
- #    }
+     }
     return(list(values = eig$values, vectors = eig$vectors))
 }
 
@@ -356,11 +356,11 @@ emma.eigen.R.wo.Z <-  function (K, X, ngpu=0)
     dn <- diag(n)
     S <- dn - X %*% solve(crossprod(X, X)) %*% t(X)
     gc()
-#    if(ngpu > 0){
-#       eig <- rcppMagmaSYEVD::eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
-#    } else {
+    if(ngpu > 0){
+       eig <- eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
+    } else {
        eig <- eigen(S %*% (K + dn) %*% S, symmetric = TRUE)
-#    }
+    }
     stopifnot(!is.complex(eig$values))
     return(list(values = eig$values[1:(n - q)] - 1, vectors = eig$vectors[, 
         1:(n - q)]))
@@ -417,6 +417,8 @@ emma.delta.ML.dLL.wo.Z <- function (logdelta, lambda, etas, xi)
         logdelta <- (0:ngrids)/ngrids * (ulim - llim) + llim
         m <- length(logdelta)
         delta <- exp(logdelta)
+print("eig.R$values")
+print(eig.R$values)
         Lambdas <- matrix(eig.R$values, n - q, m) + matrix(delta, 
             n - q, m, byrow = TRUE)
         Etasq <- matrix(etas * etas, n - q, m)
@@ -437,6 +439,7 @@ emma.delta.ML.dLL.wo.Z <- function (logdelta, lambda, etas, xi)
                 eig.R$values, etas))
         }
         for (i in 1:(m - 1)) {
+ #print(c(i, dLL[i], dLL[i+1], esp, m-1))
             if ((dLL[i] * dLL[i + 1] < 0 - esp * esp) && (dLL[i] > 
                 0) && (dLL[i + 1] < 0)) {
                 r <- uniroot(emma.delta.REML.dLL.wo.Z, lower = logdelta[i], 
@@ -779,16 +782,17 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
   } 
    res <- list()
 
-#   if(ngpu == 0){
+   if(ngpu == 0){
       MMt.eigen <- eigen(MMt, symmetric=TRUE )
       sqrt_evals <- diag(sqrt(MMt.eigen$values))
       res[["sqrt"]] <- MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)
       rm(MMt.eigen, sqrt_evals)
       gc()
       res[["invsqrt"]] <- chol2inv(chol(res[["sqrt"]]))
-#   }  else {
-#      res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
-#   } 
+   }  else {
+      #res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
+      res <- sqrt_invsqrt(MMt, symmetric=TRUE)
+   } 
 
 
 

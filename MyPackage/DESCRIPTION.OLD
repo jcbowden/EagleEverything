@@ -19,5 +19,6 @@ Imports:
 LinkingTo: 
    Rcpp , 
    RcppEigen
-Roxygen: list(wrap=FALSE)
+Roxygen: 
+   list(wrap=FALSE)
 LazyData: true

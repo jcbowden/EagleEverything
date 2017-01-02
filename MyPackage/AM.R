@@ -339,7 +339,7 @@ if(!is.matrix(Xmat))
 #'              be assumed. 
 #' @param ncpu a numeric value for the number of CPU that are available for distributed computing.  The default is to determine the number of CPU automatically. 
 #' @param ngpu   a integer value for the number of GPU available for computation.  The default
-#'               is to assume there are no gpu available. This option is not yet implemented. 
+#'               is to assume there are no gpu available. 
 #' @param  quiet      an integer value specifying the number of marker loci for which diagnostic information is 
 #' to be printed to the screen. This is useful for error checking. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
@@ -615,11 +615,11 @@ AM <- function(trait=NULL,
 
 
 
-##  if(ngpu > 0 ){
-# library(rcppMagmaSYEVD)
-## caters for the two ways data can be inputed into AMplus
-## AWG 28/10/16       rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
-##  }
+  if(ngpu > 0 ){
+  #library(rcppMagmaSYEVD)
+  #rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
+  RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
+ }
 
 
 
