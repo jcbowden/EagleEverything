@@ -10,6 +10,8 @@ Description: An a R package to make association mapping with sophisticated multi
 License: GPL (>= 3)
 Depends:
    R (>= 3.1.3)
+Suggests:
+  rcppMagmaSYEVD
 Imports: 
    Rcpp (>= 0.11.3),  
    RcppEigen, 

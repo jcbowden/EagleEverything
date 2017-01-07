@@ -1755,7 +1755,6 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_bin,
 //      2. when indxNA not NA, then need to adjust dimenions of Mt by removing cols.
 
 
-
 ostringstream
       os;
 
@@ -1767,7 +1766,7 @@ std::string
 
 Eigen::MatrixXd
              ans_tmp,
-             var_ans_tmp;
+             var_ans_tmp(dims[0] , dims[1]);
 
 
 
@@ -1846,12 +1845,14 @@ std::clock_t    start;
     var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1;
 //     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
-  var_ans_tmp.noalias()  =  Mt *  var_ans_tmp_part1;
-  
+
+    var_ans_tmp  =  Mt  *  var_ans_tmp_part1;
+
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
 
   // Added 26 April
   long i;
+  Rcout << " in here 6 " << endl;
   #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
   for(i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;

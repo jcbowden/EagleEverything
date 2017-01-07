@@ -93,7 +93,7 @@ cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-   
 }
 
 
-.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, feffects=NULL, quiet=FALSE  )
+.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, feffects=NULL, quiet=0  )
 {
    ## internal fuction: use only in AM function and summaryam function
    ## build design matrix given character vector feffects of column names
@@ -605,22 +605,21 @@ AM <- function(trait=NULL,
  ## This means this individual will later be removed. 
  if(!is.null(feffects)){
   mat.of.NA  <- which(is.na(pheno[, feffects]), arr.ind=TRUE)
-  if(dim(mat.of.NA)[1]>0){
-    trait[unique(mat.of.NA[,1])] <- NA
+  if(!is.null(dim(mat.of.NA)[1]) ){
+     if(dim(mat.of.NA)[1]>0){
+       trait[unique(mat.of.NA[,1])] <- NA
+     }
   }
  }
 
  ## check for NA's in trait
  indxNA <- check.for.NA.in.trait(trait=trait)
-
-
-
   if(ngpu > 0 ){
-  #library(rcppMagmaSYEVD)
-  #rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
-  RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
- }
-
+     if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
+        library(rcppMagmaSYEVD)
+         rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
+     } 
+  }
 
 
  ## remove missing observations from trait

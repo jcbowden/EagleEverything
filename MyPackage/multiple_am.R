@@ -441,6 +441,7 @@ AM <- function(trait=NULL,
  ## maxit           maximum number of qtl to include in the model
  ## ngpu            number of GPU available for computation
 
+  print(" in here ")
  ## check parameter inputs
  check.inputs.mlam(ncpu, availmemGb, trait, feffects, 
                      map, pheno, geno )
@@ -467,12 +468,12 @@ AM <- function(trait=NULL,
  indxNA <- check.for.NA.in.trait(trait=trait)
 
 
-
   if(ngpu > 0 ){
-# library(rcppMagmaSYEVD)
-## caters for the two ways data can be inputed into AMplus
+     ## caters for the two ways data can be inputed into AMplus
      cat(" oooooooooooooooo \n")
+     if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
        rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
+    }
   }
 
 

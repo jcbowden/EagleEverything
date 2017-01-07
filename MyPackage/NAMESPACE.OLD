@@ -3,6 +3,7 @@ importFrom(Rcpp, evalCpp)
 importFrom(parallel, detectCores)
 import(RcppEigen,  matrixcalc, Matrix, data.table )
 
+
 export(
    ReadPheno,
    ReadMarker,
