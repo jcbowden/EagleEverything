@@ -147,9 +147,9 @@ if(!is.matrix(Xmat))
   {
     ## internal function: used only in multilocus_loci_am and summaryam
     ## values passed by environments
-    MMt <- calculateMMt(geno=geno[["binfileM"]], availmemGb=availmemGb, 
+    MMt <- calculateMMt(geno=geno[["asciifileM"]], availmemGb=availmemGb, 
                            ncpu=ncpu, 
-                           dim_of_bin_M = geno[["dim_of_bin_M"]], 
+                           dim_of_ascii_M = geno[["dim_of_ascii_M"]], 
                            selected_loci=selected_loci, quiet = quiet) 
     gc()
 
@@ -178,7 +178,7 @@ if(!is.matrix(Xmat))
    res_p <- emma.MLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
    BIC <- -2 * res_p$ML + (ncol(currentX)+1) * log(length(trait))  ## fixed effects + variance component
 
-   extBIC <- BIC + 2 * lchoose(geno$dim_of_bin_M[2], ncol(currentX) - 1)  
+   extBIC <- BIC + 2 * lchoose(geno$dim_of_ascii_M[2], ncol(currentX) - 1)  
 
     return(extBIC)
  }
@@ -291,7 +291,7 @@ if(!is.matrix(Xmat))
     }
 
      a_and_vara  <- calculate_a_and_vara(maxmemGb=availmemGb, 
-                                            dims=geno[["dim_of_bin_M"]],
+                                            dims=geno[["dim_of_ascii_M"]],
                                             selectedloci = selected_loci,
                                             invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
                                             transformed_a=hat_a, 
@@ -316,7 +316,7 @@ if(!is.matrix(Xmat))
     ## taking first found qtl
     indx <- indx[1]
 
-    orig_indx <- seq(1, geno[["dim_of_bin_M"]][2])  ## 1:ncols
+    orig_indx <- seq(1, geno[["dim_of_ascii_M"]][2])  ## 1:ncols
     return(orig_indx[indx])
 }
 
@@ -569,24 +569,24 @@ AM <- function(trait=NULL,
      cat(" It is only used for the reporting of results. \n")
    }
    ## map has not been supplied. Create own map
-   map <- data.frame(SNP=paste("M", 1:geno[["dim_of_bin_M"]][2], sep=""), 
-                     Chr=rep(1, geno[["dim_of_bin_M"]][2]), 
-                     Pos=1:geno[["dim_of_bin_M"]][2])
+   map <- data.frame(SNP=paste("M", 1:geno[["dim_of_ascii_M"]][2], sep=""), 
+                     Chr=rep(1, geno[["dim_of_ascii_M"]][2]), 
+                     Pos=1:geno[["dim_of_ascii_M"]][2])
   }
 
  ## check that the number of rows in the map file match the number of columns in the geno file
- if (geno[["dim_of_bin_M"]][2] != nrow(map)){
+ if (geno[["dim_of_ascii_M"]][2] != nrow(map)){
    cat(" Error: There is a differing number of loci read in by ReadMarker and ReadMap functions. \n")
-   cat("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_bin_M"]][2], "\n")
+   cat("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][2], "\n")
    cat("        The number of marker loci in  the marker map is  ", nrow(map), "\n") 
    stop(" AM has terminatated with errors.", call. = FALSE)
  }
 
 
  ## check that the number of rows in the phenotype file match the number of rows in the geno file
- if (geno[["dim_of_bin_M"]][1] != nrow(pheno)){
+ if (geno[["dim_of_ascii_M"]][1] != nrow(pheno)){
    cat(" Error: There is a differing number  of rows read in by ReadMarker and ReadPheno functions. \n")
-   cat("         The number of rows read in by ReadMarker() is ", geno[["dim_of_bin_M"]][1], "\n")
+   cat("         The number of rows read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][1], "\n")
    cat("        The number of rows  read in by ReadPheno is  ", nrow(map), "\n") 
    stop(" AM has terminatated with errors.", call. = FALSE)
  }
@@ -617,7 +617,7 @@ AM <- function(trait=NULL,
   if(ngpu > 0 ){
      if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
         library(rcppMagmaSYEVD)
-         rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_bin_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
+         rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_ascii_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
      } 
   }
 
@@ -647,7 +647,7 @@ currentX <- do.call(.build_design_matrix, Args)
   cat("\n\n Iteration" , itnum, ": Searching for most significant marker-trait association\n\n")
    ## based on selected_locus, form model matrix X
   currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus,
-                          dim_of_bin_M=geno[["dim_of_bin_M"]],
+                          dim_of_ascii_M=geno[["dim_of_ascii_M"]],
                           indxNA = indxNA,
                           map=map, availmemGb = availmemGb)  
 

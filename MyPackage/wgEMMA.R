@@ -620,10 +620,10 @@ if(!is.data.frame(pheno)){
 
 
 nms <- names(geno)
-indx <- match(nms, c("binfileM", "binfileMt", "dim_of_bin_M" ))
+indx <- match(nms, c("asciifileM", "asciifileMt", "dim_of_ascii_M" ))
 if(any(is.na(indx))){
   cat("Error: there is a problem with the list structure of the geno object. \n")
-  cat("       It should contain the elements binfileM, binfileMt, and dim_of_bin_M. \n")
+  cat("       It should contain the elements asciifileM, asciifileMt, and dim_of_ascii_M. \n")
   cat("       The object supplied contains the elements ", names(geno), "\n")
   return(TRUE)
 }
@@ -631,7 +631,7 @@ if(any(is.na(indx))){
 if(is.null(map)){
     cat("WARNING: no map object has been specified. A generic map \n")
     cat("         will be assumed.                                \n\n")
-    map <- data.frame(Mrk= paste("M", 1:geno[["dim_of_bin_M"]][2]), Chrm=1, Pos=1:geno[["dim_of_bin_M"]][2])
+    map <- data.frame(Mrk= paste("M", 1:geno[["dim_of_ascii_M"]][2]), Chrm=1, Pos=1:geno[["dim_of_ascii_M"]][2])
 }
 
 
@@ -680,19 +680,19 @@ if(is.null(map)){
 
 
  ## check that geno and pheno contain the same number of individuals
- if(nrow(pheno) !=  geno[["dim_of_bin_M"]][1])
+ if(nrow(pheno) !=  geno[["dim_of_ascii_M"]][1])
  {
    cat("Error: the number of individuals specified in the phenotypic file is ", nrow(pheno),  "\n")
-   cat("       the number of individuals specified in the genotypic file is ",  geno[["dim_of_bin_M"]][1], "\n")
+   cat("       the number of individuals specified in the genotypic file is ",  geno[["dim_of_ascii_M"]][1], "\n")
    cat("       The number of individuals should be the same in the two files.\n")
    return(TRUE)
  }
 
  ## check that map and geno contain the same number of snp
- if(nrow(map) != geno[["dim_of_bin_M"]][2])
+ if(nrow(map) != geno[["dim_of_ascii_M"]][2])
  {
    cat("Error: the number of marker loci in the map file is ", nrow(map), "\n")
-   cat("       The number of marker loci in the genotypic file is ", geno[["dim_of_bin_M"]][2], "\n")
+   cat("       The number of marker loci in the genotypic file is ", geno[["dim_of_ascii_M"]][2], "\n")
    cat("       The number of marker loci in the two files should be the same. \n")
    return(TRUE)
  }
@@ -733,7 +733,7 @@ if(is.null(map)){
 ##-------------------------------
 
 
-calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_bin_M=NULL, quiet = 0)
+calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_ascii_M=NULL, quiet = 0)
 {
  ## R interface to Rcpp code to calculate M %*% t(M)
  ## Args
@@ -742,9 +742,9 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_b
  ##      ncpu    number of cores for matrix operations
  ##      selectedloci an integer vector that gives the column number (0- L-1 ) of the loci that
  ##                   have been selected to act as fixed QTL effects in the model. 
- ##      dim_of_bin_M    numeric vector with the row, column numbers of M. 
+ ##      dim_of_ascii_M    numeric vector with the row, column numbers of M. 
   #------------------------------------------
-  # bin file about to be overwritten
+  # ascii file about to be overwritten
   #------------------------------------------
 
 
@@ -753,9 +753,9 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_b
     stop(" calculateMMt has terminated with errors.", call. = FALSE) 
    }
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
-  MMt <- calculateMMt_rcpp( f_name_bin=geno, selected_loci = selected_loci,
+  MMt <- calculateMMt_rcpp( f_name_ascii=geno, selected_loci = selected_loci,
                                max_memory_in_Gbytes=availmemGb, num_cores=ncpu, 
-                               dims= dim_of_bin_M, quiet = quiet) 
+                               dims= dim_of_ascii_M, quiet = quiet) 
   return(MMt)
 
 }  ## end function
@@ -917,7 +917,7 @@ return(a)
 
 
 
-mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8, dim_of_bin_M=NULL, 
+mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8, dim_of_ascii_M=NULL, 
                                  selected_loci=NA, quiet = 0)
 {
  ## Rcpp function to calculate the BLUP (a) values under a dimension reduced model
@@ -954,11 +954,11 @@ mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8,
 
 
   ycolmat <- matrix(data=y, ncol=1)  ## makes it easier when dealing with this in Rcpp
-  fnamebin <- fullpath("Mt.bin")
+  fnameascii <- fullpath("Mt.ascii")
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
-  ar <- calculate_reduced_a_rcpp(f_name_bin = fnamebin, varG=varG, P=P, 
+  ar <- calculate_reduced_a_rcpp(f_name_ascii = fnameascii, varG=varG, P=P, 
                                  y=ycolmat, max_memory_in_Gbytes=availmemGb, 
-                                 dims=dim_of_bin_M , selected_loci = selected_loci , 
+                                 dims=dim_of_ascii_M , selected_loci = selected_loci , 
                                  quiet = quiet )
 
 
@@ -994,9 +994,9 @@ calculate_a_and_vara <- function(maxmemGb=8, dims=NULL,
 
 
 
-  file_bin <- fullpath("Mt.bin")
-  if(!file.exists(file_bin)){
-      cat("\n\n  Error: ", file_bin, " does not exist and it should have been created. \n\n")
+  file_ascii <- fullpath("Mt.ascii")
+  if(!file.exists(file_ascii)){
+      cat("\n\n  Error: ", file_ascii, " does not exist and it should have been created. \n\n")
       stop(call. = FALSE)
   }
 
@@ -1004,7 +1004,7 @@ calculate_a_and_vara <- function(maxmemGb=8, dims=NULL,
 
  
   if(!any(is.na(selectedloci))) selectedloci <- selectedloci-1
-  calculate_a_and_vara_rcpp(f_name_bin=file_bin,
+  calculate_a_and_vara_rcpp(f_name_ascii=file_ascii,
                     selected_loci = selectedloci,
                     inv_MMt_sqrt=invMMtsqrt,  
                     dim_reduced_vara = transformed_vara,
@@ -1302,35 +1302,40 @@ return(map)
 
 
 
-create.bin  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB=NULL, 
-                         availmemGb=8, dim_of_bin_M=NULL, csv=FALSE, quiet=FALSE){
- ## an Rcpp function to create the packed binary file of the genotype data M and Mt
+create.ascii  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB=NULL, 
+                         availmemGb=8, dim_of_ascii_M=NULL, csv=FALSE, quiet=FALSE){
+ ## an Rcpp function to create the no-space file of the genotype data M and Mt
  ## from marker data. The marker data may be from an ASCII file or PLINK ped file.
  ## Args
  ## file_genotype    absolute path and file name of genotype file
  ## AA, AB, BB       numeric codes for associated genotypes in marker genotype file
  ## availmemGb     available memory for converstion to packed binary
- ## dim_of_bin_M             row, column dimensions of M.  
+ ## dim_of_ascii_M             row, column dimensions of M.  
  ## type            where file type is text or PLINK
- binMfile <- fullpath("M.bin")
- binMtfile <- fullpath("Mt.bin")
+ asciiMfile <- fullpath("M.ascii")
+ asciiMtfile <- fullpath("Mt.ascii")
 
 
 if (type=="text"){
     ## text genotype file
-    createM_rcpp(f_name = file_genotype, type=type ,  f_name_bin = binMfile, AA = AA, AB = AB, BB = BB,
-               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv = csv,
+
+    createM_ASCII_rcpp(f_name = file_genotype, type=type ,  f_name_ascii = asciiMfile, AA = AA, AB = AB, BB = BB,
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv = csv,
                quiet = quiet)
-    createMt_rcpp(f_name = file_genotype, f_name_bin = binMtfile,  AA = AA, AB = AB, BB = BB,
-                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, csv=csv, quiet = quiet )
+
+
+    createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,  AA = AA, AB = AB, BB = BB,
+                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, csv=csv, quiet = quiet )
 } else {
     ## PLINK ped file
     ## using -9 to indicate missing/null genotypes
-    createM_rcpp(f_name = file_genotype, type=type,  f_name_bin = binMfile, AA ="-9", AB = "-9", BB = "-9",
-               max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M , csv=csv, quiet = quiet)
-    createMt_PLINK_rcpp(f_name = file_genotype, f_name_bin = binMtfile,   
-                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_bin_M, quiet = quiet )
 
+    createM_ASCII_rcpp(f_name = file_genotype, type=type,  f_name_ascii = asciiMfile, AA ="-9", AB = "-9", BB = "-9",
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv=csv, quiet = quiet)
+
+    
+    createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,   
+                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet )
 
 }  ## end if else type
 
@@ -1503,7 +1508,7 @@ if (type=="text"){
 #'
 #' @return  To allow \code{\link{AM}} to handle data larger than the memory capacity of a machine, \code{ReadMarker} doesn't load 
 #' the marker data into memory. Instead, it creates a packed binary file of the marker data and its transpose. The object returned by
-#' \code{ReadMarker} is a list object with the elements \code{binfileM} , \code{binfileMt}, and \code{dim_of_bin_M}  
+#' \code{ReadMarker} is a list object with the elements \code{asciifileM} , \code{asciifileMt}, and \code{dim_of_ascii_M}  
 #' which is the full file name (name and path)  of the packed binary file for the marker  data,  the full file name of the packed binary file 
 #' for the transpose of the marker  data,  and a 2 element vector with the first element the number of individuals and the second 
 #' element the number of marker loci. 
@@ -1562,26 +1567,26 @@ ReadMarker <- function( filename=NULL, type="text",
  if (nargs() == 0){
    ## if no arguments are supplied to ReadMarker, then it is assumed that ReadMarker has been run
    ## previously and the file M.RData  is in the current working directory. Need to check this. 
-   ## checks if M.RData which contains list object geno, Mt.bin, and M.bin exist. IF so, it returns list object geno
+   ## checks if M.RData which contains list object geno, Mt.ascii, and M.ascii exist. IF so, it returns list object geno
 
    if(file.exists(fullpath("M.RData")))
    {
-       # check that M.bin and Mt.bin exist in this directory
-       if(!file.exists(fullpath("M.bin"))){
-         cat(" The binary file M.bin could not be found in current working directory ", getwd(), "\n")
+       # check that M.ascii and Mt.ascii exist in this directory
+       if(!file.exists(fullpath("M.ascii"))){
+         cat(" The binary file M.ascii could not be found in current working directory ", getwd(), "\n")
          cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
          cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
          stop(" ReadMarker has terminated with errors \n", call. = FALSE)
        }
 
-       if(!file.exists(fullpath("Mt.bin"))){
-         cat(" The binary file Mt.bin could not be found in current working directory ", getwd(), "\n")
+       if(!file.exists(fullpath("Mt.ascii"))){
+         cat(" The binary file Mt.ascii could not be found in current working directory ", getwd(), "\n")
          cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
          cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
          stop(" ReadMarker has terminated with errors \n", call. = FALSE)
        }
        ## looks like everything is good. Return geno list object
-       cat(" The files M.RData, M.bin, and Mt.bin, in current working directory ", getwd(), " have been found and will be used for the association mapping analysis. \n")
+       cat(" The files M.RData, M.ascii, and Mt.ascii, in current working directory ", getwd(), " have been found and will be used for the association mapping analysis. \n")
    load("M.RData")
        return(geno)
 
@@ -1621,12 +1626,12 @@ ReadMarker <- function( filename=NULL, type="text",
        }
 
        ## Rcpp function to get dimensions of PLINK ped  file
-       dim_of_bin_M <- getRowColumn(fname=fullpath(filename), csv=FALSE )
+       dim_of_ascii_M <- getRowColumn(fname=fullpath(filename), csv=FALSE )
 
        ## Rcpp function to create binary packed M and Mt file 
-       create.bin(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M,  quiet=quiet  )
-       binfileM <- fullpath("M.bin")
-       binfileMt <- fullpath("Mt.bin")
+       create.ascii(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M,  quiet=quiet  )
+       asciifileM <- fullpath("M.ascii")
+       asciifileMt <- fullpath("Mt.ascii")
 
 
    }  else {
@@ -1656,25 +1661,25 @@ ReadMarker <- function( filename=NULL, type="text",
 
 
   ## Rcpp function to get dimensions of ASCII genotype file
-  dim_of_bin_M <- getRowColumn(fname=genofile, csv=csv )
+  dim_of_ascii_M <- getRowColumn(fname=genofile, csv=csv )
 
-  ## Rcpp function to create binary packed M and Mt file from 
-  create.bin(file_genotype=genofile, type=type, AA=as.character(AA), AB=as.character(AB), BB=as.character(BB), 
-              availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M, csv=csv, quiet=quiet  )
-    binfileM <- fullpath("M.bin")
-    binfileMt <- fullpath("Mt.bin")
+  ## Rcpp function to create ascii  M and Mt file from 
+  create.ascii(file_genotype=genofile, type=type, AA=as.character(AA), AB=as.character(AB), BB=as.character(BB), 
+              availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M, csv=csv, quiet=quiet  )
+    asciifileM <- fullpath("M.ascii")
+    asciifileMt <- fullpath("Mt.ascii")
 
  
   }  ## end if else nargs()==1  (PLINK case)
 
   if(type=="PLINK"){
      ## PLINK ped file which has been converted into a geno file
-     ## need to adjust dim_of_bin_M[2]  -- columns
-     dim_of_bin_M[2]<- (dim_of_bin_M[2] - 6)/2  ## allelic info starts in col 8
+     ## need to adjust dim_of_ascii_M[2]  -- columns
+     dim_of_ascii_M[2]<- (dim_of_ascii_M[2] - 6)/2  ## allelic info starts in col 8
   }
 
-  geno <- list("binfileM"=binfileM, "binfileMt"=binfileMt,
-               "dim_of_bin_M" = dim_of_bin_M)
+  geno <- list("asciifileM"=asciifileM, "asciifileMt"=asciifileMt,
+               "dim_of_ascii_M" = dim_of_ascii_M)
   save(geno, file="M.RData")
 
   ## create M.Rdata file in current directory
@@ -1688,19 +1693,19 @@ ReadMarker <- function( filename=NULL, type="text",
 
 
 extract_geno <- function(colnum=NULL, availmemGb=8, 
-                          dim_of_bin_M=NULL, 
+                          dim_of_ascii_M=NULL, 
                           selected_locus=NA,
                           indxNA = NULL )
   {
     ## Rcpp function to extra a column of genotypes from a  binary packed file of M
 
-    binfileM <- fullpath("M.bin")
+    asciifileM <- fullpath("M.ascii")
     selected_locus <- colnum - 1  ## to be consistent with C++'s indexing starting from 0
     ## AWG if(!any(is.na(indxNA))) indxNA <- indxNA - 1
     if (!(length(indxNA)==0)) indxNA <- indxNA - 1
 
-    geno <- extract_geno_rcpp(f_name_bin=binfileM, max_memory_in_Gbytes = availmemGb, 
-                              selected_locus=selected_locus, dims=dim_of_bin_M,
+    geno <- extract_geno_rcpp(f_name_ascii=asciifileM, max_memory_in_Gbytes = availmemGb, 
+                              selected_locus=selected_locus, dims=dim_of_ascii_M,
                               indxNA = indxNA)
 
     return(geno)
@@ -1710,7 +1715,7 @@ extract_geno <- function(colnum=NULL, availmemGb=8,
 
 
 constructX <- function(currentX=NULL, loci_indx=NULL, 
-                       availmemGb=8, dim_of_bin_M=NULL,
+                       availmemGb=8, dim_of_ascii_M=NULL,
                        indxNA = NULL , map=NULL)
   {
     ## R function to construct the design matrix X
@@ -1724,7 +1729,7 @@ constructX <- function(currentX=NULL, loci_indx=NULL,
      return(currentX)
    } else {
        genodat <- extract_geno(colnum=loci_indx, 
-                           availmemGb=availmemGb, dim_of_bin_M=dim_of_bin_M,
+                           availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M,
                            indxNA = indxNA)
       newX <- cbind(currentX, genodat)
       colnames(newX) <- c(colnames(currentX), as.character(map[[1]][loci_indx])) ## adding col names to new X  
