@@ -200,17 +200,11 @@ void  CreateASCIInospace_PLINK(std::string fname, std::string asciifname, std::v
 long 
    colindx = 0; 
 
-
 int
   n_of_cols_in_geno = (dims[1] -6)/2.0;
 
-
-
-
-std::vector<unsigned short>
-    genovec( n_of_cols_in_geno ); // holds entire row of genotypes 
-
-
+int
+  genovec[n_of_cols_in_geno];
 
 char
    alleles [ 2 ][ n_of_cols_in_geno ];  // holds alleles  
@@ -218,7 +212,6 @@ char
 
 std::vector<char>
      rowvec( dims[1] - 6 );  // holds allelic information from PLINK file
-
 
 
 std::string
@@ -249,35 +242,19 @@ std::ofstream fileOUT(asciifname.c_str(), ios::out );
 long  counter = 0;
 long  number_of_columns;
 Rcout << "\n Reading marker file " ;
+
+// initializing input line 
+std::string rowinfile(n_of_cols_in_geno, '0'); // s == "000000"
+
+
+
+
 while(getline(fileIN, line ))
 {
-    if (counter % 10 == 0){
-          Rcout << "." ;  
-    }
-
-    istringstream streamLine(line);
-
-    // check number of columns for each line
-    number_of_columns = 0; 
-    while(streamLine >> tmp)
-            number_of_columns ++;
-    if (quiet)
-           Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
-
-
-    if (number_of_columns != dims[1] ){
-           Rcpp::Rcout << std::endl;
-           Rcpp::Rcout << std::endl;
-           Rcpp::Rcout << "Error:  PLINK file contains an unequal number of columns per row.  " << std::endl;
-           Rcpp::Rcout << "        The error has occurred at row " << counter+1 << " which contains " << number_of_columns << " but " << endl;
-           Rcpp::Rcout << "        it should contain " << dims[1] << " columns of data. "  << std::endl;
-           Rcpp::Rcout << std::endl;
-           Rcpp::Rcout << std::endl;
-           os << " ReadMarkerData has terminated with errors\n" << std::endl;
-           Rcpp::stop(os.str() );
-    } 
+    Rcout << " Processing line  " << counter << endl;
 
     istringstream streamA(line);
+
 
     for(long i=0; i < dims[1] ; i++){
           // assign allelic info to rowvec ignoring first 6 columns of input
@@ -346,12 +323,12 @@ while(getline(fileIN, line ))
                  genovec[i] = 2;  // BB
          }
     }  // end outer if else rowvec
-   fileOUT << genovec[i];
+  //  fileOUT << genovec[i];
 
   } // end  for(long i=0; i < n_of_cols_in_geno; i++)
 
  counter++;
-
+ fileOUT << genovec;
  fileOUT << "\n";
 
 }  // end while(getline(fileIN, line ))
@@ -412,7 +389,6 @@ int
 
  std::string 
      rowvec[dims[1]]; // holds entire row worth of genotypes from ascii file
-
  
 
 std::string
@@ -431,7 +407,6 @@ if(csv)
       os;
 
 
-
 // open marker text  file
 std::ifstream fileIN(fname.c_str());
 
@@ -442,7 +417,7 @@ if(!fileIN.good()) {
 
 // open ascii file that is to hold  genotype data
  std::ofstream fileOUT(asciifname.c_str(), ios::out );
- if (quiet){
+ if (quiet > 0){
  Rcpp::Rcout << " " << std::endl;
  Rcpp::Rcout << " Reading text File  " << std::endl;
  Rcpp::Rcout << " " << std::endl;
@@ -460,28 +435,6 @@ long
 while(getline(fileIN, line ))
 {
   Rcout << " Processing line  " << counter << endl;
- //  istringstream streamLine(line);
-
- // check number of columns for each line
- //number_of_columns = 0;
-// while(streamLine >> tmp)
-//      number_of_columns ++;
-// if (quiet)
-//     Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
-
-// if (number_of_columns != dims[1] ){
-//     Rcpp::Rcout << std::endl;
-//     Rcpp::Rcout << std::endl;
-//     Rcpp::Rcout << "Error:  Marker text file contains an unequal number of columns per row.  " << std::endl;
-//     Rcpp::Rcout << "        The error has occurred at row " << counter+1 << " which contains " << number_of_columns << " but " << endl;
-//     Rcpp::Rcout << "        it should contain " << dims[1] << " columns of data. "  << std::endl;
-//     Rcpp::Rcout << std::endl;
-//     Rcpp::Rcout << std::endl;
-//     os << " ReadMarkerData has terminated with errors\n" << std::endl;
-//     Rcpp::stop(os.str() );
-// }
-
-
 
 
  // Here, BB is coded into 2 
@@ -496,13 +449,13 @@ while(getline(fileIN, line ))
         number_of_columns++;
 
 
-     if(token == BB){
-          rowinfile[i] = '2';
-     } else if (token == AB) {
-          rowinfile[i] = '1';
-     } else if (token == AA) {
-          rowinfile[i] = '0';
-     } else {
+        if(token == BB){
+             rowinfile[i] = '2';
+        } else if (token == AB) {
+             rowinfile[i] = '1';
+        } else if (token == AA) {
+             rowinfile[i] = '0';
+        } else {
           if (AB=="NA"){
               Rcpp::Rcout << "Error: Marker text file contains marker genotypes that are different to " << AA << " " << BB << endl;
               Rcpp::Rcout << "       For example, " << rowvec[i] << endl;
@@ -514,12 +467,9 @@ while(getline(fileIN, line ))
               os << "ReadMarker has terminated with errors\n\n"; 
               Rcpp::stop(os.str() );
          }
-     }  //end if else 
-    i++;
+       }  //end if else 
+       i++;
   } // end whle streamA
-  fileOUT << rowinfile;
-  fileOUT << "\n";
-  counter++;
 
   if (quiet>0){
         Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
@@ -536,15 +486,21 @@ while(getline(fileIN, line ))
              Rcpp::stop(os.str() );
        }  // end if number_of_columns
   } // end if quiet
+
+  fileOUT << rowinfile;
+  fileOUT << "\n";
+  counter++;
+
  }  // end while getline
 
-  Rcout << " FINISHED WRITING M.ascii FILE !!!!!"   << endl; 
+ Rcout << " FINISHED WRITING M.ascii FILE !!!!!"   << endl; 
 
-  if (quiet) Rcpp::Rcout << "\n" << std::endl;
+ if (quiet > 0) 
+     Rcpp::Rcout << "\n" << std::endl;
 
 
   // write out a few lines of the file if quiet
-  if(quiet){
+  if(quiet > 0){
      // open PLINK ped  file
      std::ifstream fileIN(fname.c_str());
      counter = 0;
@@ -560,9 +516,6 @@ while(getline(fileIN, line ))
         counter++;
       }  // end  while(getline(fileIN, line ))
   } // end if(quiet)
-
-
-
 
 
 // close files
@@ -649,11 +602,7 @@ Eigen::MatrixXd
 
 // [[Rcpp::export]]
 void  createMt_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii, 
-                              string AA, 
-                              string AB, 
-                              string BB,
                               double  max_memory_in_Gbytes,  std::vector <long> dims,
-                              bool csv,
                               bool quiet )
 {
 
@@ -662,7 +611,6 @@ void  createMt_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii,
 std::string
    token, 
    line;
-
 
 ostringstream
       os;
@@ -683,12 +631,9 @@ std::string
 char 
    sep = ' ';
 
-if(csv) 
-    sep = ',' ;
 
 double 
    max_mem_in_bytes  =  max_memory_in_Gbytes * 1000000000;
-
 
 
 // Calculate number of columns that can be read in as a block with XGb of
@@ -696,8 +641,6 @@ double
    // how much memory will be needed to  store M, takes it transpose M.transpose, and 
    // store its answer in Mt (+ .5 for a buffer)
 double mem_bytes = 3.5 * dims[0] * dims[1] * (bits_in_int/8);  // assumes a 64 bit system
-
-
 
 
  // open  files
@@ -711,53 +654,54 @@ std::ifstream fileIN(fname.c_str());
 //------------------------------------------------------------------------
 
 
+
 if(mem_bytes < max_mem_in_bytes){
-   // Situation 1
-   //-------------
+     // Situation 1
+     //-------------
 
-   // open ASCII file and check for its existence. 
-   if(!fileIN.good()) {
-      os << "\n\nERROR: Could not open  " << fname << "\n\n" << std::endl;
-      Rcpp::stop(os.str() );
+     // open ASCII file and check for its existence. 
+     if(!fileIN.good()) {
+        os << "\n\nERROR: Could not open  " << fname << "\n\n" << std::endl;
+        Rcpp::stop(os.str() );
 
- }
+     }
 
-  // create matrix structure to hold genotype data
-  Eigen::MatrixXi 
-      M(dims[0], dims[1]) ;
+    // create matrix structure to hold genotype data
+    Eigen::MatrixXi 
+          M(dims[0], dims[1]) ;
 
 
-  // reset position in data file
-  fileIN.clear();
-  fileIN.seekg(0, ios::beg);
+    // reset position in data file
+    fileIN.clear();
+    fileIN.seekg(0, ios::beg);
 
- // read values into matrix
- long rowi=0;
- Rcout << " Reading in M.ascii into M matrix " << endl;
- while(getline(fileIN, line ))
- {
-   // read a line of data from ASCII file
-   for(long coli=0; coli < dims[1]; coli++){
-       M(rowi, coli)  = line[coli] - '0'; // trick to removes ASCII character offset for numbers
-   }
+   // read values into matrix
+   long rowi=0;
+   Rcout << " Reading in M.ascii into M matrix " << endl;
+   while(getline(fileIN, line ))
+   {
+       // read a line of data from ASCII file
+       for(long coli=0; coli < dims[1]; coli++){
+           M(rowi, coli)  = line[coli] - '0'; // trick to removes ASCII character offset for numbers
+       }
        rowi++;
- }  // end while getline
+   }  // end while getline
 
-// take transose of matrix M
-Rcout << " Taking transose " << endl;
- MatrixXi Mt = M.transpose();
+  // take transose of matrix M
+  Rcout << " Taking transose " << endl;
+  MatrixXi Mt = M.transpose();
   
-// write out contents fo Mt to file (no spaces)a
-Rcout << " WRiting out contents of Mt to file " << endl;
- std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
-for(long rowi=0; rowi<Mt.rows(); rowi++){
- for(long coli=0; coli<Mt.cols(); coli++){
-   // fileOUT << Mt(rowi, coli);
-    rowinfile[coli] =  Mt(rowi, coli) + '0'; // forming string row before writing to file
-   } 
- fileOUT << rowinfile; // writing entire row of data
- fileOUT << "\n";
-}
+  // write out contents fo Mt to file (no spaces)a
+  Rcout << " WRiting out contents of Mt to file " << endl;
+  std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
+  for(long rowi=0; rowi<Mt.rows(); rowi++){
+     for(long coli=0; coli<Mt.cols(); coli++){
+         // fileOUT << Mt(rowi, coli);
+        rowinfile[coli] =  Mt(rowi, coli) + '0'; // forming string row before writing to file
+     } 
+     fileOUT << rowinfile; // writing entire row of data
+     fileOUT << "\n";
+  }
  Rcout << " Finished ... " << endl;
  
  fileIN.close();
@@ -767,29 +711,29 @@ for(long rowi=0; rowi<Mt.rows(); rowi++){
    //  Situation 2 
    //  Block approach needed due to lack of memory
 
-   if (quiet){
+   if (quiet > 0){
         Rcpp::Rcout << " A block transpose is being performed due to lack of memory.  "  << std::endl;
         Rcpp::Rcout << " Memory parameter workingmemGb is set to " << max_memory_in_Gbytes << "Gbytes" << std::endl;
         Rcpp::Rcout << " If possible, increase workingmemGb parameter. " << std::endl;
     }
+
     // Calculate number of columns that can be read into available memory
     n_of_cols_to_be_read = max_mem_in_bytes * 1.0 / (3.5 * dims[0] * (bits_in_int/8.0)); //64 bit system
+    Rcout << n_of_cols_to_be_read << endl;
     // Calculate number of blocks needed
     long n_blocks = dims[1]/n_of_cols_to_be_read;
     if (dims[1] % n_of_cols_to_be_read != 0)
          n_blocks++;
-
-    if (quiet)  
+     Rcout << " number of blocks is " << n_blocks << endl;
+    if (quiet > 0)  
          Rcpp::Rcout  << " Block Tranpose of ASCII genotype file beginning ... " << std::endl;
 
     // Block read and transpose - requires n_blocks passes through the 
     // ASCII input file which could be slow if file is large and memory low
     for(long b=0; b < n_blocks; b++){
-         if (quiet) 
+         if (quiet > 0) 
               Rcpp::Rcout << " Processing block ... " << b << " of a total number of blocks of " << n_blocks << std::endl;
 
-         MatrixXi
-              M(dims[0], n_of_cols_to_be_read);
 
          long
               start_val = b * n_of_cols_to_be_read,
@@ -798,43 +742,57 @@ for(long rowi=0; rowi<Mt.rows(); rowi++){
          if (end_val > dims[1])
               end_val = dims[1];
 
+         long ncols = end_val - start_val ;
+         MatrixXi
+              M(dims[0], ncols );
+
+
          // open ASCII file and check for its existence. 
          if(!fileIN.good()) {
               os << "ERROR: Could not open  " << fname << std::endl;
               Rcpp::stop(os.str() );
          }
          long counter = 0;
-         if (quiet) {
+         if (quiet > 0) {
               Rcpp::Rcout << std::endl;
               Rcpp::Rcout << std::endl;
          }
-  
          for(long rowi=0; rowi<dims[0]; rowi++){ 
                // read a line of data from ASCII file
               getline(fileIN, line);
               istringstream streamA(line);
   
              long coli=0 ;
-          for(long ii=start_val; ii < end_val ; ii++){
-           M(rowi, coli)  = line[ii] - '0'; // trick to removes ASCII character offset for numbers
-           coli++;
-       }
-   } // end for(rowi=0; rowi<dims[0]; rowi++)
-   // tranpose M
-   MatrixXi Mt = M.transpose();
-
-   // write out contents fo Mt to file (no spaces)
-   for(long rowi=0; rowi<Mt.rows(); rowi++){
-          for(long coli=0; coli<Mt.cols(); coli++){
-             fileOUT << Mt(rowi, coli);
-          }
-          fileOUT << "\n";
-   }
+             for(long ii=start_val; ii < end_val ; ii++){
+                M(rowi, coli)  = line[ii] - '0'; // trick to removes ASCII character offset for numbers
+                coli++;
+             }
+        } // end for(rowi=0; rowi<dims[0]; rowi++)
+       // tranpose M
 
 
+       MatrixXi Mt = M.transpose();
 
 
-}     // end for blocks
+      // write out contents fo Mt to file (no spaces)a
+      std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
+      for(long rowi=0; rowi<Mt.rows(); rowi++){
+         for(long coli=0; coli<Mt.cols(); coli++){
+             // fileOUT << Mt(rowi, coli);
+            rowinfile[coli] =  Mt(rowi, coli) + '0'; // forming string row before writing to file
+         }
+         fileOUT << rowinfile; // writing entire row of data
+         fileOUT << "\n";
+      }
+
+
+
+
+      // return to the beginning of the input file
+      fileIN.clear();
+      fileIN.seekg(0, ios::beg);
+
+     }     // end for blocks
 
 fileIN.close();
 fileOUT.close();
