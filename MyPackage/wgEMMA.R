@@ -1323,17 +1323,17 @@ if (type=="text"){
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv = csv,
                quiet = quiet)
 
-
-    createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,  AA = AA, AB = AB, BB = BB,
-                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, csv=csv, quiet = quiet )
+    createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,  
+                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet )
 } else {
     ## PLINK ped file
     ## using -9 to indicate missing/null genotypes
-
+    ncol  <- dim_of_ascii_M[2] 
+    dim_of_ascii_M[2] <- 2*dim_of_ascii_M[2] + 6  ## number of cols in a PLINK file
     createM_ASCII_rcpp(f_name = file_genotype, type=type,  f_name_ascii = asciiMfile, AA ="-9", AB = "-9", BB = "-9",
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv=csv, quiet = quiet)
 
-    
+    dim_of_ascii_M[2] <- ncol ## setting back to number of cols in no-space ASCII file
     createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,   
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet )
 
@@ -1627,7 +1627,7 @@ ReadMarker <- function( filename=NULL, type="text",
 
        ## Rcpp function to get dimensions of PLINK ped  file
        dim_of_ascii_M <- getRowColumn(fname=fullpath(filename), csv=FALSE )
-
+       dim_of_ascii_M[2] <- (dim_of_ascii_M[2] - 6)/2  ## adjusting for PLINK structure
        ## Rcpp function to create binary packed M and Mt file 
        create.ascii(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M,  quiet=quiet  )
        asciifileM <- fullpath("M.ascii")
@@ -1672,11 +1672,6 @@ ReadMarker <- function( filename=NULL, type="text",
  
   }  ## end if else nargs()==1  (PLINK case)
 
-  if(type=="PLINK"){
-     ## PLINK ped file which has been converted into a geno file
-     ## need to adjust dim_of_ascii_M[2]  -- columns
-     dim_of_ascii_M[2]<- (dim_of_ascii_M[2] - 6)/2  ## allelic info starts in col 8
-  }
 
   geno <- list("asciifileM"=asciifileM, "asciifileMt"=asciifileMt,
                "dim_of_ascii_M" = dim_of_ascii_M)

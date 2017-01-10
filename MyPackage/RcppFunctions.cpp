@@ -203,6 +203,8 @@ long
 int
   n_of_cols_in_geno = (dims[1] -6)/2.0;
 
+
+
 int
   genovec[n_of_cols_in_geno];
 
@@ -240,98 +242,165 @@ if(!fileIN.good()) {
 // open ascii file that is to hold no-spaces genotype data
 std::ofstream fileOUT(asciifname.c_str(), ios::out );
 long  counter = 0;
-long  number_of_columns;
-Rcout << "\n Reading marker file " ;
 
 // initializing input line 
 std::string rowinfile(n_of_cols_in_geno, '0'); // s == "000000"
 
-
+Rcout << " Number of cols in geno " << n_of_cols_in_geno << endl;
 
 
 while(getline(fileIN, line ))
 {
-    Rcout << " Processing line  " << counter << endl;
-
-    istringstream streamA(line);
+  Rcout << "\r" << 100.0*counter/dims[0] << "% read PLINK file.       " << flush;
 
 
-    for(long i=0; i < dims[1] ; i++){
-          // assign allelic info to rowvec ignoring first 6 columns of input
+
+  istringstream streamLine(line);
+
+ // check number of columns for each line
+ int printOnlyOnce = 0;  // flag for printing warning message about missing data
+ long number_of_columns = 0;
+ std::string rowinfile(n_of_cols_in_geno, '0'); // s == "000000"
+ while(streamLine >> tmp)
+
+ if (quiet > 0){
+    number_of_columns ++;
+    Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
+
+     if (number_of_columns != dims[1] ){
+         Rcpp::Rcout << std::endl;
+         Rcpp::Rcout << std::endl;
+         Rcpp::Rcout << "Error:  PLINK file contains an unequal number of columns per row.  " << std::endl;
+         Rcpp::Rcout << "        The error has occurred at row " << counter+1 << " which contains " << number_of_columns << " but " << endl;
+         Rcpp::Rcout << "        it should contain " << dims[1] << " columns of data. "  << std::endl;
+         Rcpp::Rcout << std::endl;
+         Rcpp::Rcout << std::endl;
+          os << " ReadMarkerData has terminated with errors\n" << std::endl;
+         Rcpp::stop(os.str() );
+       }  // end  if (number_of_columns != dims[1] )
+   } // end  if (quiet > 0)
+
+   istringstream streamA(line);
+   // tokenized row and placed it in vector rowvec
+   for(long i=0; i < dims[1] ; i++){
+         // assign allelic info to rowvec ignoring first 6 columns of input
          if(i <= 5){
-                 streamA >> tmp;
-          } else {
-                 streamA >> rowvec[i-6];
-          }
-    }  // end  for(long i=0; i < dims[1] ; i++)
-
-
-    // initialize alleles structure to first row of PLINK info
-    if (counter == 0) {
-         for(long i=0; i < n_of_cols_in_geno ; i++){
-              alleles[ 0 ][ i ] =  rowvec[ (2*i ) ];
-              alleles[ 1 ][ i ] =  rowvec[ (2*i + 1) ];
-             //   Rcout << "alleles "  << alleles[0][i] << alleles[1][i] << endl;
+            streamA >> tmp;
+         } else {
+            streamA >> rowvec[i-6];
          }
-    }
+   }  // end  for(long i=0; i < dims[1] ; i++)
 
-    // turn allelic info from PLINK into genotype 0,1,2 data
-    // also do some checks for more than 2 alleles, and 0 and - for missing data
-    for(long i=0; i < n_of_cols_in_geno; i++){
-          // Checking for missing allelic information in PLINK file
-         if( rowvec[ (2*i ) ] == '0' ||  rowvec[ (2*i + 1) ] == '0' || rowvec[ (2*i ) ] == '-' ||  rowvec[ (2*i + 1) ] == '-'){
+
+      // initialize alleles structure to first row of PLINK info
+      if (counter == 0) {
+         for(long i=0; i < n_of_cols_in_geno ; i++){
+            if( rowvec[ (2*i ) ] == '0' ||  rowvec[ (2*i + 1) ] == '0' || rowvec[ (2*i ) ] == '-' ||  rowvec[ (2*i + 1) ] == '-'){
+               // missing allele
+               alleles[ 0 ][ i ] = 'I';
+               alleles[ 1 ][ i ] = 'I';
+            } else {
+               alleles[ 0 ][ i ] =  rowvec[ (2*i ) ];
+               alleles[ 1 ][ i ] =  rowvec[ (2*i + 1) ];
+            } //end  if (rowvec 
+         }
+     }
+
+     // turn allelic info from PLINK into genotype 0,1,2 data
+     // also do some checks for more than 2 alleles, and 0 and - for missing data
+     for(long i=0; i < n_of_cols_in_geno; i++){
+        // Checking for missing allelic information in PLINK file
+        if( rowvec[ (2*i ) ] == '0' ||  rowvec[ (2*i + 1) ] == '0' || rowvec[ (2*i ) ] == '-' ||  rowvec[ (2*i + 1) ] == '-'){
+           if (printOnlyOnce == 0){
                  Rcpp::Rcout << std::endl;
                  Rcpp::Rcout << std::endl;
-                 Rcpp::Rcout << "Error:  PLINK file cannot contain missing alleles (i.e. 0 or - ) " << std::endl;
-                 Rcpp::Rcout << "        Please impute missing marker information before running AMplus." << std::endl;
-                 Rcpp::Rcout << "        The error has occurred at snp locus " << i << " for individual " << counter+1 << std::endl;
+                 Rcpp::Rcout << "Warning:  PLINK file contains missing alleles (i.e. 0 or - ) " << std::endl;
+                 Rcpp::Rcout << "          These missing genotypes should be imputed before running AMplus." << std::endl;
+                 Rcpp::Rcout << "          As an approximation, AMpus has set these missing genotypes to heterozygotes. " << std::endl;
+                 Rcpp::Rcout << "          Since AMplus assumes an additive model, heterozygote genotypes do not contribute to the estimation of " << std::endl;
+                 Rcpp::Rcout << "          the additive effects.  " << std::endl;
                  Rcpp::Rcout << std::endl;
                  Rcpp::Rcout << std::endl;
-                 os << " ReadMarkerData has terminated with errors\n" << std::endl;
-                 Rcpp::stop(os.str() );
-        }   
+                 printOnlyOnce = 1;
+            } // if printOnlyOnce`
+            rowvec[ (2*i) ] = 'I';      // impute
+            rowvec[ (2*i + 1) ] = 'I';  // impute
+        }
+
 
         // Check if allele has been seen before in allele file. 
         // If so, make sure alleles doesn't already  contain two alleles - otherwise generate error message
         for(int j = 1; j >= 0; --j){ // looping over the two alleles with indexes 0 and 1
-               if (rowvec[ (2*i + j) ] != alleles[ 0 ][ i ] && rowvec[ (2*i + j) ] != alleles[ 1 ][ i ]){
-                     if (alleles[ 0 ][ i ] == alleles[ 1 ][ i ] ){
-                           // this is okay. alleles only contains a single allele at the moment. Re-initialise alleles
-                           alleles[ 1 ][ i ] = rowvec[ (2*i + j) ];
-                     } else {
-                           // Error - we have more than two alleles segregating at a locus
-                           Rcpp::Rcout << std::endl;
-                           Rcpp::Rcout << std::endl;
-                           Rcpp::Rcout << "Error:  PLINK file cannot contain more than two alleles at a locus."  << std::endl;
-                           Rcpp::Rcout << "        The error has occurred at snp locus " << i << " for individual " << counter+1 << std::endl;
-                           Rcpp::Rcout << std::endl;
-                           Rcpp::Rcout << std::endl;
-                           os << " ReadMarkerData has terminated with errors\n" << std::endl;
-                           Rcpp::stop(os.str() );
-                    } // end inner if else
-               }  // end if
-       }  // end for(int j = 1; j >= 0; --j)
+           if (rowvec[ (2*i + j) ] != alleles[ 0 ][ i ] && rowvec[ (2*i + j) ] != alleles[ 1 ][ i ]){
+              // situation 1: rowvec contains missing values ie 'I' then do nothing
+              if (rowvec[ (2*i + j) ] == 'I' ){
+                 // do nothing here
+
+              } else {
+                // situation 2: alleles contain missing values I
+                if (alleles[0][i] == 'I'){
+                     alleles[0][i] = rowvec[ (2*i + j) ];
+                } else {
+                      if (alleles[1][i] == 'I'){
+                           alleles[1][i] = rowvec[ (2*i + j) ];
+                       } else {
+                         if (alleles[ 0 ][ i ] == alleles[ 1 ][ i ] ){
+                             // this is okay. alleles only contains a single allele at the moment. Re-initialise alleles
+                             alleles[ 1 ][ i ] = rowvec[ (2*i + j) ];
+                           } else {
+                              // Error - we have more than two alleles segregating at a locus
+                            Rcpp::Rcout << std::endl;
+                            Rcpp::Rcout << std::endl;
+                            Rcpp::Rcout << "Error:  PLINK file cannot contain more than two alleles at a locus."  << std::endl;
+                            Rcpp::Rcout << "        The error has occurred at snp locus " << i  + 1 << " for individual " << counter+1 << std::endl;
+                            Rcpp::Rcout << std::endl;
+                            Rcpp::Rcout << std::endl;
+                            os << " ReadMarkerData has terminated with errors\n" << std::endl;
+                             Rcpp::stop(os.str() );
+                          } // end inner if else
+
+                       } // end if (alleles[1][i] == 'I')
+                } // end  if (alleles[0][i] == 'I')
+
+              } // end if (rowvec[ (2*i + j) ] == 'I' )
 
 
-    // set genovec
-    if (rowvec[ (2*i + 1) ] !=   rowvec[ (2*i) ] ){
-         genovec[i] = 1 ;  // AB
+           }  // end if (rowvec[ (2*i + j) ] != alleles[ 0 ][ i ] && rowvec[ (2*i + j) ] != alleles[ 1 ][ i ])
+
+
+
+
+    // set rowinfile
+    if (rowvec[ (2*i) ] == 'I' || rowvec[ (2*i + 1) ] == 'I' ){
+        rowinfile[i] = '1' ; // AB geno no additive effect
     } else {
-         if (rowvec[ (2*i ) ] == alleles[ 0 ][ i ] ){  // matches first allele
-                genovec[i] = 0;  // AA
+        if (rowvec[ (2*i + 1) ] !=   rowvec[ (2*i) ] ){
+          rowinfile[i] = '1' ;  // AB
+        } else {
+          if (rowvec[ (2*i ) ] == alleles[ 0 ][ i ] ){  // matches first allele
+               rowinfile[i] = '0';  // AA
           }  else {
-                 genovec[i] = 2;  // BB
-         }
-    }  // end outer if else rowvec
-  //  fileOUT << genovec[i];
+               rowinfile[i] = '2';  // BB
+          }
+        }  // end outer if else rowvec
+    } // end  if (rowvec[ (2*i) ] == 'I' || rowvec[ (2*i + 1) ] == 'I' )
+ } // end  for(long i=0; i < n_of_cols_in_geno; i++)
 
-  } // end  for(long i=0; i < n_of_cols_in_geno; i++)
 
- counter++;
- fileOUT << genovec;
- fileOUT << "\n";
 
-}  // end while(getline(fileIN, line ))
+
+  }  // end for(long i=0; i< n_of_cols_in_geno ; i++)
+
+  fileOUT << rowinfile;
+  fileOUT << "\n";
+  counter++;
+
+
+  }  // end while(getline(fileIN, line ))
+
+Rcout << " finished creating M.ascii in PLINK funtion ... " << endl;
+
+
 Rcout << "\n\n" << endl;
 // write out a few lines of the file if quiet
 // open PLINK ped  file
@@ -351,7 +420,7 @@ while(getline(fileIN_backtobeginning, line ) && counter < 5)
 }  // end  while(getline(fileIN, line ))
 
 
-
+Rcout << " finished with function ..... " << endl;
 
 
 // close files
@@ -434,7 +503,7 @@ long
 
 while(getline(fileIN, line ))
 {
-  Rcout << " Processing line  " << counter << endl;
+  Rcout << "\r" << 100.0*counter/dims[0] << "% read PLINK file.       " << flush;
 
 
  // Here, BB is coded into 2 
