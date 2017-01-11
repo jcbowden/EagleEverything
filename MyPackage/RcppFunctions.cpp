@@ -23,6 +23,15 @@
 #include <RcppEigen.h>
 #include <R.h>
 
+// added by Ryan
+#include <cstring>
+#include <fcntl.h>
+#include <iostream>
+#include <malloc.h>
+#include <sstream>
+#include <time.h>
+// end added by Ryan
+
 #include <omp.h>
 #include <iostream>
 #include <fstream>
@@ -37,7 +46,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <ctime>
-#include<string>
 
 //    #include <magma.h>
 
@@ -60,6 +68,220 @@ using Eigen::Map;   // maps rather than copies
 const size_t bits_in_double = std::numeric_limits<long double>::digits;
 const size_t bits_in_ulong = std::numeric_limits<unsigned long int>::digits;
 const size_t bits_in_int = std::numeric_limits<int>::digits;
+
+// ---- code developed by Ryan
+
+
+
+
+
+
+
+
+char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned long &sizeActual) {
+	// If set to true debugging information is displayed
+	// Otherwise these messages are suppressed
+	bool debugMsgs = true;
+
+	// Read file size and system page file size
+	int pagesize = getpagesize();
+
+	// Stores information about file
+	struct stat s;
+
+	// Open file descriptor for given file name
+	// Read-only permission
+	int fd;
+
+	// Open file and get file descriptor
+	try {
+		fd = open (file_name, O_RDONLY);
+		// File descriptor returned as -1 if file cannot be opened
+		if ( -1 == fd) throw "File could not be opened for reading";
+	}
+	catch (const char* msg) {
+		cout << "ERROR: " << msg << endl;
+		exit(-1);
+	}
+
+	// Get the file size on disc
+	int status = fstat (fd, &s);
+
+	// Round up file size to next multiple
+	// of system page size;
+	sizeActual = s.st_size;
+	sizeUsed = sizeActual + (pagesize - (sizeActual % pagesize));
+	if (debugMsgs) printf("Memory used to map file: %d Mbytes\n", sizeUsed/1024/1024);
+
+	// Memory mapped data file
+	char *fileMemMap;
+
+	// Map file to memory using mmap() system function
+	// File may now be treated as a character array in memory
+	// Syntax:
+	// 		void *mmap(void *addr, size_t length,
+	//			  int prot, int flags, int fd, off_t offset);
+	// Permissions:
+	//		PROT_READ: Pages in memory only allow read-only operations
+	//		MAP_PRIVATE: Changes not visible to other processes
+	//					 Underlying file is no altered
+
+	fileMemMap = (char *) mmap (0, sizeUsed, PROT_READ, MAP_PRIVATE, fd, 0);
+
+	if (madvise(fileMemMap, sizeUsed, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
+		cout << "madvise error" << endl;
+		return NULL;
+	}
+
+	// Close the file descriptor
+	// Frees resources associated with the file descriptor
+	close(fd);
+
+	return fileMemMap;
+}
+
+
+
+void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vector<long> dims,
+		std::string  AA,
+		std::string AB,
+		std::string BB,
+		bool csv,
+		bool quiet)
+{
+
+	// Used to store size of memory used for mapping file
+	// Size is rounded up to memory page size, hence two variables
+	// SizeUsed is used to ummap the mapped memory
+	// SizeActual is used to determine the number of characters in the file
+	unsigned long sizeUsed = 0;
+	unsigned long sizeActual = 0;
+
+	// Map file from hard-disk to memory
+	char* dataFile = mapFileFromDisc(fname.c_str(), sizeUsed, sizeActual);
+
+	// Check that an error did not occur in the file mapping process
+	if ( dataFile == NULL )
+	{
+		cout << "Error mapping file." << endl;
+		return;
+	}
+
+	// Array used for buffering file output
+	const long long bufferSize = 8*1024*1024;
+
+	char outputBuffer[bufferSize];
+	int inc = 0;
+
+	// Output file
+	FILE *outputFile;
+	outputFile = fopen (asciifname.c_str(), "wb");
+
+	// Assuming BA is the reverse of AB
+	string BA = string ( AB.rbegin(), AB.rend() );
+
+	// Find a more elegant way to do this
+	const short AALen = AA.length();
+	const short ABLen = AB.length();
+	const short BBLen = BB.length();
+	int maxLenGen = 0;
+	if ( AALen > ABLen )
+	{
+		maxLenGen = AALen;
+	}else
+	{
+		if ( BBLen > ABLen )
+		{
+			maxLenGen = BBLen;
+		} else {
+			maxLenGen = ABLen;
+		}
+	}
+
+	int slidingInc = 0;
+	char windowBuffer[maxLenGen];
+
+	int latch = 0;
+	// Loop through file in memory
+	for (unsigned long long i = 0; i <= sizeActual; i++ ) {
+
+		if ( dataFile[i] != ' ' && dataFile[i] != '\n' && i != sizeActual)
+		{
+			latch = 0;
+			windowBuffer[slidingInc] = dataFile[i];
+			slidingInc++;
+		}else {
+			if ( latch == 0 )
+			{
+				// Output magic
+				windowBuffer[slidingInc] = '\0';
+				// cout << "(" << windowBuffer << ")" << endl;
+
+				// Comparison magic
+
+				if ( AA == windowBuffer ) {
+					// cout << "AA Found" << endl;
+					outputBuffer[inc] = '0';
+					inc++;
+				} else if ( AB == windowBuffer ) {
+					// cout << "AB Found" << endl;
+					outputBuffer[inc] = '1';
+					inc++;
+				} else if ( BA == windowBuffer ) {
+					// cout << "BA Found" << endl;
+					outputBuffer[inc] = '1';
+					inc++;
+				} else if ( BB == windowBuffer ) {
+					// cout << "BB Found" << endl;
+					outputBuffer[inc] = '2';
+					inc++;
+				} else {
+					cout << "Error missing data point." << endl;
+					exit(1);
+				}
+
+				// Reset sliding index
+				slidingInc = 0;
+				latch = 1;
+			}
+			if ( dataFile[i] == '\n' )
+			{
+				outputBuffer[inc] = '\n';
+				inc++;
+			}
+		}
+
+		// If output buffer is full
+		if ( inc >= bufferSize)
+		{
+			// Write buffer to file on disk
+			fwrite (outputBuffer , sizeof(char), sizeof(outputBuffer), outputFile);
+			//cout << inc << endl;
+			// Reset buffer index
+			inc = 0;
+		}
+	}
+
+	// Writing remaining data in output buffer to output file
+	fwrite (outputBuffer , sizeof(char), inc, outputFile);
+
+	// No longer need to use memory mapped file, release it
+	munmap(dataFile, sizeUsed);
+
+	// Close output file
+	fclose (outputFile);
+	return;
+}
+
+
+
+
+
+
+// ----- end of code by Ryan
+
+
+
 
 
 
@@ -136,50 +358,6 @@ std::string
 
 
 }
-
-
-// Ryan's map file from disc into memory
-char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, 
-                      unsigned long &sizeActual){
-
-  bool debugMsgs = true;
-  int pagesize = getpagesize();
-  struct stat s;
-  int fd;
-  try {
-     fd = open (file_name, O_RDONLY);
-     if( -1 == fd) throw "File could not be opened for reading ";
-  }
-  catch (const char* msg){
-       Rcout << "ERROR: " << msg << endl;
-       exit(-1);
-  }
-
-  int status = fstat (fd, &s);
-
-  sizeActual = s.st_size;
-  sizeUsed = sizeActual + (pagesize - (sizeActual % pagesize));
-  if (debugMsgs)
-      printf(" Memory used to map file: %d Mbytes\n", sizeUsed/(1024*1024));
-
-  char *fileMemMap;
-
-  fileMemMap = (char *) mmap (0, sizeUsed, PROT_READ, MAP_PRIVATE, fd,  0);
-
-  if (madvise(fileMemMap, sizeUsed, MADV_WILLNEED | MADV_SEQUENTIAL) == -1)
-  {
-    Rcout << "madvise error " << endl;
-    return NULL;
-  }
-
-  close(fd);
-
-  return fileMemMap;
-
-
-
-} // end function mapFileFromDisc
-
 
 
 
@@ -1517,7 +1695,8 @@ double
       // transpose. 
       if (quiet > 0 )
           Rcout << " A text file is being assumed as the input data file type. " << std::endl;
-      CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
+      // CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
+      CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
    }  // end if type == "PLINK" 
 
 //--------------------------------------
