@@ -662,7 +662,6 @@ currentX <- do.call(.build_design_matrix, Args)
         if(quiet>0)
            cat(" quiet=FALSE: calculating M %*% M^t. \n")
          MMt <- do.call(.calcMMt, Args)  
-         print(MMt[1:5,1:5]         )
 
 
 

@@ -116,9 +116,9 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
      cat(" It is only used for the reporting of results. \n")
    }
    ## map has not been supplied. Create own map
-   map <- data.frame(SNP=paste("M", 1:geno[["dim_of_bin_M"]][2], sep=""), 
-                     Chr=rep(1, geno[["dim_of_bin_M"]][2]), 
-                     Pos=1:geno[["dim_of_bin_M"]][2])
+   map <- data.frame(SNP=paste("M", 1:geno[["dim_of_ascii_M"]][2], sep=""), 
+                     Chr=rep(1, geno[["dim_of_ascii_M"]][2]), 
+                     Pos=1:geno[["dim_of_ascii_M"]][2])
   }
 
  ## check to make sure that null model is not being supplied
@@ -138,7 +138,7 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
   fullX <- baseX
   for(loc in AMobj$Indx){
         fullX <- constructX(currentX=fullX, loci_indx=loc,
-                               dim_of_bin_M=geno[["dim_of_bin_M"]],
+                               dim_of_ascii_M=geno[["dim_of_ascii_M"]],
                                indxNA = AMobj$indxNA, map=map)
    }  ## end for loc
 
@@ -203,7 +203,7 @@ cat("     Size and Significance of Effects in Final Model    \n")
   cat(sprintf("   %15s      %10s \n", "Marker name", "Proportion"))
   for(loc in AMobj$Indx[-1]){
         fullX <- constructX(currentX=fullX, loci_indx=loc,
-                               dim_of_bin_M=geno[["dim_of_bin_M"]],
+                               dim_of_ascii_M=geno[["dim_of_ascii_M"]],
                                indxNA = AMobj$indxNA, map=map)
         fullmod <- emma.MLE(y=AMobj$trait, X=fullX, K=MMt, llim=-100,ulim=100)
         full_logML <- fullmod$ML

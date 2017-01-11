@@ -743,7 +743,8 @@ Eigen::MatrixXd
       if(rr >= start_row){
           istringstream streamA(line);
           for(long ii=0; ii < numcols  ; ii++){
-            M(rowi, ii)  = line[ii] - '0'; // trick to removes ASCII character offset for numbers
+            int tmp  = line[ii] - '0'; // trick to removes ASCII character offset for numbers
+            M(rowi, ii) = (double) tmp - 1;   // converting data to -1, 0, 1 
           }
           rowi++;
       } // end if rr
@@ -1735,7 +1736,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    }
 
 
-   MMt.noalias() = genoMat * genoMat.transpose(); 
+    MMt.noalias() = genoMat * genoMat.transpose(); 
 
 
 

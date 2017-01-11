@@ -1206,14 +1206,30 @@ if(!is.null(file_phenotype))
 ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, ...){
 
   phenofile <- fullpath(filename)
+
+
+
   error.code <- check.inputs(file_phenotype=phenofile)
   if(error.code)
      stop(" ReadPheno has terminated with errors.", call. = FALSE)
 
   sep <- ""
   if(csv) sep=","
+  cat("\n\n Loading Pheotype file ... \n\n")
   phenos <- read.table(phenofile, header=header, sep=sep, ...)
-cat("\n\n Loading Pheotype file ... \n\n")
+  ## check for factors with only one level which will cause contrast code to crash
+  for(ii in names(phenos)){
+    if(is.factor(phenos[[ii]])){
+       if(length(levels(phenos[[ii]]))==1){
+          cat(" The phenotype file contains factors that only have a single value. \n")
+          cat(" Please remove this factor. \n") 
+         stop(" ReadPheno has terminated with errors.", call. = FALSE)
+
+       }
+    }
+  }
+
+
 cat("               Summary of Phenotype File  \n")
 cat("              ~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
 cat(" File name:                   ",  phenofile, "\n")
@@ -1318,11 +1334,12 @@ create.ascii  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB
 
 if (type=="text"){
     ## text genotype file
-
+    cat(" running createM_ASCII_rcpp\n")
     createM_ASCII_rcpp(f_name = file_genotype, type=type ,  f_name_ascii = asciiMfile, AA = AA, AB = AB, BB = BB,
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv = csv,
                quiet = quiet)
 
+    cat(" running createMt_ASCII_rcpp \n")
     createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,  
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet )
 } else {
