@@ -30,8 +30,14 @@
 #include <vector>
 #include <bitset>
 #include <string>
-
+#include <fcntl.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <ctime>
+#include<string>
 
 //    #include <magma.h>
 
@@ -58,6 +64,22 @@ const size_t bits_in_int = std::numeric_limits<int>::digits;
 
 
 
+vector<string> split(const char *str, char c = ' ')
+{
+    vector<string> result;
+
+    do
+    {
+        const char *begin = str;
+
+        while(*str != c && *str)
+            str++;
+
+        result.push_back(string(begin, str));
+    } while (0 != *str++);
+
+    return result;
+}
 
 
 // check genotypes in file are correct numeric values AA, AB, BB
@@ -114,6 +136,52 @@ std::string
 
 
 }
+
+
+// Ryan's map file from disc into memory
+char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, 
+                      unsigned long &sizeActual){
+
+  bool debugMsgs = true;
+  int pagesize = getpagesize();
+  struct stat s;
+  int fd;
+  try {
+     fd = open (file_name, O_RDONLY);
+     if( -1 == fd) throw "File could not be opened for reading ";
+  }
+  catch (const char* msg){
+       Rcout << "ERROR: " << msg << endl;
+       exit(-1);
+  }
+
+  int status = fstat (fd, &s);
+
+  sizeActual = s.st_size;
+  sizeUsed = sizeActual + (pagesize - (sizeActual % pagesize));
+  if (debugMsgs)
+      printf(" Memory used to map file: %d Mbytes\n", sizeUsed/(1024*1024));
+
+  char *fileMemMap;
+
+  fileMemMap = (char *) mmap (0, sizeUsed, PROT_READ, MAP_PRIVATE, fd,  0);
+
+  if (madvise(fileMemMap, sizeUsed, MADV_WILLNEED | MADV_SEQUENTIAL) == -1)
+  {
+    Rcout << "madvise error " << endl;
+    return NULL;
+  }
+
+  close(fd);
+
+  return fileMemMap;
+
+
+
+} // end function mapFileFromDisc
+
+
+
 
 
 
@@ -195,7 +263,7 @@ return dimen;
 // recode PLINK as ASCII with no spaces
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void  CreateASCIInospace_PLINK(std::string fname, std::string asciifname, std::vector<long> dims,
-                         bool quiet)
+                         int quiet)
 {
 long 
    colindx = 0; 
@@ -228,8 +296,40 @@ char
  ostringstream 
       os;
 
+// ------------------------- TESTING AREA mmap
+
+//unsigned long sizeUsed = 0;
+//unsigned long sizeActual = 0;
+
+//char* dataFile = mapFileFromDisc(fname.c_str(), sizeUsed, sizeActual);
+
+//if (dataFile == NULL){
+//   Rcout << "Error mapping file to memory." << endl;
+//   exit(-1);
+//}
+
+//Rcout << sizeUsed << endl;
+//Rcout << sizeActual << endl;
 
 
+//  char str[] ="- This, a sample string.";
+//  char * pch;
+//  printf ("Splitting string \"%s\" into tokens:\n",str);
+  // pch = strtok (str," ,.-");
+//  pch = strtok (dataFile," ");
+//  while (pch != NULL)
+//  {
+//    printf ("%s\n",pch);
+//    pch = strtok (NULL, " ,.-");
+//  }
+
+ 
+
+//  Rcpp::stop("stop");
+
+
+
+//------------------------------
 
 // open PLINK ped  file
 std::ifstream fileIN(fname.c_str());
@@ -251,8 +351,8 @@ Rcout << " Number of cols in geno " << n_of_cols_in_geno << endl;
 
 while(getline(fileIN, line ))
 {
-  Rcout << "\r" << 100.0*counter/dims[0] << "% read PLINK file.       " << flush;
-
+  Rcout << "\r" << 100.0*counter/dims[0] << "% read of PLINK file.       " << flush;
+  Rcout << counter << endl;
 
 
   istringstream streamLine(line);
@@ -261,10 +361,10 @@ while(getline(fileIN, line ))
  int printOnlyOnce = 0;  // flag for printing warning message about missing data
  long number_of_columns = 0;
  std::string rowinfile(n_of_cols_in_geno, '0'); // s == "000000"
- while(streamLine >> tmp)
-
+ 
  if (quiet > 0){
-    number_of_columns ++;
+    while(streamLine >> tmp)
+        number_of_columns ++;
     Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
 
      if (number_of_columns != dims[1] ){
@@ -282,18 +382,15 @@ while(getline(fileIN, line ))
 
    istringstream streamA(line);
    // tokenized row and placed it in vector rowvec
-   for(long i=0; i < dims[1] ; i++){
-         // assign allelic info to rowvec ignoring first 6 columns of input
-         if(i <= 5){
-            streamA >> tmp;
-         } else {
+   for(int i=0; i <= 5; i++)
+     streamA >> tmp;
+   for(long i=6; i < dims[1] ; i++){
             streamA >> rowvec[i-6];
-         }
    }  // end  for(long i=0; i < dims[1] ; i++)
 
 
-      // initialize alleles structure to first row of PLINK info
-      if (counter == 0) {
+   // initialize alleles structure to first row of PLINK info
+   if (counter == 0) {
          for(long i=0; i < n_of_cols_in_geno ; i++){
             if( rowvec[ (2*i ) ] == '0' ||  rowvec[ (2*i + 1) ] == '0' || rowvec[ (2*i ) ] == '-' ||  rowvec[ (2*i + 1) ] == '-'){
                // missing allele
@@ -304,9 +401,9 @@ while(getline(fileIN, line ))
                alleles[ 1 ][ i ] =  rowvec[ (2*i + 1) ];
             } //end  if (rowvec 
          }
-     }
+   }
 
-     // turn allelic info from PLINK into genotype 0,1,2 data
+   // turn allelic info from PLINK into genotype 0,1,2 data
      // also do some checks for more than 2 alleles, and 0 and - for missing data
      for(long i=0; i < n_of_cols_in_geno; i++){
         // Checking for missing allelic information in PLINK file
@@ -447,7 +544,7 @@ void  CreateASCIInospace(std::string fname, std::string asciifname, std::vector<
                          std::string AB, 
                          std::string BB,
                          bool csv, 
-                         bool quiet)
+                         int  quiet)
 {
 long 
    colindx = 0;
@@ -503,7 +600,7 @@ long
 
 while(getline(fileIN, line ))
 {
-  Rcout << "\r" << 100.0*counter/dims[0] << "% read PLINK file.       " << flush;
+  Rcout << "\r" << 100.0*counter/dims[0] << "% read of text file.       " << flush;
 
 
  // Here, BB is coded into 2 
@@ -672,7 +769,7 @@ Eigen::MatrixXd
 // [[Rcpp::export]]
 void  createMt_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii, 
                               double  max_memory_in_Gbytes,  std::vector <long> dims,
-                              bool quiet )
+                              int  quiet )
 {
 
 // read data from M.ascii that has already been created and transpose this file
@@ -891,7 +988,7 @@ MatrixXd calculate_reduced_a_rcpp ( CharacterVector f_name_ascii, double varG,
                                            double max_memory_in_Gbytes,  
                                            std::vector <long> dims,
                                            Rcpp::NumericVector  selected_loci,
-                                           bool quiet)
+                                           int quiet)
 {
   // function to calculate the BLUPs for the dimension reduced model. 
   // It is being performed in Rcpp because it makes use of Mt. 
@@ -979,7 +1076,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
 
-      if (quiet){
+      if (quiet > 0){
       Rprintf(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
       Rprintf(" Block multiplication necessary. \n");
       Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
@@ -1027,7 +1124,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
               counter++;
          }
 
-       if (quiet)  Rcpp::Rcout << "block done ... " << std::endl;
+       if (quiet > 0 )  Rcpp::Rcout << "block done ... " << std::endl;
       } // end for long
 
 
@@ -1084,7 +1181,7 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_ascii,
                                     double  max_memory_in_Gbytes,  
                                     std::vector <long> dims,
                                     Eigen::VectorXd  a,
-                                    bool quiet,
+                                    int  quiet,
                                     Rcpp::NumericVector indxNA)
 {
 // Purpose: to calculate the untransformed BLUP (a) values from the 
@@ -1240,7 +1337,7 @@ std::clock_t    start;
       long num_blocks = dims[0]/num_rows_in_block;
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
-      if (quiet){
+      if (quiet > 0 ){
       Rprintf(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
       Rprintf(" Block multiplication necessary. \n");
       Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
@@ -1337,7 +1434,7 @@ Rcout << "vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt " << endl;
                  counter++;
             }
     
-             if (quiet)  Rcpp::Rcout << "block done ... " << std::endl;
+             if (quiet > 0 )  Rcpp::Rcout << "block done ... " << std::endl;
 
 
       } // end for long
@@ -1366,7 +1463,7 @@ void createM_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii,
                   string BB,
                   double  max_memory_in_Gbytes,  std::vector <long> dims,
                   bool csv, 
-                  bool quiet) 
+                  int quiet) 
 {
   // Rcpp function to create space-removed ASCII file from ASCII and PLINK input files
 
@@ -1417,7 +1514,7 @@ double
       // we are processing a line of the file at a time. This is not the case when 
       // creating a ASCII Mt because we have to read in blocks before we can 
       // transpose. 
-      if (quiet)
+      if (quiet > 0 )
           Rcout << " A text file is being assumed as the input data file type. " << std::endl;
       CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
    }  // end if type == "PLINK" 
@@ -1570,7 +1667,7 @@ return(column_of_genos);
 Eigen::MatrixXd  calculateMMt_rcpp(CharacterVector f_name_ascii, 
                                    double  max_memory_in_Gbytes, int num_cores,
                                    Rcpp::NumericVector  selected_loci , std::vector<long> dims, 
-                                   bool quiet) 
+                                   int  quiet) 
 {
 // set multiple cores
 Eigen::initParallel();

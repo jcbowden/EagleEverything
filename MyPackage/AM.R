@@ -662,6 +662,10 @@ currentX <- do.call(.build_design_matrix, Args)
         if(quiet>0)
            cat(" quiet=FALSE: calculating M %*% M^t. \n")
          MMt <- do.call(.calcMMt, Args)  
+         print(MMt[1:5,1:5]         )
+
+
+
          doquiet(dat=MMt, num_markers=quiet, lab="M%*%M^t")
         invMMt <- chol2inv(chol(MMt))   ## doesn't use GPU
         gc()
