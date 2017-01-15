@@ -876,8 +876,6 @@ fileIN.close();
 
 
 
-
-
 Eigen::MatrixXd  ReadBlock(std::string asciifname, 
                            long start_row,
                            long numcols,
@@ -930,7 +928,7 @@ Eigen::MatrixXd
 
 
 
-// Close the binary file
+// Close the ascii file
    fileIN.close();
 
 
@@ -1413,26 +1411,29 @@ if (!quiet){
 if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
 
-
+    Rcout << "begining readblock " << endl;
     Eigen::MatrixXd Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
-
+    Rcout << "ending readblock " << endl;
   // removing columns that correspond to individuals with no 
   // trait data
 //   if(!R_IsNA(indxNA(0)))
+Rcout << " Removing column " << endl;
    if(indxNA.size()!=0){
      for (long ii=0; ii < indxNA.size(); ii++){
         removeColumn(Mt, indxNA(ii) );
      }
   }
+Rcout << " end Removing column " << endl;
 
 
-
+Rcout << " Setting colums to 0 " << endl;
    if(!R_IsNA(selected_loci(0))){
    // setting columns to 0
    for(long ii=0; ii < selected_loci.size() ; ii++){
            Mt.row(selected_loci(ii)).setZero();
     }
    }
+Rcout << " end Setting colums to 0 " << endl;
 
 
 
@@ -1442,9 +1443,14 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 std::clock_t    start;
 
 //   start = std::clock();
+   Rcout << " ans_part1 = inv_MMt_sqrt * a " << endl;
     Eigen::MatrixXd  ans_part1 = inv_MMt_sqrt * a;
-    ans.noalias() =   Mt  * ans_part1; 
+   Rcout << " end ans_part1 = inv_MMt_sqrt * a " << endl;
 
+    Rcout << " ans.noalias() =   Mt  * ans_part1; " << endl;
+    ans.noalias() =   Mt  * ans_part1; 
+    Rcout << " end ans.noalias() =   Mt  * ans_part1; " << endl;
+   
 //   Rcout << "Time2 Mtd *  inv_MMt_sqrt  * a : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 
@@ -1459,22 +1465,33 @@ std::clock_t    start;
   // calculate untransformed variances of BLUP values
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
 
-//     start = std::clock();
+    Rcout << " Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt " << endl;
     Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt;
+    Rcout << " end Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt " << endl;
+
+    Rcout << " var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1; " << endl;
     var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1;
+    Rcout << " end var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1; " << endl;
+
+
+
 //     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
 
+    Rcout << " ar_ans_tmp  =  Mt  *  var_ans_tmp_part1; " << endl;
     var_ans_tmp  =  Mt  *  var_ans_tmp_part1;
+    Rcout << " end ar_ans_tmp  =  Mt  *  var_ans_tmp_part1; " << endl;
 
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
 
   // Added 26 April
   long i;
+  Rcout << "pragma var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;" << endl;
   #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
   for(i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
+  Rcout << "end pragma var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;" << endl;
 
 
 

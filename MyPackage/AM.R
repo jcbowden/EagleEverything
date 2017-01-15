@@ -5,6 +5,7 @@
 #This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. 
 
 
+
 doquiet <- function(dat, num_markers, lab){
      ## a diagnostic function for printing the contents of matrix or vector
      ## used for error checking
@@ -173,7 +174,8 @@ if(!is.matrix(Xmat))
   }
 
  .calc_extBIC <- function(trait=NULL, currentX=NULL, MMt=NULL,  geno=NULL, quiet=FALSE)
- {
+ { 
+   ## smallest extBIC and BIC is best
    ## internal function: use in multiple_loucs_am only
    res_p <- emma.MLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
    BIC <- -2 * res_p$ML + (ncol(currentX)+1) * log(length(trait))  ## fixed effects + variance component
@@ -614,6 +616,9 @@ AM <- function(trait=NULL,
 
  ## check for NA's in trait
  indxNA <- check.for.NA.in.trait(trait=trait)
+
+
+  ## setting up gpu sevrver
   if(ngpu > 0 ){
      if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
         library(rcppMagmaSYEVD)
@@ -633,10 +638,9 @@ AM <- function(trait=NULL,
 
  }
 
- ## build design matrix currentX
- Args <- list(pheno=pheno, geno=geno, indxNA=indxNA, feffects=feffects, quiet=quiet )
-currentX <- do.call(.build_design_matrix, Args) 
 
+ ## build design matrix currentX
+currentX <- .build_design_matrix(pheno=pheno, geno=geno, indxNA=indxNA, feffects=feffects, quiet=quiet )
 
  ## Initialization
  continue <- TRUE
