@@ -538,6 +538,7 @@ check.for.NA.in.trait <- function(trait=NULL)
 {
      ## internal function for AM 
      ## to return the positions of NA in a trait
+     ## ordered for largest to smallest (this is important for ReshapeM_rcpp code
 
        ## check for NA's in trait
         indxNA <- which(is.na(trait))
@@ -1709,12 +1710,12 @@ extract_geno <- function(colnum=NULL, availmemGb=8,
                           selected_locus=NA,
                           indxNA = NULL )
   {
-    ## Rcpp function to extra a column of genotypes from a  binary packed file of M
+    ## Rcpp function to extra a column of genotypes from ascii file M
 
     asciifileM <- fullpath("M.ascii")
     selected_locus <- colnum - 1  ## to be consistent with C++'s indexing starting from 0
     ## AWG if(!any(is.na(indxNA))) indxNA <- indxNA - 1
-    if (!(length(indxNA)==0)) indxNA <- indxNA - 1
+    if (!(length(indxNA)==0)) indxNA <- indxNA - 1  ## because columns start from 0 in C++
 
     geno <- extract_geno_rcpp(f_name_ascii=asciifileM, max_memory_in_Gbytes = availmemGb, 
                               selected_locus=selected_locus, dims=dim_of_ascii_M,

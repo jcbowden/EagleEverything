@@ -69,14 +69,115 @@ const size_t bits_in_double = std::numeric_limits<long double>::digits;
 const size_t bits_in_ulong = std::numeric_limits<unsigned long int>::digits;
 const size_t bits_in_int = std::numeric_limits<int>::digits;
 
+
+
+// [[Rcpp::export]]
+void ReshapeM_rcpp( CharacterVector  fnameM, 
+               CharacterVector  fnameMt, 
+               vector <long> indxNA, 
+               vector <long> dims){
+
+
+   // note indxNA starts from 0
+
+
+ ostringstream
+      os;
+
+
+
+   std::string
+       line, 
+       FnameM = Rcpp::as<std::string>(fnameM),
+       FnameMt = Rcpp::as<std::string>(fnameMt); 
+
+
+
+   //-------------------------------------------
+   // converting M.ascii to reshaped M.asciitmp
+   //-------------------------------------------
+   // open file and check for its existence. 
+   std::ifstream fileIN(FnameM.c_str());
+   if(!fileIN.good()) {
+        os << "\n\nERROR: Could not open  " << FnameM << "\n\n" << std::endl;
+        Rcpp::stop(os.str() );
+   }
+
+
+   // change name for new no-space ASCII file with rows matching indxNA removed
+   FnameM.append("tmp");
+
+
+   // open ascii file that is to hold no-spaces genotype data
+   std::ofstream fileOUT(FnameM.c_str(), ios::out );
+
+ long rownum=0;
+ bool writeline;
+ while(fileIN.good()){
+      while(getline(fileIN, line)){
+          writeline = true;
+          for(long ii=0; ii<indxNA.size(); ii++){
+             Rcout << indxNA[ii] << " "; 
+            if(indxNA[ii] == rownum)
+                writeline = false;
+          }
+          Rcout << endl; 
+          if(writeline)
+              fileOUT << line << endl;
+
+          rownum++;
+
+
+      }  // end inner while
+
+ }  // end outer while(fileIN
+
+ fileIN.close();
+ fileOUT.close();
+
+  //-------------------------------------------
+   // converting Mt.ascii to reshaped Mt.asciitmp
+   //-------------------------------------------
+
+   // open file and check for its existence. 
+   std::ifstream fileINt(FnameMt.c_str());
+   if(!fileINt.good()) {
+        os << "\n\nERROR: Could not open  " << FnameMt << "\n\n" << std::endl;
+        Rcpp::stop(os.str() );
+   }
+
+
+   // change name for new no-space ASCII file with rows matching indxNA removed
+   FnameMt.append("tmp");
+
+ 
+   // open ascii file that is to hold no-spaces genotype data
+   std::ofstream fileOUTt(FnameMt.c_str(), ios::out );
+
+  while(fileINt.good()){
+      while(getline(fileINt, line)){
+          // removing columns
+          // this is okay since indxNA is in decreasing size
+          for(long ii=0; ii<indxNA.size(); ii++){
+            Rcout << ii << " " << endl;
+            line.erase ( indxNA[ii], 1 );
+          }  // end fora
+          Rcout << line << endl;
+          fileOUTt << line << endl;
+      }  // end inner while
+ }  // end outer while(fileIN
+
+ fileINt.close();
+ fileOUTt.close();
+ 
+  return ;
+
+}  //end ReshapeM
+
+
+
+
 // ---- code developed by Ryan
-
-
-
-
-
-
-
 
 char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned long &sizeActual) {
 	// If set to true debugging information is displayed
@@ -890,7 +991,6 @@ std::string
    line;
 
 
-
 long 
   coli = 0, 
   rowi = 0;
@@ -1205,6 +1305,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
    Eigen::MatrixXd
                    Mt;
 
+  Mt = ReadBlock(fnamebin, 0, dims[0], dims[1]);
 
   if(!R_IsNA(selected_loci(0))){
    // setting columns to 0
@@ -1212,17 +1313,10 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
           Mt.row(selected_loci(ii) ).setZero();
    }
 
-   Rcout << " calculate_reduced_a_rcpp " << " about to read in Mt " << endl;
-   Mt = ReadBlock(fnamebin, 0, dims[0], dims[1]);
-   Rcout << " read ... " << endl;
    // ar  =    varG * Mt *  P   * y ;
- //    std::clock_t    start;
- //    start = std::clock();
-   Rcout << " ar  =    varG * Mt *  P   * y " << endl;
     ar  =     P   * y ;
     ar  =    Mt * ar;
     ar  =    varG * ar;
-//    Rcout << "Time1: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 } else {
 
       // calculation being processed in block form
@@ -1890,10 +1984,6 @@ std::string
 // Had to change code to be double precision. 
 MatrixXd
     MMt(MatrixXd(dims[0], dims[0]).setZero());
-
-//MatrixXi 
-//    genoMat,
-//    MMt(MatrixXi(dims[0], dims[0]).setZero());
 
 
 

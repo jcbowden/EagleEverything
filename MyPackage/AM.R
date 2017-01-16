@@ -6,6 +6,16 @@
 
 
 
+ReshapeM  <- function(fnameM, fnameMt, indxNA, dims){
+   ## function to create a temp version of M.ascii and Mt.ascii where the rows and colums, 
+   ## respectively have been removed for the elements in indxNA
+   
+   ## its indxNA-1 so that indexs start from 0 as in c++
+   ReshapeM_rcpp(fnameM=fnameM, fnameMt=fnameMt, indxNA=(indxNA-1), dims=dims)
+
+}
+
+
 doquiet <- function(dat, num_markers, lab){
      ## a diagnostic function for printing the contents of matrix or vector
      ## used for error checking
@@ -602,7 +612,7 @@ AM <- function(trait=NULL,
  ## assign trait 
  trait <-  pheno[[trait]]
  
- ## check for NA's in explanatory variables. 
+ ## check for NA's in explanatory variables feffects 
  ## If any, set individual's trait value to NA
  ## This means this individual will later be removed. 
  if(!is.null(feffects)){
@@ -637,6 +647,15 @@ AM <- function(trait=NULL,
     }
 
  }
+
+
+## create a new M.ascii and Mt.ascii if length(indxNA) is non-zero 
+## remove rows in M.ascii and columns in Mt.ascii of those individuals listed in indxNA 
+#if(length(indxNA)>0){
+#    ReshapeM(fnameM=geno$asciifileM, fnameMt=geno$asciifileMt, indxNA=indxNA, dims=geno$dim_of_ascii_M)
+#    geno$asciifileM  <-  fullpath("M.asciitmp")
+#    geno$asciifileMt <-  fullpath("Mt.asciitmp")
+#}
 
 
  ## build design matrix currentX
