@@ -976,11 +976,10 @@ return(ar)
 
 
 
-calculate_a_and_vara <- function(maxmemGb=8, dims=NULL,
+calculate_a_and_vara <- function(geno=NULL, maxmemGb=8, 
                          selectedloci = NA,
                          invMMtsqrt=NULL, transformed_a=NULL, transformed_vara=NULL,
-                         quiet = 0,
-                         indxNA = NULL)
+                         quiet = 0)
 {
  ## an Rcpp function to take dimension reduced a (BLUP) values 
  ## and transform them into the original a (BLUP) values and their variances 
@@ -995,25 +994,24 @@ calculate_a_and_vara <- function(maxmemGb=8, dims=NULL,
 
 
 
-  file_ascii <- fullpath("Mt.ascii")
-  if(!file.exists(file_ascii)){
-      cat("\n\n  Error: ", file_ascii, " does not exist and it should have been created. \n\n")
-      stop(call. = FALSE)
-  }
+#  file_ascii <- fullpath("Mt.ascii")
+#  if(!file.exists(file_ascii)){
+#      cat("\n\n  Error: ", file_ascii, " does not exist and it should have been created. \n\n")
+#      stop(call. = FALSE)
+#  }
+  fnameMt <- geno[["asciifileMt"]]
+  dimsMt <- c(geno[["dim_of_ascii_M"]][2], geno[["dim_of_ascii_M"]][1])
 
-  dimsMt <- c(dims[2], dims[1]) 
-
- 
   if(!any(is.na(selectedloci))) selectedloci <- selectedloci-1
-  calculate_a_and_vara_rcpp(f_name_ascii=file_ascii,
+  calculate_a_and_vara_rcpp(f_name_ascii=fnameMt,
                     selected_loci = selectedloci,
                     inv_MMt_sqrt=invMMtsqrt,  
                     dim_reduced_vara = transformed_vara,
                     max_memory_in_Gbytes=maxmemGb, 
                     dims=dimsMt, 
                     a = transformed_a, 
-                    quiet = quiet,
-                    indxNA = indxNA) 
+                    quiet = quiet)
+                    
 
 }
 
@@ -1705,45 +1703,39 @@ ReadMarker <- function( filename=NULL, type="text",
 
 
 
-extract_geno <- function(colnum=NULL, availmemGb=8, 
+extract_geno <- function(fnameM=NULL, colnum=NULL, availmemGb=8, 
                           dim_of_ascii_M=NULL, 
-                          selected_locus=NA,
-                          indxNA = NULL )
+                          selected_locus=NA)
   {
     ## Rcpp function to extra a column of genotypes from ascii file M
 
-    asciifileM <- fullpath("M.ascii")
     selected_locus <- colnum - 1  ## to be consistent with C++'s indexing starting from 0
-    ## AWG if(!any(is.na(indxNA))) indxNA <- indxNA - 1
-    if (!(length(indxNA)==0)) indxNA <- indxNA - 1  ## because columns start from 0 in C++
 
-    geno <- extract_geno_rcpp(f_name_ascii=asciifileM, max_memory_in_Gbytes = availmemGb, 
-                              selected_locus=selected_locus, dims=dim_of_ascii_M,
-                              indxNA = indxNA)
+    genodata <- extract_geno_rcpp(f_name_ascii=fnameM,
+                               max_memory_in_Gbytes = availmemGb, 
+                              selected_locus=selected_locus, dims=dim_of_ascii_M)
 
-    return(geno)
+    return(genodata)
 
   }
 
 
 
-constructX <- function(currentX=NULL, loci_indx=NULL, 
+constructX <- function(fnameM=NULL, currentX=NULL, loci_indx=NULL, 
                        availmemGb=8, dim_of_ascii_M=NULL,
-                       indxNA = NULL , map=NULL)
+                        map=NULL)
   {
     ## R function to construct the design matrix X
     ## Args
     ##   currentX    current model matrix
     ##   loci        the marker loci to be included as fixed QTL effects (additive model)
-    ##   indxNA      those individuals that should be removed due to missing phenotypes
    
    if(is.na(loci_indx))
    {
      return(currentX)
    } else {
-       genodat <- extract_geno(colnum=loci_indx, 
-                           availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M,
-                           indxNA = indxNA)
+       genodat <- extract_geno(fnameM=fnameM, colnum=loci_indx, 
+                           availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M)
       newX <- cbind(currentX, genodat)
       colnames(newX) <- c(colnames(currentX), as.character(map[[1]][loci_indx])) ## adding col names to new X  
       return(newX)

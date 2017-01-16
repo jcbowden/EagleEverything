@@ -137,13 +137,14 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
   ## add genetic marker effects 
   fullX <- baseX
   for(loc in AMobj$Indx){
-        fullX <- constructX(currentX=fullX, loci_indx=loc,
+        fullX <- constructX(fnameM=geno[["asciifileM"]], 
+                              currentX=fullX, loci_indx=loc,
                                dim_of_ascii_M=geno[["dim_of_ascii_M"]],
-                               indxNA = AMobj$indxNA, map=map)
+                                map=map)
    }  ## end for loc
 
  ## calculate MMt
- MMt <- .calcMMt(geno, AMobj$availmemGb, AMobj$ncpu, AMobj$Indx, AMobj$quiet, AMobj$indxNA)
+ MMt <- .calcMMt(geno, AMobj$availmemGb, AMobj$ncpu, AMobj$Indx, AMobj$quiet)
 
  ## calculate variance components of LMM
  eR <- emma.REMLE(y=AMobj$trait, X= fullX , K=MMt, llim=-100,ulim=100)
@@ -202,9 +203,10 @@ cat("     Size and Significance of Effects in Final Model    \n")
   cat(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
   cat(sprintf("   %15s      %10s \n", "Marker name", "Proportion"))
   for(loc in AMobj$Indx[-1]){
-        fullX <- constructX(currentX=fullX, loci_indx=loc,
+        fullX <- constructX(fnameM=geno[["asciifileM"]],
+                                currentX=fullX, loci_indx=loc,
                                dim_of_ascii_M=geno[["dim_of_ascii_M"]],
-                               indxNA = AMobj$indxNA, map=map)
+                               map=map)
         fullmod <- emma.MLE(y=AMobj$trait, X=fullX, K=MMt, llim=-100,ulim=100)
         full_logML <- fullmod$ML
         Rsq <- 1 - exp(-2/nrow(MMt) * (full_logML - base_logML))

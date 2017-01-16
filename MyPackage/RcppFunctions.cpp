@@ -72,7 +72,7 @@ const size_t bits_in_int = std::numeric_limits<int>::digits;
 
 
 // [[Rcpp::export]]
-void ReshapeM_rcpp( CharacterVector  fnameM, 
+std::vector <long>    ReshapeM_rcpp( CharacterVector  fnameM, 
                CharacterVector  fnameMt, 
                vector <long> indxNA, 
                vector <long> dims){
@@ -80,6 +80,9 @@ void ReshapeM_rcpp( CharacterVector  fnameM,
 
    // note indxNA starts from 0
 
+
+  std::vector <long> 
+        newdims(2,0);
 
  ostringstream
       os;
@@ -117,16 +120,16 @@ void ReshapeM_rcpp( CharacterVector  fnameM,
       while(getline(fileIN, line)){
           writeline = true;
           for(long ii=0; ii<indxNA.size(); ii++){
-             Rcout << indxNA[ii] << " "; 
             if(indxNA[ii] == rownum)
                 writeline = false;
           }
-          Rcout << endl; 
-          if(writeline)
+          if(writeline){
               fileOUT << line << endl;
-
+              newdims[0]++;
+          }
           rownum++;
 
+      newdims[1] = line.length();
 
       }  // end inner while
 
@@ -159,18 +162,15 @@ void ReshapeM_rcpp( CharacterVector  fnameM,
           // removing columns
           // this is okay since indxNA is in decreasing size
           for(long ii=0; ii<indxNA.size(); ii++){
-            Rcout << ii << " " << endl;
             line.erase ( indxNA[ii], 1 );
           }  // end fora
-          Rcout << line << endl;
           fileOUTt << line << endl;
       }  // end inner while
  }  // end outer while(fileIN
 
  fileINt.close();
  fileOUTt.close();
- 
-  return ;
+  return newdims;
 
 }  //end ReshapeM
 
@@ -1452,8 +1452,7 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_ascii,
                                     double  max_memory_in_Gbytes,  
                                     std::vector <long> dims,
                                     Eigen::VectorXd  a,
-                                    int  quiet,
-                                    Rcpp::NumericVector indxNA)
+                                    int  quiet)
 {
 // Purpose: to calculate the untransformed BLUP (a) values from the 
 //          dimension reduced BLUP value estimates. 
@@ -1463,7 +1462,6 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_ascii,
 //          be converted into a douple precision matrix which has a large memory cost.  
 // Note:
 //      1. dims is the row, column dimension of the Mt matrix
-//      2. when indxNA not NA, then need to adjust dimenions of Mt by removing cols.
 
 
 ostringstream
@@ -1504,30 +1502,15 @@ if (!quiet){
 
 if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
-
-    Rcout << "begining readblock " << endl;
     Eigen::MatrixXd Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
-    Rcout << "ending readblock " << endl;
-  // removing columns that correspond to individuals with no 
-  // trait data
-//   if(!R_IsNA(indxNA(0)))
-Rcout << " Removing column " << endl;
-   if(indxNA.size()!=0){
-     for (long ii=0; ii < indxNA.size(); ii++){
-        removeColumn(Mt, indxNA(ii) );
-     }
-  }
-Rcout << " end Removing column " << endl;
 
 
-Rcout << " Setting colums to 0 " << endl;
    if(!R_IsNA(selected_loci(0))){
    // setting columns to 0
    for(long ii=0; ii < selected_loci.size() ; ii++){
            Mt.row(selected_loci(ii)).setZero();
     }
    }
-Rcout << " end Setting colums to 0 " << endl;
 
 
 
@@ -1537,13 +1520,12 @@ Rcout << " end Setting colums to 0 " << endl;
 std::clock_t    start;
 
 //   start = std::clock();
-   Rcout << " ans_part1 = inv_MMt_sqrt * a " << endl;
     Eigen::MatrixXd  ans_part1 = inv_MMt_sqrt * a;
-   Rcout << " end ans_part1 = inv_MMt_sqrt * a " << endl;
 
-    Rcout << " ans.noalias() =   Mt  * ans_part1; " << endl;
+
     ans.noalias() =   Mt  * ans_part1; 
-    Rcout << " end ans.noalias() =   Mt  * ans_part1; " << endl;
+
+
    
 //   Rcout << "Time2 Mtd *  inv_MMt_sqrt  * a : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
@@ -1559,22 +1541,16 @@ std::clock_t    start;
   // calculate untransformed variances of BLUP values
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
 
-    Rcout << " Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt " << endl;
     Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt;
-    Rcout << " end Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt " << endl;
 
-    Rcout << " var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1; " << endl;
     var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1;
-    Rcout << " end var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1; " << endl;
 
 
 
 //     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
 
-    Rcout << " ar_ans_tmp  =  Mt  *  var_ans_tmp_part1; " << endl;
     var_ans_tmp  =  Mt  *  var_ans_tmp_part1;
-    Rcout << " end ar_ans_tmp  =  Mt  *  var_ans_tmp_part1; " << endl;
 
   var_ans_tmp_part1.resize(0,0);  // erase matrix 
 
@@ -1643,15 +1619,6 @@ std::clock_t    start;
          Eigen::MatrixXd Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
          // Rcout << Mt.rows() << endl;
          // Rcout << Mt.cols() << endl;
-         // removing columns that correspond to individuals with no 
-         // trait data
-         //  if(!R_IsNA(indxNA(0)))
-         if(indxNA.size() != 0 ){
-               Rcpp::Rcout << " Removing columns don't know why though ... " << endl;
-               for (long ii=0; ii < indxNA.size(); ii++){
-                     removeColumn(Mt, indxNA(ii) );
-               }
-          }
 
 
 
@@ -1678,16 +1645,12 @@ std::clock_t    start;
                 }   
             }
            //  ans_tmp  =  Mtd *  inv_MMt_sqrt  * a ;
-            Rcout << " 1 ans_tmp.noalias()  =   inv_MMt_sqrt  * a " << endl;
              ans_tmp.noalias()  =   inv_MMt_sqrt  * a ;
-         Rcout << "ns_tmp = Mt * ans_tmp " << endl;
              ans_tmp = Mt * ans_tmp;
 
             // variance calculation
             // vt.noalias() =  Mtd *  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
-Rcout << "vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt " << endl;
              vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt;
-     Rcout << " vt1           =  inv_MMt_sqrt * vt1 " << endl;
              vt1           =  inv_MMt_sqrt * vt1;
 
 
@@ -1700,7 +1663,6 @@ Rcout << "vt1.noalias() =  dim_reduced_vara * inv_MMt_sqrt " << endl;
 //        Rcout << "end of computing variances ... " << endl;
             // vt.noalias() =  Mt *  vt1;
            Eigen::MatrixXd vt;
-             Rcout << " vt.noalias()  =  Mt *  vt1 " << endl; 
               vt.noalias()  =  Mt *  vt1;
 
 
@@ -1847,8 +1809,7 @@ Rcpp::Rcout << "\n\n" << std::endl;
 Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_ascii, 
                                    double  max_memory_in_Gbytes, 
                                     long  selected_locus, 
-                                    std::vector<long> dims,
-                                   Rcpp::NumericVector indxNA)
+                                    std::vector<long> dims)
 {
   std::string
      fnamebin = Rcpp::as<std::string>(f_name_ascii);
@@ -1859,10 +1820,6 @@ Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_ascii,
   nind = dims[0];
 
 
-
-  // if (!R_IsNA(indxNA(0)))
-  if (indxNA.size() != 0 )
-    nind = dims[0] - indxNA.size();
 
 
 //-----------------------------------
@@ -1881,12 +1838,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
     Eigen::MatrixXd genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
 
-    // removing rows that correspond to individuals with no 
-  // trait data
-  if(indxNA.size() != 0){
-     for (long ii=0; ii < indxNA.size(); ii++){
-           removeRow(genoMat, indxNA(ii) ); } 
-  }
    column_of_genos = genoMat.col(selected_locus).cast<int>() ;
    
 
@@ -1913,30 +1864,14 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               // trait data
               long start = start_row1;
               long  finish = start_row1 + num_rows_in_block1;
-              // if(!R_IsNA(indxNA(0))){
-              if(indxNA.size() != 0 ){
-                 for (long ii=0; ii < indxNA.size(); ii++){
-                   if(indxNA(ii) >= start & indxNA(ii) <= finish)
-                        removeRow(genoMat_block1, indxNA(ii) );
-                 }
-              }
 
 
               // dealing with assigning column_of_genos when some values 
               // may be missing due to having been removed. 
               long colindx = start_row1;
               for(long j=start_row1; j< start_row1+num_rows_in_block1 ; j++){
-                 bool found = 0;
-                 for(long ii = 0; ii < indxNA.size() ; ii++){
-                   if(indxNA[ii] == j){
-                          found=1;
-                   }
-                 }
-                 if (!found){ 
-                    // j not in indxNA
-                   column_of_genos(colindx) = genoMat_block1.col(selected_locus)(j-start_row1);
-                   colindx++;
-                }
+                  column_of_genos(colindx) = genoMat_block1.col(selected_locus)(j-start_row1);
+                  colindx++;
 
               } // end for j
 

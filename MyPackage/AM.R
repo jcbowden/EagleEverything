@@ -11,8 +11,8 @@ ReshapeM  <- function(fnameM, fnameMt, indxNA, dims){
    ## respectively have been removed for the elements in indxNA
    
    ## its indxNA-1 so that indexs start from 0 as in c++
-   ReshapeM_rcpp(fnameM=fnameM, fnameMt=fnameMt, indxNA=(indxNA-1), dims=dims)
-
+   res <- ReshapeM_rcpp(fnameM=fnameM, fnameMt=fnameMt, indxNA=(indxNA-1), dims=dims)
+   return(res)  ## returns integer vector with new dims of reshaped matrix M
 }
 
 
@@ -104,7 +104,7 @@ cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-   
 }
 
 
-.build_design_matrix <- function(pheno=NULL, geno=NULL, indxNA=NULL, feffects=NULL, quiet=0  )
+.build_design_matrix <- function(pheno=NULL,  indxNA=NULL, feffects=NULL, quiet=0  )
 {
    ## internal fuction: use only in AM function and summaryam function
    ## build design matrix given character vector feffects of column names
@@ -154,7 +154,7 @@ if(!is.matrix(Xmat))
 }
 
 
-.calcMMt <- function(geno, availmemGb, ncpu, selected_loci, quiet, indxNA)
+.calcMMt <- function(geno, availmemGb, ncpu, selected_loci, quiet)
   {
     ## internal function: used only in multilocus_loci_am and summaryam
     ## values passed by environments
@@ -164,8 +164,6 @@ if(!is.matrix(Xmat))
                            selected_loci=selected_loci, quiet = quiet) 
     gc()
 
-    if(length(indxNA)> 0 )
-        MMt <- MMt[-indxNA, -indxNA]
 
     ## Trick for dealing with singular MMt due to colinearity
     MMt <- MMt/max(MMt) + diag(0.95, nrow(MMt)) 
@@ -240,7 +238,7 @@ if(!is.matrix(Xmat))
 
 
 
-  .find_qtl <- function(geno, availmemGb, indxNA, selected_loci, MMt, invMMt, best_ve, best_vg, 
+  .find_qtl <- function(geno, availmemGb,  selected_loci, MMt, invMMt, best_ve, best_vg, 
                        currentX,  ncpu, quiet, trait, ngpu )
   {
     ##  internal function: use only with AM
@@ -302,13 +300,12 @@ if(!is.matrix(Xmat))
       cat(" quiet = ", quiet, ": beginning calculation of BLUPS and their standard errors for full model. \n")
     }
 
-     a_and_vara  <- calculate_a_and_vara(maxmemGb=availmemGb, 
-                                            dims=geno[["dim_of_ascii_M"]],
+     a_and_vara  <- calculate_a_and_vara(geno = geno,
+                                         maxmemGb=availmemGb, 
                                             selectedloci = selected_loci,
                                             invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
                                             transformed_a=hat_a, 
                                             transformed_vara=var_hat_a,
-                                            indxNA = indxNA,
                                             quiet=quiet) 
 
      doquiet(dat=a_and_vara[["a"]], num_markers=quiet, lab="BLUPs for full model")
@@ -651,15 +648,18 @@ AM <- function(trait=NULL,
 
 ## create a new M.ascii and Mt.ascii if length(indxNA) is non-zero 
 ## remove rows in M.ascii and columns in Mt.ascii of those individuals listed in indxNA 
-#if(length(indxNA)>0){
-#    ReshapeM(fnameM=geno$asciifileM, fnameMt=geno$asciifileMt, indxNA=indxNA, dims=geno$dim_of_ascii_M)
-#    geno$asciifileM  <-  fullpath("M.asciitmp")
-#    geno$asciifileMt <-  fullpath("Mt.asciitmp")
-#}
+if(length(indxNA)>0){
+    res <- ReshapeM(fnameM=geno$asciifileM, fnameMt=geno$asciifileMt, indxNA=indxNA, dims=geno$dim_of_ascii_M)
+    cat("new dimensions of reshaped M", res, "\n")
+    geno$asciifileM  <-  fullpath("M.asciitmp")
+    geno$asciifileMt <-  fullpath("Mt.asciitmp")
+    geno$dim_of_ascii_M <- res
+}
+
 
 
  ## build design matrix currentX
-currentX <- .build_design_matrix(pheno=pheno, geno=geno, indxNA=indxNA, feffects=feffects, quiet=quiet )
+currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, feffects=feffects, quiet=quiet )
 
  ## Initialization
  continue <- TRUE
@@ -669,9 +669,8 @@ currentX <- .build_design_matrix(pheno=pheno, geno=geno, indxNA=indxNA, feffects
  while(continue){
   cat("\n\n Iteration" , itnum, ": Searching for most significant marker-trait association\n\n")
    ## based on selected_locus, form model matrix X
-  currentX <- constructX(currentX=currentX, loci_indx=new_selected_locus,
+  currentX <- constructX(fnameM=geno[["asciifileM"]], currentX=currentX, loci_indx=new_selected_locus,
                           dim_of_ascii_M=geno[["dim_of_ascii_M"]],
-                          indxNA = indxNA,
                           map=map, availmemGb = availmemGb)  
 
 
@@ -679,7 +678,7 @@ currentX <- .build_design_matrix(pheno=pheno, geno=geno, indxNA=indxNA, feffects
     ## calculate Ve and Vg
     Args <- list(geno=geno,availmemGb=availmemGb,
                     ncpu=ncpu,selected_loci=selected_loci,
-                    quiet=quiet, indxNA=indxNA)
+                    quiet=quiet)
 
     if(itnum==1){
         if(quiet>0)
@@ -719,7 +718,7 @@ currentX <- .build_design_matrix(pheno=pheno, geno=geno, indxNA=indxNA, feffects
    ## Select new locus if extBIC is still decreasing 
    if(which(extBIC==min(extBIC))==length(extBIC) ){  ## new way of stoppint based on extBIC only
      ## find QTL
-     ARgs <- list(geno=geno,availmemGb=availmemGb, indxNA=indxNA, selected_loci=selected_loci,
+     ARgs <- list(geno=geno,availmemGb=availmemGb, selected_loci=selected_loci,
                  MMt=MMt, invMMt=invMMt, best_ve=best_ve, best_vg=best_vg, currentX=currentX,
                  ncpu=ncpu, quiet=quiet, trait=trait, ngpu=ngpu)
       new_selected_locus <- do.call(.find_qtl, ARgs)  ## memory blowing up here !!!! 
