@@ -560,7 +560,7 @@ cat("             been removed from the analysis.  \n\n")
    } 
 
 
-check.inputs.mlam <- function (ncpu, availmemGb, colname.trait, colname.feffects, map, pheno, 
+check.inputs.mlam <- function (ncpu, availmemGb, colname.trait, map, pheno, 
                   geno )
 {
 
@@ -663,20 +663,8 @@ if(is.null(map)){
  }
 
 
- ## checks for colname.feffects
- if(is.null(colname.feffects)){
-    cat("\n\n WARNING: no fixed effects have been specified. \n\n")
- }
 
 
- indx <- match(colname.feffects, names(pheno))
- if(any(is.na(indx))){
-   cat("Error: the feffects option contains column names that do not \n")
-   cat("       match any of the column names in the phenotypic file. \n")
-   cat("       The column names in the phenotypic file are: \n")
-   cat(c("       ", names(pheno), "\n"))
-   return(TRUE)
- }
 
 
 
@@ -1182,7 +1170,7 @@ if(!is.null(file_phenotype))
 #' a data frame is returned of the phenotypic data. If \code{header} is true, the 
 #' names of the columns will be as specified by the first row of the phenotypic file. If \code{header} is \code{FALSE}, 
 #' generic names are supplied by R in the form of V1, V2, etc.  If no column headings are given, these 
-#' generic names will need to be used in the \code{trait} and \code{feffects} parameters in 
+#' generic names will need to be used in the \code{trait} and \code{fformula} parameters in 
 #' \code{\link{AM}}.  You can print out the column names of the dataframe by using
 #'
 #' \preformatted{names(pheno_obj)}

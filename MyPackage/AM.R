@@ -58,12 +58,12 @@ doquiet <- function(dat, num_markers, lab){
 
 }
 
-.form_results <- function(trait, selected_loci, map,  feffects, indxNA,
+.form_results <- function(trait, selected_loci, map,  fformula, indxNA,
                            ncpu, availmemGb, quiet,  extBIC )
 {
   if (length(selected_loci) > 1){
    sigres <- list(trait=trait,
-                    feffects = feffects,
+                    fformula = fformula,
                     indxNA = indxNA,
                     Mrk=map[[1]][selected_loci], 
                     Chr=map[[2]][selected_loci], 
@@ -75,7 +75,7 @@ doquiet <- function(dat, num_markers, lab){
                     extBIC=extBIC)
   } else {
    sigres <- list(trait=trait,
-                    feffects = feffects,
+                    fformula = fformula,
                     indxNA = indxNA,
                     Mrk=NA,
                     Chr=NA,
@@ -104,13 +104,13 @@ cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-   
 }
 
 
-.build_design_matrix <- function(pheno=NULL,  indxNA=NULL, feffects=NULL, quiet=0  )
+.build_design_matrix <- function(pheno=NULL,  indxNA=NULL, fformula=NULL, quiet=0  )
 {
    ## internal fuction: use only in AM function and summaryam function
-   ## build design matrix given character vector feffects of column names
+   ## build design matrix given character vector fformula of column names
 
    ## assign model matrix X
-   if(is.null(feffects))
+   if(is.null(fformula))
    {  ## trait + intercept being fitted only
       if(length(indxNA) > 0){
          Xmat <- matrix(data=1, nrow=nrow(pheno[-indxNA,]), ncol=1)
@@ -123,23 +123,21 @@ cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-   
       ## trait + fixed effects being fitted. 
      if(length(indxNA)==0)
      {
-        mf <- paste(feffects, collapse=" + ")
-        mf <- paste(" ~ ", mf, sep="")
-        mf <- as.formula(mf)
-        Xmat <- model.matrix(mf, data=pheno)
+      #  mf <- paste(fformula, collapse=" + ")
+      #  mf <- paste(" ~ ", mf, sep="")
+      #  mf <- as.formula(mf)
+        Xmat <- model.matrix(fformula, data=pheno)
      }  else {
         # there is an issue with creating Xmat when it includes
         # factors that have some of their levels removed. 
         ph <- pheno[-indxNA,]
-        for(ii in feffects){
+        mat <- get_all_vars(fformula, data=ph)
+        for(ii in names(mat)){
            if(is.factor(ph[,ii])){
               ph[,ii] <- as.factor(as.character(ph[,ii]))
            }
         }  ## for    
-        mf <- paste(feffects, collapse=" + ")
-        mf <- paste(" ~ ", mf, sep="")
-        mf <- as.formula(mf)
-        Xmat <- model.matrix(mf, data=ph)
+        Xmat <- model.matrix(fformula, data=ph)
      } ## if else (length(indxNA)==0)
    } 
 
@@ -337,8 +335,8 @@ if(!is.matrix(Xmat))
 #' Those snp in strongest association with a trait are reported in a table of results. These 
 #' snp map to the genomic regions containing the genes that are influencing the trait. 
 #' @param trait  the name of the column in the phenotypic data file that contains the trait data. The name is case sensitive and must match exactly the column name in the phenotypic data file. 
-#' @param feffects   a character vector containing the column names of 
-#'                        the explanatory/independent variables in the phenotypic data file. If
+#' @param fformula   the right hand side formula for the fixed effects.   See below for details. 
+#'                        If
 #'                        not specified, only an overall mean will be fitted.
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). 
 #' This should be set to the maximum practical value of available memory for the analysis. 
@@ -409,7 +407,7 @@ if(!is.matrix(Xmat))
 #'
 #'   map_obj   <- ReadMap(filename="/my/dir/map.txt")
 #'
-#'   res <- AM(trait="y2", feffects=c("cov1", "cov2", "pc1", "pc2"), 
+#'   res <- AM(trait="y2", fformula=c("cov1 + cov2 + pc1 + pc2"), 
 #'             geno=geno_obj, pheno=pheno_obj, map=map_obj, availmemGb=32)
 #' }
 #' A table of results is printed to the screen and saved in the R object \code{res}. 
@@ -468,7 +466,7 @@ if(!is.matrix(Xmat))
 #' A list with the following components:
 #' \describe{
 #'\item{trait}{column name of the trait being used by AM}
-#'\item{feffects}{column names of the explanatory variables being used by AM}
+#'\item{fformula}{Right hand size formula of the fixed effects part of the linear mixed model.}
 #'\item{indxNA}{numeric vector containing the line numbers of those individuals with missing phenotypic data for the 
 #' trait and explanatory variables being used by AM}
 #' \item{Mrk}{character vector with the marker names of those loci found to be in significant association with the trait}
@@ -518,7 +516,7 @@ if(!is.matrix(Xmat))
 #'   # Perform multiple-locus genome-wide association mapping 
 #'   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #'   res <- AM(trait = "trait",
-#'                            feffects = c("cov1", "cov2"),
+#'                            fformula = c("cov1 + "cov2"),
 #'                            map = map_obj,
 #'                            pheno = pheno_obj,
 #'                            geno = geno_obj, availmemGb=8)
@@ -534,7 +532,7 @@ if(!is.matrix(Xmat))
 #'
 #'
 AM <- function(trait=NULL, 
-               feffects  = NULL,
+               fformula  = NULL,
                availmemGb=8, 
                geno=NULL, 
                pheno=NULL, 
@@ -563,7 +561,7 @@ AM <- function(trait=NULL,
  .print_title()
 
 
- error.code <- check.inputs.mlam(ncpu=ncpu , availmemGb=availmemGb, colname.trait=trait, colname.feffects=feffects, 
+ error.code <- check.inputs.mlam(ncpu=ncpu , availmemGb=availmemGb, colname.trait=trait, 
                      map=map, pheno=pheno, geno=geno )
  if(error.code)
     stop("AM has terminted with errors.", call. = FALSE)
@@ -608,12 +606,33 @@ AM <- function(trait=NULL,
  extBIC <- vector("numeric", 0)
  ## assign trait 
  trait <-  pheno[[trait]]
+
+
+ ## Turn fformula  into class formula with some checks
+ if(!is.null(fformula)){
+   if(length(grep("~", fformula))==0){
+      if(length(fformula)==1){
+          fformula <- as.formula(paste("~", fformula, sep="") )
+      }  else {
+          cat(" fformula has ", length(fformula), " separate terms. It should be a single formula. \n") 
+          stop("AM has terminted with errors.", call. = FALSE)
+      }
+   } else {
+    ## problem: formula should not contain ~
+    cat(" It looks like fformula contains a formula. \n")
+    cat(" If so, only the terms on the right hand side of the formula should be specified. \n")
+    cat(" Please remove the ~ from the formula. \n")
+    stop("AM has terminted with errors.", call. = FALSE)
+  }  ## if length grep
+ } ## end if(!is.null(fformula))
+
  
- ## check for NA's in explanatory variables feffects 
+ ## check for NA's in explanatory variables 
  ## If any, set individual's trait value to NA
  ## This means this individual will later be removed. 
- if(!is.null(feffects)){
-  mat.of.NA  <- which(is.na(pheno[, feffects]), arr.ind=TRUE)
+ if(!is.null(fformula)){
+    mat <- get_all_vars(form=fformula, data=pheno)
+    mat.of.NA  <- which(is.na(mat), arr.ind=TRUE)
   if(!is.null(dim(mat.of.NA)[1]) ){
      if(dim(mat.of.NA)[1]>0){
        trait[unique(mat.of.NA[,1])] <- NA
@@ -659,7 +678,7 @@ if(length(indxNA)>0){
 
 
  ## build design matrix currentX
-currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, feffects=feffects, quiet=quiet )
+currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, quiet=quiet )
 
  ## Initialization
  continue <- TRUE
@@ -743,7 +762,7 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, feffects=feffects, 
          ## need to remove the last selected locus since we don't go on and calucate its H and extBIC 
          ## under this new model. 
          .print_final(selected_loci[-length(selected_loci)], map, extBIC)
-         sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  feffects, 
+         sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  fformula, 
                      indxNA, ncpu, availmemGb, quiet,  extBIC )   
     }
  
@@ -752,7 +771,7 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, feffects=feffects, 
 if( itnum > maxit){
     .print_header()
     .print_final(selected_loci, map,  extBIC)
-    sigres <- .form_results(trait, selected_loci, map,  feffects, 
+    sigres <- .form_results(trait, selected_loci, map,  fformula, 
                      indxNA, ncpu, availmemGb, quiet,  extBIC )   
 
 } else {
@@ -762,13 +781,13 @@ if( itnum > maxit){
         .print_final(selected_loci[-length(selected_loci)], 
                      map, 
                      extBIC[-length(selected_loci)])
-        sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  feffects, 
+        sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  fformula, 
                          indxNA, ncpu, availmemGb, quiet, 
                          extBIC[-length(selected_loci)] )   
     } else {
         .print_header()
         .print_final(selected_loci, map, extBIC)
-        sigres <- .form_results(trait, selected_loci, map,  feffects, 
+        sigres <- .form_results(trait, selected_loci, map,  fformula, 
                          indxNA, ncpu, availmemGb, quiet, extBIC )   
    }  ## end inner  if(lenth(selected_locus)>1)
 }  ## end if( itnum > maxit)

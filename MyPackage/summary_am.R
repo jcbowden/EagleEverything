@@ -78,7 +78,7 @@ GenomicRel = function(M){
 #'   # Perform multiple-locus genome-wide association mapping 
 #'   #-------------------------------------------------------                   
 #'   res <- AM(trait = "trait",
-#'                            feffects = c("cov1", "cov2"),
+#'                            fformula = c("cov1 + cov2"),
 #'                            map = map_obj,
 #'                            pheno = pheno_obj,
 #'                            geno = geno_obj, availmemGb=8)
@@ -130,7 +130,7 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
 
   ## build enviornmental effects design matrix
   baseX <- .build_design_matrix(pheno=pheno,  indxNA=AMobj$indxNA, 
-                                    feffects=AMobj$feffects,
+                                    fformula=AMobj$fformula,
                                    quiet=AMobj$quiet)
 
 
