@@ -608,6 +608,8 @@ AM <- function(trait=NULL,
  trait <-  pheno[[trait]]
 
 
+
+
  ## Turn fformula  into class formula with some checks
  if(!is.null(fformula)){
    if(length(grep("~", fformula))==0){
@@ -625,6 +627,28 @@ AM <- function(trait=NULL,
     stop("AM has terminted with errors.", call. = FALSE)
   }  ## if length grep
  } ## end if(!is.null(fformula))
+
+
+  ## check that terms in  formula are in pheno file
+ if(!is.null(fformula)){
+  res <- tryCatch(
+     mat <- get_all_vars(fformula, data=pheno) , 
+     error = function(e) 
+     {
+         return(TRUE)
+     }
+  )
+  if(!is.data.frame(res))
+  {
+   if(res){
+      cat(" fformula contains terms that are not column headings in the phenotypic file. \n")
+      cat(" Check spelling and case of terms in fformula. \n")
+      stop("AM has terminted with errors.", call. = FALSE)
+   }
+  }
+ }
+
+
 
  
  ## check for NA's in explanatory variables 
