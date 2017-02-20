@@ -148,6 +148,14 @@ cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-   
 if(!is.matrix(Xmat))
    Xmat <- matrix(data=Xmat, ncol=1)
 
+## remove colums that are 0 sum AWG
+indx <- which(colSums(Xmat)==0)
+if(length(indx) > 0)
+   Xmat <- Xmat[, -indx]
+
+
+
+
   return(Xmat)
 }
 
@@ -703,6 +711,23 @@ if(length(indxNA)>0){
 
  ## build design matrix currentX
 currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, quiet=quiet )
+
+  ## check currentX for solve(crossprod(X, X)) singularity
+  chck <- tryCatch({ans <- solve(crossprod(currentX, currentX))},
+           error = function(err){
+            return(TRUE)
+           })
+
+  if(is.logical(chck)){
+      if(chck){
+        cat(" There is a problem with the effects in fformula.\n")
+        cat(" These effects are causing computational instability. \n")
+        cat(" This can occur when there is a strong dependency between the effects.\n")
+        cat(" Try removing some of the effects in fformula. \n")
+        stop("AM has terminted with errors.", call. = FALSE)
+      }
+  }
+
 
  ## Initialization
  continue <- TRUE
