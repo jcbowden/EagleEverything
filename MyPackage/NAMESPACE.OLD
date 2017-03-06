@@ -9,4 +9,5 @@ export(
    ReadMarker,
    ReadMap,
    AM,
+   RunApp,
    SummaryAM)

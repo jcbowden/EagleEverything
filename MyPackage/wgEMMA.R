@@ -1321,10 +1321,10 @@ create.ascii  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB
 
 if (type=="text"){
     ## text genotype file
-    cat(" running createM_ASCII_rcpp\n")
+    message(" running createM_ASCII_rcpp ----------------------------------------------- \n")
     createM_ASCII_rcpp(f_name = file_genotype, type=type ,  f_name_ascii = asciiMfile, AA = AA, AB = AB, BB = BB,
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv = csv,
-               quiet = quiet)
+               quiet = quiet, cat=message)
 
     cat(" running createMt_ASCII_rcpp \n")
     createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,  
@@ -1335,7 +1335,8 @@ if (type=="text"){
     ncol  <- dim_of_ascii_M[2] 
     dim_of_ascii_M[2] <- 2*dim_of_ascii_M[2] + 6  ## number of cols in a PLINK file
     createM_ASCII_rcpp(f_name = file_genotype, type=type,  f_name_ascii = asciiMfile, AA ="-9", AB = "-9", BB = "-9",
-               max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv=csv, quiet = quiet)
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv=csv, quiet = quiet,   
+               cat=message)
 
     dim_of_ascii_M[2] <- ncol ## setting back to number of cols in no-space ASCII file
     createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,   
@@ -1615,18 +1616,20 @@ ReadMarker <- function( filename=NULL, type="text",
       stop(" ReadMarker has terminated with errors \n", call. = FALSE)
    }
 
+
     ## ------   PLINK ped file -------------------
     if (type=="PLINK"){
-
+       
        ## checking if a PLINK file has been specified. 
        if (is.null(filename)){
-            cat(" The name of the PLINK ped file is missing in current working directory ", getwd(), " \n")
-            cat("  Run ReadMarker with filename  set to the name of the PLINK ped input file and set type=\"PLINK\". \n")
-            stop(" ReadMarker has terminated with errors \n", call. = FALSE)
+            errormsg <- paste(" The name of the PLINK ped file is missing.  \n", 
+                              "  ReadMarker has terminated with errors \n", sep="")
+            stop(errormsg, call. = FALSE)
        }
        if (!file.exists(fullpath(filename) )){
-            cat(" The PLINK ped file ", filename, " could not be found in the current directory ", getwd(), "\n")
-            stop(" ReadMarker has terminated with errors \n", call. = FALSE)
+            errormsg <- paste(" The PLINK ped file ", filename, " could not be found. \n",
+                              " ReadMarker has terminated with errors \n", sep="")
+            stop(errormsg,  call. = FALSE)
        }
 
        ## Rcpp function to get dimensions of PLINK ped  file
@@ -1680,7 +1683,7 @@ ReadMarker <- function( filename=NULL, type="text",
   geno <- list("asciifileM"=asciifileM, "asciifileMt"=asciifileMt,
                "dim_of_ascii_M" = dim_of_ascii_M)
   save(geno, file="M.RData")
-
+  print("=======================================================================================")
   ## create M.Rdata file in current directory
   return(geno)
 
@@ -1732,6 +1735,15 @@ constructX <- function(fnameM=NULL, currentX=NULL, loci_indx=NULL,
 
 
 
+
+RunApp <- function() {
+  appDir <- system.file("shiny_app", package = "AMplus")
+  if (appDir == "") {
+    stop("Could not find shiny-app directory. Try re-installing `AMplus` package.", call. = FALSE)
+  }
+
+  shiny::runApp(appDir, display.mode = "normal")
+}
 
 
 

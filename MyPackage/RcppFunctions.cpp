@@ -1715,7 +1715,8 @@ void createM_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii,
                   string BB,
                   double  max_memory_in_Gbytes,  std::vector <long> dims,
                   bool csv, 
-                  int quiet) 
+                  int quiet,
+                  Function cat)
 {
   // Rcpp function to create space-removed ASCII file from ASCII and PLINK input files
 
@@ -1737,7 +1738,7 @@ std::string
      fname = Rcpp::as<std::string>(f_name),
      fnameascii = Rcpp::as<std::string>(f_name_ascii);
 
-
+cat("this should go to consule as it happens ... ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  \n");
 
 //-----------------------------------
 // Calculate amount of memory needed

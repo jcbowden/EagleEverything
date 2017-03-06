@@ -105,6 +105,12 @@ cd $DIR
 
 cp /home/geo047/gitHUB_WMAM/MyPackage/Makevars.gpu /home/geo047/gitHUB_WMAM/MyPackage/AMplus/src/Makevars
 
+## building shiny structure
+mkdir /home/geo047/gitHUB_WMAM/MyPackage/AMplus/inst/shiny_app
+cp ui.R /home/geo047/gitHUB_WMAM/MyPackage/AMplus/inst/shiny_app
+cp server.R /home/geo047/gitHUB_WMAM/MyPackage/AMplus/inst/shiny_app
+
+
 R CMD check AMplus
 
 R CMD INSTALL AMplus -l ~/RLibs
