@@ -1,3 +1,15 @@
+# To do
+#  * write code to handle data larger than memory (need to slot in Ryan's code)
+#  * slot in GPU code of Ryan's
+#  * add ReadBlock code of Ryan's
+#  * tidy up doc 
+#  * change name to Eagle of package
+
+
+
+
+
+
 # Warranty
 # This software is distributed under the GNU General Public License.
 #
@@ -547,11 +559,11 @@ check.for.NA.in.trait <- function(trait=NULL)
         } else {
           ## place in reverse order
           indxNA <- sort(indxNA, decreasing = TRUE)
-cat("\n\n WARNING!!!! The individuals in rows ", indxNA, " either have missing trait data \n")
-cat("             and/or missing explanatory variable values. These individuals have \n")
-cat("             been removed from the analysis.  \n\n")
+message("\n\n WARNING!!!! The individuals in rows ", indxNA, " either have missing trait data ")
+message("             and/or missing explanatory variable values. These individuals have ")
+message("             been removed from the analysis.  \n")
           if(any(is.na(indxNA))){
-            cat("Error:  (internal).  indxNA contains NA values. \n")
+            message("Error:  (internal).  indxNA contains NA values. ")
             stop(" AM has terminated with errors. ", call. = FALSE)
           }
         }
@@ -567,54 +579,54 @@ check.inputs.mlam <- function (ncpu, availmemGb, colname.trait, map, pheno,
 
 
 if(is.null(colname.trait)){
-   cat("Error: the name of the column containing the trait data must be given. \n")
+   message("Error: the name of the column containing the trait data must be given. \n")
    return(TRUE)
 }
 
 if(is.null(pheno)){
-   cat("Error: the pheno parameter has not been set. \n")
-   cat("       Set this parameter to the object that contains \n")
-   cat("       the phenotypic data. This object is the result of running  \n")
-   cat("       ReadPheno. \n")
+   message("Error: the pheno parameter has not been set. ")
+   message("       Set this parameter to the object that contains ")
+   message("       the phenotypic data. This object is the result of running  ")
+   message("       ReadPheno. \n")
    return(TRUE)
 }
 
 if(is.null(geno)){
-   cat("Error: the geno parameter has not been set. \n")
-   cat("       Set this parameter to the object that contains \n")
-   cat("       the phenotypic data. This object is the result of running  \n")
-   cat("       ReadMarker. \n")
+   message("Error: the geno parameter has not been set. ")
+   message("       Set this parameter to the object that contains ")
+   message("       the phenotypic data. This object is the result of running  ")
+   message("       ReadMarker. \n")
    return(TRUE)
 }
 
 
 if(class(try(class(geno), silent=TRUE)) == "try-error"){
-   cat("Error: the object supplied to the geno parameter does not exist. \n")
-   cat("       This object is set by running ReadMarker. Type help(ReadMarker) for help \n")
-   cat("       on running this command. \n")
+   message("Error: the object supplied to the geno parameter does not exist. ")
+   message("       This object is set by running ReadMarker. Type help(ReadMarker) for help ")
+   message("       on running this command. \n")
    return(TRUE)
 }
 
 
 if(class(try(class(pheno), silent=TRUE)) == "try-error"){
-   cat("Error: the object supplied to the pheno parameter does not exist. \n")
-   cat("       This object is set by running ReadPheno. Type help(ReadPheno) for help. \n")
-   cat("       on running this command. \n")
+   message("Error: the object supplied to the pheno parameter does not exist. ")
+   message("       This object is set by running ReadPheno. Type help(ReadPheno) for help. ")
+   message("       on running this command. \n")
    return(TRUE)
 }
 
 
 ## checking list structure of geno
 if(!is.list(geno)){
-  cat("Error: the geno object is not a list object. \n")
-  cat("     The geno object is obtained from running ReadMarker.Type help(ReadMarker) for help. \n")
+  message("Error: the geno object is not a list object. ")
+  message("     The geno object is obtained from running ReadMarker.Type help(ReadMarker) for help. \n")
   return(TRUE)
 }
 
 ## checking if pheno is a data frame 
 if(!is.data.frame(pheno)){
-  cat("Error: the pheno object is not a data frame. \n")
-  cat("      It is a ", class(pheno), "\n")
+  message("Error: the pheno object is not a data frame. ")
+  message("      It is a ", class(pheno), "\n")
   return(TRUE)
 }
 
@@ -623,15 +635,15 @@ if(!is.data.frame(pheno)){
 nms <- names(geno)
 indx <- match(nms, c("asciifileM", "asciifileMt", "dim_of_ascii_M" ))
 if(any(is.na(indx))){
-  cat("Error: there is a problem with the list structure of the geno object. \n")
-  cat("       It should contain the elements asciifileM, asciifileMt, and dim_of_ascii_M. \n")
-  cat("       The object supplied contains the elements ", names(geno), "\n")
+  message("Error: there is a problem with the list structure of the geno object. ")
+  message("       It should contain the elements asciifileM, asciifileMt, and dim_of_ascii_M. ")
+  message("       The object supplied contains the elements ", names(geno) )
   return(TRUE)
 }
 
 if(is.null(map)){
-    cat("WARNING: no map object has been specified. A generic map \n")
-    cat("         will be assumed.                                \n\n")
+    message("WARNING: no map object has been specified. A generic map ")
+    message("         will be assumed.                                ")
     map <- data.frame(Mrk= paste("M", 1:geno[["dim_of_ascii_M"]][2]), Chrm=1, Pos=1:geno[["dim_of_ascii_M"]][2])
 }
 
@@ -642,23 +654,23 @@ if(is.null(map)){
 
  ## checks for colname.trait
  if(is.null(colname.trait)){
-    cat("Error: the column name for the trait/response has not been specified.\n")
-    cat("       Please set trait to the column name of the trait data in \n")
-    cat(" .     the phenotypic file. The allowable column names are ", names(pheno), "\n")
+    message("Error: the column name for the trait/response has not been specified.")
+    message("       Please set trait to the column name of the trait data in ")
+    message(" .     the phenotypic file. The allowable column names are ", names(pheno) )
     return(TRUE)
  }
 
  if(length(colname.trait)>1){
-    cat("Error: multiple column names for the trait have been specified. \n")
-    cat("       Only a single column name should be  assigned to trait. \n")
+    message("Error: multiple column names for the trait have been specified. ")
+    message("       Only a single column name should be  assigned to trait. ")
     return(TRUE)
  }
 
  indx <- match(colname.trait, names(pheno))
  if(any(is.na(indx))){
-   cat("Error: the trait column name does not match any of the column names in the phenotypic file. \n")
-   cat("       The name that has been supplied is ", pheno, "\n")
-   cat("       The column names of the phenotypic file are ", names(pheno), "\n")
+   message("Error: the trait column name does not match any of the column names in the phenotypic file. ")
+   message("       The name that has been supplied is ", pheno)
+   message("       The column names of the phenotypic file are ", names(pheno))
    return(TRUE)
  }
 
@@ -671,18 +683,18 @@ if(is.null(map)){
  ## check that geno and pheno contain the same number of individuals
  if(nrow(pheno) !=  geno[["dim_of_ascii_M"]][1])
  {
-   cat("Error: the number of individuals specified in the phenotypic file is ", nrow(pheno),  "\n")
-   cat("       the number of individuals specified in the genotypic file is ",  geno[["dim_of_ascii_M"]][1], "\n")
-   cat("       The number of individuals should be the same in the two files.\n")
+   message("Error: the number of individuals specified in the phenotypic file is ", nrow(pheno))
+   message("       the number of individuals specified in the genotypic file is ",  geno[["dim_of_ascii_M"]][1])
+   message("       The number of individuals should be the same in the two files.")
    return(TRUE)
  }
 
  ## check that map and geno contain the same number of snp
  if(nrow(map) != geno[["dim_of_ascii_M"]][2])
  {
-   cat("Error: the number of marker loci in the map file is ", nrow(map), "\n")
-   cat("       The number of marker loci in the genotypic file is ", geno[["dim_of_ascii_M"]][2], "\n")
-   cat("       The number of marker loci in the two files should be the same. \n")
+   message("Error: the number of marker loci in the map file is ", nrow(map))
+   message("       The number of marker loci in the genotypic file is ", geno[["dim_of_ascii_M"]][2])
+   message("       The number of marker loci in the two files should be the same." )
    return(TRUE)
  }
 
@@ -738,7 +750,7 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_a
 
 
   if(!file.exists(geno)){
-    cat(" Error: The binary packed file ", geno, " cannot be found.\n")
+    message(" Error: The binary packed file ", geno, " cannot be found.\n")
     stop(" calculateMMt has terminated with errors.", call. = FALSE) 
    }
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
@@ -770,11 +782,11 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
 
   ## testing that MMt is postive definite
   if(!is.positive.definite(MMt)){
-    cat(" Error: the matrix multiplication M %*% t(M) is not positive definite. \n")
-    cat("        This can occur if there are individuals with identical marker \n")
-    cat("        information. Please remove individuals with indentical marker \n")
-    cat("        information, remembering also to remove their associated phenotypic \n")
-    cat("        information as well. \n")
+    message(" Error: the matrix multiplication M %*% t(M) is not positive definite. \n")
+    message("        This can occur if there are individuals with identical marker \n")
+    message("        information. Please remove individuals with indentical marker \n")
+    message("        information, remembering also to remove their associated phenotypic \n")
+    message("        information as well. \n")
     stop(" Internal function: calculateMMt_sqrt_and_sqrtinv has terminated with errors.\n", call. = FALSE)
   } 
    res <- list()
@@ -799,10 +811,10 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
        a <- (res[["sqrt"]] %*% res[["invsqrt"]] )
        if(trunc(sum(diag(a))) != nrow(MMt))
        {
-         cat(" \n\n\nWARNING: these results may be unstable.\n")
-         cat(" The sum of the diagonal elements of the square root of M %*% t(M) and its inverse is ", sum(diag(a)), " where \n")
-         cat("  it should have been ", nrow(MMt), "\n")
-         cat("  This can occur if the genotype file contains near identical rows and/or columns.  Please check.\n\n")
+         message(" \n\n\nWARNING: these results may be unstable.\n")
+         message(" The sum of the diagonal elements of the square root of M %*% t(M) and its inverse is ", sum(diag(a)), " where \n")
+         message("  it should have been ", nrow(MMt), "\n")
+         message("  This can occur if the genotype file contains near identical rows and/or columns.  Please check.\n\n")
       
 
        } 
@@ -879,11 +891,11 @@ calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, quiet=F
 {
 
   if( !(nrow(P) ==  length(y))){
-    cat(" Error:  there is a problem with the  dimensions of  P, and/or the vector y.")
-    cat("         They should  be of the dimension (n x n), and a vector of length n.")
-    cat(" The dimensions are: \n")
-    cat(" dim(P)      = ", dim(P), "\n")
-    cat(" length(y)   = ", length(y), "\n")
+    message(" Error:  there is a problem with the  dimensions of  P, and/or the vector y.")
+    message("         They should  be of the dimension (n x n), and a vector of length n.")
+    message(" The dimensions are: \n")
+    message(" dim(P)      = ", dim(P), "\n")
+    message(" length(y)   = ", length(y), "\n")
     stop(call. = FALSE)
 
   }
@@ -931,11 +943,11 @@ mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8,
 
  
   if( !(nrow(P) ==  length(y))){
-    cat(" Error:  there is a problem with the  dimensions of  P, and/or the vector y.")
-    cat("         They should  be of the dimension (n x n), and a vector of length n.")
-    cat(" The dimensions are: \n")
-    cat(" dim(P)      = ", dim(P), "\n")
-    cat(" length(y)   = ", length(y), "\n")
+    message(" Error:  there is a problem with the  dimensions of  P, and/or the vector y.")
+    message("         They should  be of the dimension (n x n), and a vector of length n.")
+    message(" The dimensions are: \n")
+    message(" dim(P)      = ", dim(P), "\n")
+    message(" length(y)   = ", length(y), "\n")
     stop(call. = FALSE)  
 
   }
@@ -984,7 +996,7 @@ calculate_a_and_vara <- function(geno=NULL, maxmemGb=8,
 
 #  file_ascii <- fullpath("Mt.ascii")
 #  if(!file.exists(file_ascii)){
-#      cat("\n\n  Error: ", file_ascii, " does not exist and it should have been created. \n\n")
+#      message("\n\n  Error: ", file_ascii, " does not exist and it should have been created. \n\n")
 #      stop(call. = FALSE)
 #  }
   fnameMt <- geno[["asciifileMt"]]
@@ -1059,11 +1071,11 @@ check.inputs <- function(ncpu=NULL, availmemGb=NULL,
 
 if(!is.null(ncpu)){
  if(!is.numeric(ncpu)){
-   cat("Error:  ncpu is not a numeric value. It is of class ", class(ncpu), "It should be the number of cpu.\n")
+   message("Error:  ncpu is not a numeric value. It is of class ", class(ncpu), "It should be the number of cpu.\n")
    return(TRUE)
  }
  if(ncpu < 1){
-    cat("Error: ncpu cannot be a zero or a negative number. It should be the number of cpu. \n")
+    message("Error: ncpu cannot be a zero or a negative number. It should be the number of cpu. \n")
     return(TRUE)
  }
     
@@ -1072,11 +1084,11 @@ if(!is.null(ncpu)){
 if(!is.null(availmemGb))
 {
  if(!is.numeric(availmemGb)){
-   cat("Error: availmemGb is not a numeric value. It is of class ", class(availmemGb), "It should be the number of giggabytes of RAM available. \n")
+   message("Error: availmemGb is not a numeric value. It is of class ", class(availmemGb), "It should be the number of giggabytes of RAM available. \n")
    return(TRUE)
  }
  if(availmemGb <= 0){
-    cat("Error: availmemGb cannot be zero or a a negative number.  It should be the number of giggabytes of RAM available. \n")
+    message("Error: availmemGb cannot be zero or a a negative number.  It should be the number of giggabytes of RAM available. \n")
     return(TRUE)
   } 
 }
@@ -1087,10 +1099,10 @@ if(!is.null(file_genotype))
   genofile <- fullpath(file_genotype)
 
   if(!file.exists(genofile)){
-    cat("Error: Cannot find marker file ", genofile, "\n")
-    cat("       This could be a problem with the name of the file and/or the location of the file. \n")
-    cat("       Perhaps specify the full name of the file (i.e. absolute directory path and file name) \n")
-    cat("       Type help(ReadMarker) and go to the examples section for an example of this. \n") 
+    message("Error: Cannot find marker file ", genofile, "\n")
+    message("       This could be a problem with the name of the file and/or the location of the file. \n")
+    message("       Perhaps specify the full name of the file (i.e. absolute directory path and file name) \n")
+    message("       Type help(ReadMarker) and go to the examples section for an example of this. \n") 
     return(TRUE)
   }
 }
@@ -1101,10 +1113,10 @@ if(!is.null(file_phenotype))
   phenofile <- fullpath(file_phenotype)
 
   if(!file.exists(phenofile)){
-    cat("Error: Cannot find phenotype file ", phenofile, "\n")
-    cat("       This could be a problem with the name of the file and/or the location of the file. \n")
-    cat("       Perhaps specify the full name of the file (i.e. absolute directory path and file name) \n")
-    cat("       Type help(ReadPheno) and go to the examples section for an example of this. \n") 
+    message("Error: Cannot find phenotype file ", phenofile, "\n")
+    message("       This could be a problem with the name of the file and/or the location of the file. \n")
+    message("       Perhaps specify the full name of the file (i.e. absolute directory path and file name) \n")
+    message("       Type help(ReadPheno) and go to the examples section for an example of this. \n") 
     return(TRUE)
   }
 }
@@ -1202,14 +1214,14 @@ ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, ...){
 
   sep <- ""
   if(csv) sep=","
-  cat("\n\n Loading Pheotype file ... \n\n")
+  message("\n\n Loading Pheotype file ... \n\n")
   phenos <- read.table(phenofile, header=header, sep=sep, ...)
   ## check for factors with only one level which will cause contrast code to crash
   for(ii in names(phenos)){
     if(is.factor(phenos[[ii]])){
        if(length(levels(phenos[[ii]]))==1){
-          cat(" The phenotype file contains factors that only have a single value. \n")
-          cat(" Please remove this factor. \n") 
+          message(" The phenotype file contains factors that only have a single value. \n")
+          message(" Please remove this factor. \n") 
          stop(" ReadPheno has terminated with errors.", call. = FALSE)
 
        }
@@ -1217,19 +1229,19 @@ ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, ...){
   }
 
 
-cat("               Summary of Phenotype File  \n")
-cat("              ~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
-cat(" File name:                   ",  phenofile, "\n")
-cat(" Number of individuals:       ", nrow(phenos), "\n")
-cat(" Number of columns:           ", ncol(phenos), "\n\n")
-cat(" First 5 rows of the phenotype file are \n")
+message("               Summary of Phenotype File  \n")
+message("              ~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
+message(" File name:                   ",  phenofile, "\n")
+message(" Number of individuals:       ", nrow(phenos), "\n")
+message(" Number of columns:           ", ncol(phenos), "\n\n")
+message(" First 5 rows of the phenotype file are \n")
 print(head(phenos,n=5))
-cat("\n Column classes are  \n")
+message("\n Column classes are  \n")
 for(ii in 1:ncol(phenos))
-  cat(c( sprintf("%20s   %15s", names(phenos)[ii], class(phenos[[ii]]) ), "\n"))
+  message(c( sprintf("%20s   %15s", names(phenos)[ii], class(phenos[[ii]]) ), "\n"))
 
 
-cat("\n WARNING: if the column classes are incorrect, these will need to be changed by the user.\n\n\n")
+message("\n WARNING: if the column classes are incorrect, these will need to be changed by the user.\n\n\n")
 
   return(phenos)
 
@@ -1288,16 +1300,16 @@ ReadMap  <- function( filename = NULL, csv=FALSE)
   sep=""
   if(csv) sep=","
   map <- read.table(mapfile, header=TRUE, sep=sep)
-cat("\n\n Loading map file ... \n\n")
-cat("                    Summary of Map File  \n")
-cat("                   ~~~~~~~~~~~~~~~~~~~~~~ \n")
-cat(" File name:                   ",  mapfile, "\n")
-cat(" Number of marker loci:       ", nrow(map), "\n")
-cat(" Number of columns:           ", ncol(map), "\n")
-cat(" Number of chromosomes:       ", length(unique(map[[2]])), "\n\n")
-cat(" First 5 markers of the map file are \n")
-print(head(map, n=5))
-cat("\n\n")
+message("\n\n Loading map file ... \n\n")
+message("                    Summary of Map File  \n")
+message("                   ~~~~~~~~~~~~~~~~~~~~~~ \n")
+message(" File name:                   ",  mapfile, "\n")
+message(" Number of marker loci:       ", nrow(map), "\n")
+message(" Number of columns:           ", ncol(map), "\n")
+message(" Number of chromosomes:       ", length(unique(map[[2]])), "\n\n")
+message(" First 5 markers of the map file are \n")
+message(head(map, n=5))
+message("\n\n")
 
 return(map)
 
@@ -1321,14 +1333,15 @@ create.ascii  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB
 
 if (type=="text"){
     ## text genotype file
-    message(" running createM_ASCII_rcpp ----------------------------------------------- \n")
+    print(" In R create.ascii ")
+    print(AB)
+    print("-----")
     createM_ASCII_rcpp(f_name = file_genotype, type=type ,  f_name_ascii = asciiMfile, AA = AA, AB = AB, BB = BB,
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv = csv,
-               quiet = quiet, cat=message)
+               quiet = quiet, message=message)
 
-    cat(" running createMt_ASCII_rcpp \n")
     createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,  
-                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet )
+                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet, message=message )
 } else {
     ## PLINK ped file
     ## using -9 to indicate missing/null genotypes
@@ -1336,11 +1349,11 @@ if (type=="text"){
     dim_of_ascii_M[2] <- 2*dim_of_ascii_M[2] + 6  ## number of cols in a PLINK file
     createM_ASCII_rcpp(f_name = file_genotype, type=type,  f_name_ascii = asciiMfile, AA ="-9", AB = "-9", BB = "-9",
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv=csv, quiet = quiet,   
-               cat=message)
+               message=message)
 
     dim_of_ascii_M[2] <- ncol ## setting back to number of cols in no-space ASCII file
     createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,   
-                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet )
+                  max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet, message=message )
 
 }  ## end if else type
 
@@ -1578,28 +1591,28 @@ ReadMarker <- function( filename=NULL, type="text",
    {
        # check that M.ascii and Mt.ascii exist in this directory
        if(!file.exists(fullpath("M.ascii"))){
-         cat(" The binary file M.ascii could not be found in current working directory ", getwd(), "\n")
-         cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
-         cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
+         message(" The binary file M.ascii could not be found in current working directory ", getwd(), "\n")
+         message(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
+         message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
          stop(" ReadMarker has terminated with errors \n", call. = FALSE)
        }
 
        if(!file.exists(fullpath("Mt.ascii"))){
-         cat(" The binary file Mt.ascii could not be found in current working directory ", getwd(), "\n")
-         cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
-         cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
+         message(" The binary file Mt.ascii could not be found in current working directory ", getwd(), "\n")
+         message(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
+         message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
          stop(" ReadMarker has terminated with errors \n", call. = FALSE)
        }
        ## looks like everything is good. Return geno list object
-       cat(" The files M.RData, M.ascii, and Mt.ascii, in current working directory ", getwd(), " have been found and will be used for the association mapping analysis. \n")
+       message(" The files M.RData, M.ascii, and Mt.ascii, in current working directory ", getwd(), " have been found and will be used for the association mapping analysis. \n")
    load("M.RData")
        return(geno)
 
    } else {
 
-       cat(" The R file M.RData could not be found in current working directory ", getwd(), "\n")
-       cat(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
-       cat(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
+       message(" The R file M.RData could not be found in current working directory ", getwd(), "\n")
+       message(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
+       message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
        stop(" ReadMarker has terminated with errors \n", call. = FALSE)
 
    }  ## end if(file.exists(fullpath("M.RData"))
@@ -1608,11 +1621,11 @@ ReadMarker <- function( filename=NULL, type="text",
       ## read in either a text file or a PLINK file. The paramter type must be specified. Default it text file. 
 
    if(is.null(type)){
-      cat(" type must be set to \"text\" or \"PLINK\". \n")
+      message(" type must be set to \"text\" or \"PLINK\". \n")
       stop(" ReadMarker has terminated with errors \n", call. = FALSE)
    }
    if(!(type=="text" || type=="PLINK") ){
-      cat(" type must be set to \"text\" or \"PLINK\". \n")
+      message(" type must be set to \"text\" or \"PLINK\". \n")
       stop(" ReadMarker has terminated with errors \n", call. = FALSE)
    }
 
@@ -1651,8 +1664,8 @@ ReadMarker <- function( filename=NULL, type="text",
  ## Has AA, AB, BB been assigned character values
   if(is.null(AA) ||  is.null(BB))
   { 
-     cat("Error: The function parameters AA and BB must be assigned a numeric or character value since a text file is being assumed. \n")
-     cat("       Type help(ReadMarker) for help on how to read in the marker data. \n")
+     message("Error: The function parameters AA and BB must be assigned a numeric or character value since a text file is being assumed. \n")
+     message("       Type help(ReadMarker) for help on how to read in the marker data. \n")
      stop(" ReadMarker has terminated with errors \n", call. = FALSE)
   }
 
@@ -1671,6 +1684,7 @@ ReadMarker <- function( filename=NULL, type="text",
   dim_of_ascii_M <- getRowColumn(fname=genofile, csv=csv )
 
   ## Rcpp function to create ascii  M and Mt file from 
+
   create.ascii(file_genotype=genofile, type=type, AA=as.character(AA), AB=as.character(AB), BB=as.character(BB), 
               availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M, csv=csv, quiet=quiet  )
     asciifileM <- fullpath("M.ascii")
@@ -1683,7 +1697,6 @@ ReadMarker <- function( filename=NULL, type="text",
   geno <- list("asciifileM"=asciifileM, "asciifileMt"=asciifileMt,
                "dim_of_ascii_M" = dim_of_ascii_M)
   save(geno, file="M.RData")
-  print("=======================================================================================")
   ## create M.Rdata file in current directory
   return(geno)
 

@@ -280,7 +280,6 @@ void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 
 	// Assuming BA is the reverse of AB
 	string BA = string ( AB.rbegin(), AB.rend() );
-
 	// Find a more elegant way to do this
 	const short AALen = AA.length();
 	const short ABLen = AB.length();
@@ -542,7 +541,7 @@ return dimen;
 // recode PLINK as ASCII with no spaces
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void  CreateASCIInospace_PLINK(std::string fname, std::string asciifname, std::vector<long> dims,
-                         int quiet)
+                         int quiet, Function message)
 {
 long 
    colindx = 0; 
@@ -613,7 +612,7 @@ char
 // open PLINK ped  file
 std::ifstream fileIN(fname.c_str());
 if(!fileIN.good()) {
-  Rcpp::Rcout << "\n\nERROR: PLINK ped file could not be opened with filename  " << fname <<  std::endl;
+  message("\nERROR: PLINK ped file could not be opened with filename  ",   fname );
   os << "\n\nERROR: ReadMarkerData has terminated with errors.  " << fname << "\n\n" << std::endl;
   Rcpp::stop(os.str() );
 }
@@ -625,35 +624,29 @@ long  counter = 0;
 // initializing input line 
 std::string rowinfile(n_of_cols_in_geno, '0'); // s == "000000"
 
-Rcout << " Number of cols in geno " << n_of_cols_in_geno << endl;
+int printOnlyOnce = 0;  // flag for printing warning message about missing data
 
 
 while(getline(fileIN, line ))
 {
-  Rcout << "\r" << 100.0*counter/dims[0] << "% read of PLINK file.       " << flush;
-  Rcout << counter << endl;
 
 
   istringstream streamLine(line);
 
  // check number of columns for each line
- int printOnlyOnce = 0;  // flag for printing warning message about missing data
  long number_of_columns = 0;
  std::string rowinfile(n_of_cols_in_geno, '0'); // s == "000000"
  
  if (quiet > 0){
     while(streamLine >> tmp)
         number_of_columns ++;
-    Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
 
      if (number_of_columns != dims[1] ){
-         Rcpp::Rcout << std::endl;
-         Rcpp::Rcout << std::endl;
-         Rcpp::Rcout << "Error:  PLINK file contains an unequal number of columns per row.  " << std::endl;
-         Rcpp::Rcout << "        The error has occurred at row " << counter+1 << " which contains " << number_of_columns << " but " << endl;
-         Rcpp::Rcout << "        it should contain " << dims[1] << " columns of data. "  << std::endl;
-         Rcpp::Rcout << std::endl;
-         Rcpp::Rcout << std::endl;
+         message("\n");
+         message( "Error:  PLINK file contains an unequal number of columns per row.  " );
+         message( "        The error has occurred at row " ,  counter+1 , " which contains " ,  number_of_columns ,  " but " );
+         message( "        it should contain " , dims[1] , " columns of data. " );
+         message("\n");
           os << " ReadMarkerData has terminated with errors\n" << std::endl;
          Rcpp::stop(os.str() );
        }  // end  if (number_of_columns != dims[1] )
@@ -688,15 +681,13 @@ while(getline(fileIN, line ))
         // Checking for missing allelic information in PLINK file
         if( rowvec[ (2*i ) ] == '0' ||  rowvec[ (2*i + 1) ] == '0' || rowvec[ (2*i ) ] == '-' ||  rowvec[ (2*i + 1) ] == '-'){
            if (printOnlyOnce == 0){
-                 Rcpp::Rcout << std::endl;
-                 Rcpp::Rcout << std::endl;
-                 Rcpp::Rcout << "Warning:  PLINK file contains missing alleles (i.e. 0 or - ) " << std::endl;
-                 Rcpp::Rcout << "          These missing genotypes should be imputed before running AMplus." << std::endl;
-                 Rcpp::Rcout << "          As an approximation, AMpus has set these missing genotypes to heterozygotes. " << std::endl;
-                 Rcpp::Rcout << "          Since AMplus assumes an additive model, heterozygote genotypes do not contribute to the estimation of " << std::endl;
-                 Rcpp::Rcout << "          the additive effects.  " << std::endl;
-                 Rcpp::Rcout << std::endl;
-                 Rcpp::Rcout << std::endl;
+                 message("\n");
+                 message(" Warning:  PLINK file contains missing alleles (i.e. 0 or - ) " );
+                 message("           These missing genotypes should be imputed before running AMplus." );
+                 message("           As an approximation, AMpus has set these missing genotypes to heterozygotes. " );
+                 message("           Since AMplus assumes an additive model, heterozygote genotypes do not contribute to the estimation of " );
+                 message("           the additive effects.  " );
+                 message("\n");
                  printOnlyOnce = 1;
             } // if printOnlyOnce`
             rowvec[ (2*i) ] = 'I';      // impute
@@ -725,12 +716,10 @@ while(getline(fileIN, line ))
                              alleles[ 1 ][ i ] = rowvec[ (2*i + j) ];
                            } else {
                               // Error - we have more than two alleles segregating at a locus
-                            Rcpp::Rcout << std::endl;
-                            Rcpp::Rcout << std::endl;
-                            Rcpp::Rcout << "Error:  PLINK file cannot contain more than two alleles at a locus."  << std::endl;
-                            Rcpp::Rcout << "        The error has occurred at snp locus " << i  + 1 << " for individual " << counter+1 << std::endl;
-                            Rcpp::Rcout << std::endl;
-                            Rcpp::Rcout << std::endl;
+                            message("\n");
+                            message("Error:  PLINK file cannot contain more than two alleles at a locus.");
+                            message("        The error has occurred at snp locus " , i  + 1 , " for individual " , counter+1 );
+                            message("\n");
                             os << " ReadMarkerData has terminated with errors\n" << std::endl;
                              Rcpp::stop(os.str() );
                           } // end inner if else
@@ -774,29 +763,29 @@ while(getline(fileIN, line ))
 
   }  // end while(getline(fileIN, line ))
 
-Rcout << " finished creating M.ascii in PLINK funtion ... " << endl;
 
 
-Rcout << "\n\n" << endl;
 // write out a few lines of the file if quiet
 // open PLINK ped  file
 std::ifstream fileIN_backtobeginning(fname.c_str());
 counter = 0;
-Rcout << " First 5 lines and 12 columns of the PLINK ped  file. " << endl;
+message(" First 5 lines and 12 columns of the PLINK ped  file. ");
+string rowline;
+
 while(getline(fileIN_backtobeginning, line ) && counter < 5)
 {
-       Rcpp::Rcout << " " ;
+       std::ostringstream oss;
        istringstream streamB(line);
        for(int i=0; i < 12 ; i++){
            streamB >> tmp;
-           Rcpp::Rcout << tmp << " " ;
+           oss << tmp << " " ;
         }
-        Rcpp::Rcout << std::endl;
+        std::string rowline = oss.str();
+        message(rowline);
         counter++;
 }  // end  while(getline(fileIN, line ))
 
 
-Rcout << " finished with function ..... " << endl;
 
 
 // close files
@@ -873,6 +862,8 @@ long
    counter = 0;
 
 
+
+
  // initializing input line 
  std::string rowinfile(dims[1], '0'); // s == "000000"
 
@@ -903,12 +894,12 @@ while(getline(fileIN, line ))
         } else {
           if (AB=="NA"){
               Rcpp::Rcout << "Error: Marker text file contains marker genotypes that are different to " << AA << " " << BB << endl;
-              Rcpp::Rcout << "       For example, " << rowvec[i] << endl;
+              Rcpp::Rcout << "       For example , " << token  << endl;
               os << "ReadMarker has terminated with errors\n\n"; 
               Rcpp::stop(os.str() );
           } else {
               Rcpp::Rcout << "Error: Marker text file contains marker genotypes that are different to " << AA << " " << AB << " " << BB << endl;
-              Rcpp::Rcout << "       For example, " << rowvec[i] << endl;
+              Rcpp::Rcout << "       For example , " << token  << endl;
               os << "ReadMarker has terminated with errors\n\n"; 
               Rcpp::stop(os.str() );
          }
@@ -1046,7 +1037,7 @@ Eigen::MatrixXd
 // [[Rcpp::export]]
 void  createMt_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii, 
                               double  max_memory_in_Gbytes,  std::vector <long> dims,
-                              int  quiet )
+                              int  quiet, Function message )
 {
 
 // read data from M.ascii that has already been created and transpose this file
@@ -1120,7 +1111,6 @@ if(mem_bytes < max_mem_in_bytes){
 
    // read values into matrix
    long rowi=0;
-   Rcout << " Reading in M.ascii into M matrix " << endl;
    while(getline(fileIN, line ))
    {
        // read a line of data from ASCII file
@@ -1131,11 +1121,9 @@ if(mem_bytes < max_mem_in_bytes){
    }  // end while getline
 
   // take transose of matrix M
-  Rcout << " Taking transose " << endl;
   MatrixXi Mt = M.transpose();
   
   // write out contents fo Mt to file (no spaces)a
-  Rcout << " WRiting out contents of Mt to file " << endl;
   std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
   for(long rowi=0; rowi<Mt.rows(); rowi++){
      for(long coli=0; coli<Mt.cols(); coli++){
@@ -1145,7 +1133,7 @@ if(mem_bytes < max_mem_in_bytes){
      fileOUT << rowinfile; // writing entire row of data
      fileOUT << "\n";
   }
- Rcout << " Finished ... " << endl;
+ message( " File has been Uploaded ... ");
  
  fileIN.close();
  fileOUT.close();
@@ -1155,9 +1143,9 @@ if(mem_bytes < max_mem_in_bytes){
    //  Block approach needed due to lack of memory
 
    if (quiet > 0){
-        Rcpp::Rcout << " A block transpose is being performed due to lack of memory.  "  << std::endl;
-        Rcpp::Rcout << " Memory parameter workingmemGb is set to " << max_memory_in_Gbytes << "Gbytes" << std::endl;
-        Rcpp::Rcout << " If possible, increase workingmemGb parameter. " << std::endl;
+        message( " A block transpose is being performed due to lack of memory.  ");
+        message( " Memory parameter workingmemGb is set to " , max_memory_in_Gbytes , "Gbytes" );
+        message( " If possible, increase workingmemGb parameter. " );
     }
 
     // Calculate number of columns that can be read into available memory
@@ -1167,15 +1155,15 @@ if(mem_bytes < max_mem_in_bytes){
     long n_blocks = dims[1]/n_of_cols_to_be_read;
     if (dims[1] % n_of_cols_to_be_read != 0)
          n_blocks++;
-     Rcout << " number of blocks is " << n_blocks << endl;
+     message( " number of blocks is " , n_blocks);
     if (quiet > 0)  
-         Rcpp::Rcout  << " Block Tranpose of ASCII genotype file beginning ... " << std::endl;
+         message( " Block Tranpose of ASCII genotype file beginning ... " );
 
     // Block read and transpose - requires n_blocks passes through the 
     // ASCII input file which could be slow if file is large and memory low
     for(long b=0; b < n_blocks; b++){
          if (quiet > 0) 
-              Rcpp::Rcout << " Processing block ... " << b << " of a total number of blocks of " << n_blocks << std::endl;
+              message( " Processing block ... " , b , " of a total number of blocks of " , n_blocks );
 
 
          long
@@ -1197,8 +1185,7 @@ if(mem_bytes < max_mem_in_bytes){
          }
          long counter = 0;
          if (quiet > 0) {
-              Rcpp::Rcout << std::endl;
-              Rcpp::Rcout << std::endl;
+              message("\n\n");
          }
          for(long rowi=0; rowi<dims[0]; rowi++){ 
                // read a line of data from ASCII file
@@ -1716,7 +1703,7 @@ void createM_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii,
                   double  max_memory_in_Gbytes,  std::vector <long> dims,
                   bool csv, 
                   int quiet,
-                  Function cat)
+                  Function message)
 {
   // Rcpp function to create space-removed ASCII file from ASCII and PLINK input files
 
@@ -1738,7 +1725,7 @@ std::string
      fname = Rcpp::as<std::string>(f_name),
      fnameascii = Rcpp::as<std::string>(f_name_ascii);
 
-cat("this should go to consule as it happens ... ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  \n");
+
 
 //-----------------------------------
 // Calculate amount of memory needed
@@ -1757,7 +1744,7 @@ double
      //------------------------------------
      // convert PLINK ped file into ASCII file with no spaces
      //----------------------------------------------
-       CreateASCIInospace_PLINK(fname, fnameascii, dims, quiet);
+       CreateASCIInospace_PLINK(fname, fnameascii, dims, quiet, message);
 
    }  else {
       //-------------------------------------------
@@ -1768,31 +1755,29 @@ double
       // creating a ASCII Mt because we have to read in blocks before we can 
       // transpose. 
       if (quiet > 0 )
-          Rcout << " A text file is being assumed as the input data file type. " << std::endl;
-      // CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
-      CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
+          message(" A text file is being assumed as the input data file type. ");
+       CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
+      // CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
    }  // end if type == "PLINK" 
 
 //--------------------------------------
 // Summary of Genotype File
 //--------------------------------------
 
-Rcpp::Rcout <<  "\n\n                    Summary of Marker File  " << std::endl;
-Rcpp::Rcout <<  "                   ~~~~~~~~~~~~~~~~~~~~~~~~   " << std::endl;
-Rcpp::Rcout <<  " File type:                " << type  << std::endl;
-Rcpp::Rcout <<  " File name:                " << fname << std::endl;
-Rcpp::Rcout <<  " New ASCII file name:  " << fnameascii  << std::endl;
-Rcpp::Rcout <<  " Number of individuals:    "     << dims[0] << std::endl;
+message( "\n\n                    Summary of Marker File  " );
+message( "                   ~~~~~~~~~~~~~~~~~~~~~~~~   " );
+message( " File type:                " , type  );
+message(" File name:                " , fname );
+message(" New ASCII file name:  " , fnameascii  );
+message(" Number of individuals:    "     , dims[0] );
 if (ftype == "PLINK"  ){
-Rcpp::Rcout <<  " Number of loci:           "  << (dims[1] -6)/2.0   << std::endl;
+message(" Number of loci:           "  , (dims[1] -6)/2.0   );
 } else {
-Rcpp::Rcout <<  " Number of loci:           "  << dims[1] << std::endl;
+message(" Number of loci:           "  , dims[1] );
 }
-Rcpp::Rcout.precision(2);
-Rcpp::Rcout <<  " File size (Gbytes):       "  << memory_needed_in_Gb << std::endl;
-Rcpp::Rcout <<  " Available memory (Gbytes):" << max_memory_in_Gbytes  << std::endl;
-Rcpp::Rcout << "\n\n" << std::endl;
-
+message( " File size (Gbytes):       "  , memory_needed_in_Gb );
+message(" Available memory (Gbytes):" , max_memory_in_Gbytes  );
+message("\n\n" );
 
 }
 
@@ -1844,7 +1829,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
 
 }  else {
-   Rcout << " In else part of if statement " << endl;
     long num_rows_in_block = (max_memory_in_Gbytes  * (double) 1000000000 )/(sizeof(double) * dims[1]);
 
          long num_blocks = dims[0]/num_rows_in_block;

@@ -112,8 +112,8 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
 
  if(is.null(map)){
    if(AMobj$quiet > 0){
-     cat(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
-     cat(" It is only used for the reporting of results. \n")
+     message(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
+     message(" It is only used for the reporting of results. \n")
    }
    ## map has not been supplied. Create own map
    map <- data.frame(SNP=paste("M", 1:geno[["dim_of_ascii_M"]][2], sep=""), 
@@ -123,8 +123,8 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
 
  ## check to make sure that null model is not being supplied
  if (length(AMobj$Mrk)==1){
-   cat(" No significant marker-trait associations have been found by AM. \n")
-   cat(" Nothing to summarize. \n")
+   message(" No significant marker-trait associations have been found by AM. \n")
+   message(" Nothing to summarize. \n")
    return()
  }
 
@@ -137,17 +137,17 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
   ## add genetic marker effects 
   fullX <- baseX
   for(loc in AMobj$Indx){
-        fullX <- constructX(fnameM=geno[["asciifileM"]], 
+           fullX <- constructX(fnameM=geno[["asciifileM"]], 
                               currentX=fullX, loci_indx=loc,
                                dim_of_ascii_M=geno[["dim_of_ascii_M"]],
                                 map=map)
-   }  ## end for loc
+  }  ## end for loc
 
- ## calculate MMt
- MMt <- .calcMMt(geno, AMobj$availmemGb, AMobj$ncpu, AMobj$Indx, AMobj$quiet)
+  ## calculate MMt
+  MMt <- .calcMMt(geno, AMobj$availmemGb, AMobj$ncpu, AMobj$Indx, AMobj$quiet)
 
- ## calculate variance components of LMM
- eR <- emma.REMLE(y=AMobj$trait, X= fullX , K=MMt, llim=-100,ulim=100)
+  ## calculate variance components of LMM
+  eR <- emma.REMLE(y=AMobj$trait, X= fullX , K=MMt, llim=-100,ulim=100)
 
  ## calculating p values of fixed marker effecs via Wald statistic
  mrks <- AMobj$Mrk[-1]  ## its -1 to remove the NA for the null model 
@@ -156,6 +156,7 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
  H <-  eR$vg * MMt + eR$ve * diag(1, nrow(MMt))
  Hinv <- try(solve(H))
  beta <- try(solve( t(fullX) %*% Hinv %*% fullX) %*% t(fullX) %*% Hinv %*% matrix(data=AMobj$trait ,ncol=1)   )
+ df_pvalue <- NULL
  for(ii in colnames(fullX)  ){
     indx <- which(colnames(fullX)==ii)
     L <- matrix(data=rep(0, ncol(fullX)), byrow=TRUE, nrow=1)
@@ -165,23 +166,26 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
             (L %*% beta)
    pval[which(ii==colnames(fullX)) ] <- 1 - pchisq(W, 1) 
  }  ## end for ii in AMobj$Mrk
-
+df_pvalue <- data.frame("effects"=colnames(fullX), "p-value"=pval)
  ## print Annova table of results
+print("========================")
+print(df_pvalue)
+print("========================")
 
 
-  cat(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
-cat("     Size and Significance of Effects in Final Model    \n")
-  cat(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
+  message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
+message("     Size and Significance of Effects in Final Model    \n")
+  message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
 
-  cat(sprintf("%15s  %10s  %10s \n", "Name", "Additive effect", "p-value"))
+  message(sprintf("%15s  %10s  %10s \n", "Name", "Additive effect", "p-value"))
   for(ii in colnames(fullX) )
   {
       indx <- which(colnames(fullX) == ii)
-      cat(sprintf("%15s  %10f         %.3E\n",
+      message(sprintf("%15s  %10f         %.3E\n",
          ii, beta[indx], pval[indx ]))
   }  ## end for ii
- cat("\n\n\n")
-
+ message("\n\n\n")
+df_size <- data.frame("effect_names"=colnames(fullX), "estimate" = beta, "p_value"=pval)
 
 
 
@@ -195,13 +199,14 @@ cat("     Size and Significance of Effects in Final Model    \n")
  base_logML <- basemod$ML
 
  # full model
+  df_R <- NULL
   fullX <- baseX
-  cat(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
-  cat(" Proportion of Phenotypic Variance Explained by Multiple-locus \n")
-  cat("             Association Mapping Model \n")
-  cat("  Marker loci which were found by AM() are added one at a time    \n")
-  cat(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
-  cat(sprintf("   %15s      %10s \n", "Marker name", "Proportion"))
+  message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
+  message(" Proportion of Phenotypic Variance Explained by Multiple-locus \n")
+  message("             Association Mapping Model \n")
+  message("  Marker loci which were found by AM() are added one at a time    \n")
+  message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
+  message(sprintf("   %15s      %10s \n", "Marker name", "Proportion"))
   for(loc in AMobj$Indx[-1]){
         fullX <- constructX(fnameM=geno[["asciifileM"]],
                                 currentX=fullX, loci_indx=loc,
@@ -210,11 +215,17 @@ cat("     Size and Significance of Effects in Final Model    \n")
         fullmod <- emma.MLE(y=AMobj$trait, X=fullX, K=MMt, llim=-100,ulim=100)
         full_logML <- fullmod$ML
         Rsq <- 1 - exp(-2/nrow(MMt) * (full_logML - base_logML))
-        cat(sprintf("  %+15s          %.3f\n",  paste("+",as.character(AMobj$Mrk[which(loc==AMobj$Indx)])), Rsq))
+        message(sprintf("  %+15s          %.3f\n",  paste("+ ",as.character(AMobj$Mrk[which(loc==AMobj$Indx)])), Rsq))
+        df_R <- rbind.data.frame(df_R, data.frame("Marker_name"=paste("+",as.character(AMobj$Mrk[which(loc==AMobj$Indx)])),
+                                                  "Prop_var_explained"=Rsq))
    }  ## end for loc
 
 
+  res <- list()
+  res[["pvalue"]] <- df_pvalue
+  res[["size"]] <- df_size
+  res[["R"]] <- df_R
 
   
-
+  invisible(res)
 }

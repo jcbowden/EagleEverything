@@ -27,8 +27,8 @@ doquiet <- function(dat, num_markers, lab){
           ### if dat is a matrix
 
          if(num_markers > 0){
-           cat(" Dimension of ", lab, " is", dim(dat), "\n")
-           cat(" First few rows and ", num_markers, "columns of ", lab, " are: \n")
+           message(" Dimension of ", lab, " is", dim(dat), "\n")
+           message(" First few rows and ", num_markers, "columns of ", lab, " are: \n")
            if(nrow(dat) > 5 && ncol(dat) > num_markers)
                print(dat[1:5, 1:num_markers])
            if(nrow(dat) <=5  &&  ncol(dat) > num_markers)
@@ -37,24 +37,24 @@ doquiet <- function(dat, num_markers, lab){
                print(dat[1:5, 1:ncol(dat)])
            if(nrow(dat) <= 5  &&  ncol(dat) <=  num_markers)
                print(dat[1:nrow(dat), 1:ncol(dat)])
-           cat("\n\n")
+           message("\n\n")
          }
      } ## end if class(dat)
 
      if(class(dat)=="numeric" || class(dat)=="vector"){
        if(num_markers > 0){
-          cat(" Length of ", lab, "is", length(dat), "\n")
-          cat(" The first ", num_markers, "elements of the vector are ", lab, "\n")
+          message(" Length of ", lab, "is", length(dat), "\n")
+          message(" The first ", num_markers, "elements of the vector are ", lab, "\n")
           if(length(dat) > num_markers)
              print(dat[1:num_markers])
           if(length(dat) <= num_markers)
              print(dat[1:length(dat)])
-       cat("\n\n")
+       message("\n\n")
        }
     }
 
     if(!(class(dat)=="matrix" || class(dat)=="vector" || class(dat)=="numeric"))
-      cat(" Internal error in doquiet. dat not matrix or vector or numeric. \n")
+      message(" Internal error in doquiet. dat not matrix or vector or numeric. \n")
 
 }
 
@@ -92,14 +92,14 @@ return(sigres)
 .print_title <- function(){
     ## internal fuction: use only in AM function
     ## title
-    cat("\n\n\n\n")
-cat("                    Multiple-Locus Association Mapping\n")
-cat("                            Version 1.0 \n\n")
-cat(" \n")
-cat("   . ,-\"-.   ,-\"-. ,-\"-.   ,-\"-. ,-\"-. ,-\"-. ,-\"-.   ,-\"-. ,-\"-.    \n")  
-cat("    X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ /   \n")
-cat("   / \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X|   \n")
-cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-     \n\n\n")
+    message("\n\n\n")
+message("                    Multiple-Locus Association Mapping")
+message("                            Version 1.0 \n")
+message(" ")
+message("   . ,-\"-.   ,-\"-. ,-\"-.   ,-\"-. ,-\"-. ,-\"-. ,-\"-.   ,-\"-. ,-\"-.    ")  
+message("    X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ /   ")
+message("   / \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X|   ")
+message("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-     \n\n")
 
 }
 
@@ -142,7 +142,7 @@ cat("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-   
    } 
 
  if (quiet > 0){
-   cat("Dimension of design matrix, before addition of marker fixed effects is ", nrow(Xmat), "rows and ", ncol(Xmat), "columns.\n") 
+   message("Dimension of design matrix, before addition of marker fixed effects is ", nrow(Xmat), "rows and ", ncol(Xmat), "columns.\n") 
  }
 
 if(!is.matrix(Xmat))
@@ -202,18 +202,18 @@ if(length(indx) > 0)
 
 
  .print_header <- function(){
-   cat("\n\n\n                           Final  Results  \n")
-   cat(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+   message("\n\n\n                           Final  Results  \n")
+   message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
  }
 
 .print_final  <- function(selected_loci, map,  extBIC )
 {
   if (length(selected_loci) == 1 & any(is.na(selected_loci)))
   {
-      cat("No significant marker-trait associations have been found. \n\n")
+      message("No significant marker-trait associations have been found. \n\n")
   }  else {
      .print_results(selected_loci=selected_loci, map=map,  extBIC=extBIC)
-          cat("\n\n")
+          message("\n\n")
   }   ## end if else
 
 
@@ -221,25 +221,25 @@ if(length(indx) > 0)
 
  .print_results <- function(itnum=NULL, selected_loci, map, extBIC)
  {  if(!is.null(itnum)){ 
-       cat(" Significant marker-trait association found. \n\n")
-       cat(" New results after iteration ", itnum, "are \n\n")
+       message(" Significant marker-trait association found. \n")
+       message(" New results after iteration ", itnum, "are \n")
     }
-    cat(sprintf("%15s  %10s        %10s     %10s        %10s \n", 
+    message(sprintf("%15s  %10s        %10s     %10s        %10s ", 
                  "SNP", "Chrm", "Map Pos",  "Col Number",       "extBIC"))
-    cat(sprintf("%15s  %10s        %10s     %10s        %10s \n", 
+    message(sprintf("%15s  %10s        %10s     %10s        %10s ", 
                  "-----", "------", "---------",  "-----------",       "---------"))
 
     for(ii in 1:length(selected_loci)){
        if(is.na(selected_loci[ii])){
-       cat(sprintf("%15s  %10s        %10s        %8s           %-8.2f \n", 
+       message(sprintf("%15s  %10s        %10s        %8s           %-8.2f ", 
         "Null Model", " ", " ", " ", extBIC[ii] ))
        }  else {
-       cat(sprintf("%15s  %10s        %10s       %8s            %-8.2f \n", 
+       message(sprintf("%15s  %10s        %10s       %8s            %-8.2f ", 
         map[[1]][selected_loci[ii]], map[[2]][selected_loci[ii]], as.character(map[[3]][selected_loci[ii]]), 
              selected_loci[ii], extBIC[ii] ))
      }  ## end if else 
    }
-    cat("\n\n\n\n")
+    message("\n\n\n")
  }
 
 
@@ -249,13 +249,13 @@ if(length(indx) > 0)
   {
     ##  internal function: use only with AM
     if(quiet > 0){
-       cat(" quiet =", quiet, ": beginning calculation of H matrix. \n")
+       message(" quiet =", quiet, ": beginning calculation of H matrix. \n")
     }
     H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg ) 
     doquiet(dat=H, num_markers=quiet, lab="H")
 
     if(quiet>0){
-       cat(" quiet =", quiet, ": beginning calculation of P matrix. \n")
+       message(" quiet =", quiet, ": beginning calculation of P matrix. \n")
     }
     P <- calculateP(H=H, X=currentX ) 
     doquiet(dat=P, num_markers=quiet, lab="P")
@@ -264,7 +264,7 @@ if(length(indx) > 0)
  
     
     if(quiet > 0){
-      cat(" quiet = ", quiet, ": beginning calculation of the square root of MMt and its inverse. \n")
+      message(" quiet = ", quiet, ": beginning calculation of the square root of MMt and its inverse. \n")
     }
     ## artifact from old code but kept it anyway. Looks at the stability of the MMt calculation 
     ## especially if there are near identical rows of data in M
@@ -278,7 +278,7 @@ if(length(indx) > 0)
     doquiet(dat=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]], num_markers=quiet, lab="sqrt(M %*% M^t)^-1")
 
     if(quiet > 0){
-      cat(" quiet =", quiet, ": beginning calculation of the BLUP estimates for dimension reduced model. \n")
+      message(" quiet =", quiet, ": beginning calculation of the BLUP estimates for dimension reduced model. \n")
     }
     hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
@@ -290,7 +290,7 @@ if(length(indx) > 0)
      gc()
 
     if(quiet > 0){
-      cat(" quiet = ", quiet, ": beginning calculation of the standard errors  of BLUP estimates for dimension reduced model. \n")
+      message(" quiet = ", quiet, ": beginning calculation of the standard errors  of BLUP estimates for dimension reduced model. \n")
     }
 
     var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
@@ -303,7 +303,7 @@ if(length(indx) > 0)
      gc()
      ## load("everything.RData")   ## just for testing ... 
     if(quiet > 0){
-      cat(" quiet = ", quiet, ": beginning calculation of BLUPS and their standard errors for full model. \n")
+      message(" quiet = ", quiet, ": beginning calculation of BLUPS and their standard errors for full model. \n")
     }
 
      a_and_vara  <- calculate_a_and_vara(geno = geno,
@@ -321,7 +321,7 @@ if(length(indx) > 0)
   
     ## outlier test statistic
     if (quiet > 0) 
-        cat(" quiet = ", quiet, ": beginning calculation of  outlier test statistics. \n")
+        message(" quiet = ", quiet, ": beginning calculation of  outlier test statistics. \n")
     tsq <- a_and_vara[["a"]]**2/a_and_vara[["vara"]]
     doquiet(dat=tsq, num_markers=quiet, lab="outlier test statistic")
 
@@ -580,8 +580,8 @@ AM <- function(trait=NULL,
  ## checking if map is present. If not, generate a fake map. 
  if(is.null(map)){
    if(quiet > 0){
-     cat(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
-     cat(" It is only used for the reporting of results. \n")
+     message(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
+     message(" It is only used for the reporting of results. \n")
    }
    ## map has not been supplied. Create own map
    map <- data.frame(SNP=paste("M", 1:geno[["dim_of_ascii_M"]][2], sep=""), 
@@ -591,18 +591,18 @@ AM <- function(trait=NULL,
 
  ## check that the number of rows in the map file match the number of columns in the geno file
  if (geno[["dim_of_ascii_M"]][2] != nrow(map)){
-   cat(" Error: There is a differing number of loci read in by ReadMarker and ReadMap functions. \n")
-   cat("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][2], "\n")
-   cat("        The number of marker loci in  the marker map is  ", nrow(map), "\n") 
+   message(" Error: There is a differing number of loci read in by ReadMarker and ReadMap functions. \n")
+   message("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][2], "\n")
+   message("        The number of marker loci in  the marker map is  ", nrow(map), "\n") 
    stop(" AM has terminatated with errors.", call. = FALSE)
  }
 
 
  ## check that the number of rows in the phenotype file match the number of rows in the geno file
  if (geno[["dim_of_ascii_M"]][1] != nrow(pheno)){
-   cat(" Error: There is a differing number  of rows read in by ReadMarker and ReadPheno functions. \n")
-   cat("         The number of rows read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][1], "\n")
-   cat("        The number of rows  read in by ReadPheno is  ", nrow(map), "\n") 
+   message(" Error: There is a differing number  of rows read in by ReadMarker and ReadPheno functions. \n")
+   message("         The number of rows read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][1], "\n")
+   message("        The number of rows  read in by ReadPheno is  ", nrow(map), "\n") 
    stop(" AM has terminatated with errors.", call. = FALSE)
  }
 
@@ -624,14 +624,14 @@ AM <- function(trait=NULL,
       if(length(fformula)==1){
           fformula <- as.formula(paste("~", fformula, sep="") )
       }  else {
-          cat(" fformula has ", length(fformula), " separate terms. It should be a single formula. \n") 
+          message(" fformula has ", length(fformula), " separate terms. It should be a single formula. \n") 
           stop("AM has terminted with errors.", call. = FALSE)
       }
    } else {
     ## problem: formula should not contain ~
-    cat(" It looks like fformula contains a formula. \n")
-    cat(" If so, only the terms on the right hand side of the formula should be specified. \n")
-    cat(" Please remove the ~ from the formula. \n")
+    message(" It looks like fformula contains a formula. \n")
+    message(" If so, only the terms on the right hand side of the formula should be specified. \n")
+    message(" Please remove the ~ from the formula. \n")
     stop("AM has terminted with errors.", call. = FALSE)
   }  ## if length grep
  } ## end if(!is.null(fformula))
@@ -649,8 +649,8 @@ AM <- function(trait=NULL,
   if(!is.data.frame(res))
   {
    if(res){
-      cat(" fformula contains terms that are not column headings in the phenotypic file. \n")
-      cat(" Check spelling and case of terms in fformula. \n")
+      message(" fformula contains terms that are not column headings in the phenotypic file. \n")
+      message(" Check spelling and case of terms in fformula. \n")
       stop("AM has terminted with errors.", call. = FALSE)
    }
   }
@@ -690,8 +690,8 @@ AM <- function(trait=NULL,
     trait <- trait[-indxNA]
 
     if(quiet > 0){
-     cat(" The following rows are being removed from pheno due to missing data: \n")
-     cat("             ", indxNA, "\n\n")
+     message(" The following rows are being removed from pheno due to missing data: \n")
+     message("             ", indxNA, "\n\n")
     }
 
  }
@@ -701,7 +701,7 @@ AM <- function(trait=NULL,
 ## remove rows in M.ascii and columns in Mt.ascii of those individuals listed in indxNA 
 if(length(indxNA)>0){
     res <- ReshapeM(fnameM=geno$asciifileM, fnameMt=geno$asciifileMt, indxNA=indxNA, dims=geno$dim_of_ascii_M)
-    cat("new dimensions of reshaped M", res, "\n")
+    message("new dimensions of reshaped M", res, "\n")
     geno$asciifileM  <-  fullpath("M.asciitmp")
     geno$asciifileMt <-  fullpath("Mt.asciitmp")
     geno$dim_of_ascii_M <- res
@@ -720,10 +720,10 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
 
   if(is.logical(chck)){
       if(chck){
-        cat(" There is a problem with the effects in fformula.\n")
-        cat(" These effects are causing computational instability. \n")
-        cat(" This can occur when there is a strong dependency between the effects.\n")
-        cat(" Try removing some of the effects in fformula. \n")
+        message(" There is a problem with the effects in fformula.\n")
+        message(" These effects are causing computational instability. \n")
+        message(" This can occur when there is a strong dependency between the effects.\n")
+        message(" Try removing some of the effects in fformula. \n")
         stop("AM has terminted with errors.", call. = FALSE)
       }
   }
@@ -735,7 +735,7 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
 
 
  while(continue){
-  cat("\n\n Iteration" , itnum, ": Searching for most significant marker-trait association\n\n")
+  message("\n\n Iteration" , itnum, ": Searching for most significant marker-trait association\n\n")
    ## based on selected_locus, form model matrix X
   currentX <- constructX(fnameM=geno[["asciifileM"]], currentX=currentX, loci_indx=new_selected_locus,
                           dim_of_ascii_M=geno[["dim_of_ascii_M"]],
@@ -750,7 +750,7 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
 
     if(itnum==1){
         if(quiet>0)
-           cat(" quiet=FALSE: calculating M %*% M^t. \n")
+           message(" quiet=FALSE: calculating M %*% M^t. \n")
          MMt <- do.call(.calcMMt, Args)  
 
 
@@ -760,7 +760,7 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
         gc()
     } 
     if(quiet>0){
-      cat(" Calculating variance components for multiple-locus model. \n")
+      message(" Calculating variance components for multiple-locus model. \n")
     }
     vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, ngpu=ngpu) 
     gc()
@@ -768,8 +768,8 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
     best_vg <- vc[["vg"]]
 
    if(quiet>0){
-      cat(" Residual variance estimate is ", best_ve, "\n")
-      cat(" Polygenic variance estimate is ", best_vg, "\n")
+      message(" Residual variance estimate is ", best_ve, "\n")
+      message(" Polygenic variance estimate is ", best_vg, "\n")
    }
 
 
