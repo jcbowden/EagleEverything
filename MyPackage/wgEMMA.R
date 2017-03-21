@@ -1333,9 +1333,6 @@ create.ascii  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB
 
 if (type=="text"){
     ## text genotype file
-    print(" In R create.ascii ")
-    print(AB)
-    print("-----")
     createM_ASCII_rcpp(f_name = file_genotype, type=type ,  f_name_ascii = asciiMfile, AA = AA, AB = AB, BB = BB,
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv = csv,
                quiet = quiet, message=message)

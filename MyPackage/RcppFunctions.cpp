@@ -248,7 +248,8 @@ void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 		std::string AB,
 		std::string BB,
 		bool csv,
-		bool quiet)
+		bool quiet, 
+                Function message)
 {
 
 	// Used to store size of memory used for mapping file
@@ -264,7 +265,7 @@ void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 	// Check that an error did not occur in the file mapping process
 	if ( dataFile == NULL )
 	{
-		cout << "Error mapping file." << endl;
+	        message("Error mapping file.");
 		return;
 	}
 
@@ -336,7 +337,7 @@ void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 					outputBuffer[inc] = '2';
 					inc++;
 				} else {
-					cout << "Error missing data point." << endl;
+					message("Error missing data point.");
 					exit(1);
 				}
 
@@ -812,7 +813,8 @@ void  CreateASCIInospace(std::string fname, std::string asciifname, std::vector<
                          std::string AB, 
                          std::string BB,
                          bool csv, 
-                         int  quiet)
+                         int  quiet, 
+                         Function message)
 {
 long 
    colindx = 0;
@@ -846,16 +848,16 @@ std::ifstream fileIN(fname.c_str());
 
 if(!fileIN.good()) {
   os << "\n\nERROR: Text file could not be opened with filename  " << fname << "\n\n" << std::endl;
-  Rcpp::stop(os.str() );
+ //  Rcpp::stop(os.str() );
 }
 
 // open ascii file that is to hold  genotype data
  std::ofstream fileOUT(asciifname.c_str(), ios::out );
  if (quiet > 0){
- Rcpp::Rcout << " " << std::endl;
- Rcpp::Rcout << " Reading text File  " << std::endl;
- Rcpp::Rcout << " " << std::endl;
- Rcpp::Rcout << " Loading file .";
+ message("");
+ message(" Reading text File  ");
+ message("");
+ message(" Loading file ");
  }
 long 
    number_of_columns, 
@@ -893,33 +895,32 @@ while(getline(fileIN, line ))
              rowinfile[i] = '0';
         } else {
           if (AB=="NA"){
-              Rcpp::Rcout << "Error: Marker text file contains marker genotypes that are different to " << AA << " " << BB << endl;
-              Rcpp::Rcout << "       For example , " << token  << endl;
+              message( "Error: Marker text file contains marker genotypes that are different to " , AA , " " , BB);
+              message(" 1111111  For example , " , token );
+              Rcpp::warning("---- Unexpected condition occurred");
               os << "ReadMarker has terminated with errors\n\n"; 
-              Rcpp::stop(os.str() );
+               Rcpp::stop(os.str() );
           } else {
-              Rcpp::Rcout << "Error: Marker text file contains marker genotypes that are different to " << AA << " " << AB << " " << BB << endl;
-              Rcpp::Rcout << "       For example , " << token  << endl;
+              message( "Error: Marker text file contains marker genotypes that are different to " , AA , " " , AB , " " , BB);
+              message( " For example , " , token );
               os << "ReadMarker has terminated with errors\n\n"; 
-              Rcpp::stop(os.str() );
+               Rcpp::stop(os.str() );
          }
        }  //end if else 
        i++;
   } // end whle streamA
 
   if (quiet>0){
-        Rcout << " Number of columns in line " << counter+1 << " is " << number_of_columns << std::endl;
+        message(" Number of columns in line " , counter+1 , " is " , number_of_columns);
 
         if (number_of_columns != dims[1] ){
-             Rcpp::Rcout << std::endl;
-             Rcpp::Rcout << std::endl;
-             Rcpp::Rcout << "Error:  Marker text file contains an unequal number of columns per row.  " << std::endl;
-             Rcpp::Rcout << "        The error has occurred at row " << counter+1 << " which contains " << number_of_columns << " but " << endl;
-             Rcpp::Rcout << "        it should contain " << dims[1] << " columns of data. "  << std::endl;
-             Rcpp::Rcout << std::endl;
-             Rcpp::Rcout << std::endl;
+             message("\n");
+             message("Error:  Marker text file contains an unequal number of columns per row.  ");
+             message("        The error has occurred at row " , counter+1 , " which contains " , number_of_columns , " but ");
+             message("        it should contain " , dims[1] , " columns of data. ");
+             message("\n");
              os << " ReadMarkerData has terminated with errors\n" << std::endl;
-             Rcpp::stop(os.str() );
+              Rcpp::stop(os.str() );
        }  // end if number_of_columns
   } // end if quiet
 
@@ -929,26 +930,31 @@ while(getline(fileIN, line ))
 
  }  // end while getline
 
- Rcout << " FINISHED WRITING M.ascii FILE !!!!!"   << endl; 
 
- if (quiet > 0) 
-     Rcpp::Rcout << "\n" << std::endl;
+
+
+
+
+
 
 
   // write out a few lines of the file if quiet
   if(quiet > 0){
-     // open PLINK ped  file
+     // open ascii  file
      std::ifstream fileIN(fname.c_str());
      counter = 0;
-     Rcout << " First 5 lines and 12 columns of the text file. " << endl;
+     message(" First 5 lines and 12 columns of the text file. ");
+     string rowline;
      while(getline(fileIN, line ) && counter < 5)
      {
+       std::ostringstream oss;
        istringstream streamA(line);
        for(int i=0; i < 12 ; i++){
            streamA >> tmp;
-           Rcpp::Rcout << tmp << " " ;
+           oss << tmp << " " ;
         }
-        Rcpp::Rcout << std::endl;
+        std::string rowline = oss.str();
+        message(rowline);
         counter++;
       }  // end  while(getline(fileIN, line ))
   } // end if(quiet)
@@ -1703,7 +1709,7 @@ void createM_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii,
                   double  max_memory_in_Gbytes,  std::vector <long> dims,
                   bool csv, 
                   int quiet,
-                  Function message)
+                  Function message) 
 {
   // Rcpp function to create space-removed ASCII file from ASCII and PLINK input files
 
@@ -1756,8 +1762,8 @@ double
       // transpose. 
       if (quiet > 0 )
           message(" A text file is being assumed as the input data file type. ");
-       CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
-      // CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet);
+       CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+      // CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
    }  // end if type == "PLINK" 
 
 //--------------------------------------
