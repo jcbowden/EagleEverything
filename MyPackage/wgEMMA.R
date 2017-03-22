@@ -1333,10 +1333,12 @@ create.ascii  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB
 
 if (type=="text"){
     ## text genotype file
-    createM_ASCII_rcpp(f_name = file_genotype, type=type ,  f_name_ascii = asciiMfile, AA = AA, AB = AB, BB = BB,
+    it_worked <- createM_ASCII_rcpp(f_name = file_genotype, type=type ,  f_name_ascii = asciiMfile, AA = AA, AB = AB, BB = BB,
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv = csv,
                quiet = quiet, message=message)
-
+    if(!it_worked) #  creation of ASCII file has failed 
+       return(FALSE)
+ 
     createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,  
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet, message=message )
 } else {
@@ -1354,7 +1356,7 @@ if (type=="text"){
 
 }  ## end if else type
 
- return(NULL)
+ return(TRUE)
 
 }
 
@@ -1591,14 +1593,16 @@ ReadMarker <- function( filename=NULL, type="text",
          message(" The binary file M.ascii could not be found in current working directory ", getwd(), "\n")
          message(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
          message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
-         stop(" ReadMarker has terminated with errors \n", call. = FALSE)
+         message(" ReadMarker has terminated with errors.")
+         return(NULL)
        }
 
        if(!file.exists(fullpath("Mt.ascii"))){
          message(" The binary file Mt.ascii could not be found in current working directory ", getwd(), "\n")
          message(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
          message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
-         stop(" ReadMarker has terminated with errors \n", call. = FALSE)
+         message(" ReadMarker has terminated with errors.")
+         return(NULL)
        }
        ## looks like everything is good. Return geno list object
        message(" The files M.RData, M.ascii, and Mt.ascii, in current working directory ", getwd(), " have been found and will be used for the association mapping analysis. \n")
@@ -1610,7 +1614,8 @@ ReadMarker <- function( filename=NULL, type="text",
        message(" The R file M.RData could not be found in current working directory ", getwd(), "\n")
        message(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
        message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
-       stop(" ReadMarker has terminated with errors \n", call. = FALSE)
+       message(" ReadMarker has terminated with errors.")
+       return(NULL)
 
    }  ## end if(file.exists(fullpath("M.RData"))
 
@@ -1619,11 +1624,13 @@ ReadMarker <- function( filename=NULL, type="text",
 
    if(is.null(type)){
       message(" type must be set to \"text\" or \"PLINK\". \n")
-      stop(" ReadMarker has terminated with errors \n", call. = FALSE)
+      message(" ReadMarker has terminated with errors.")
+      return(NULL)
    }
    if(!(type=="text" || type=="PLINK") ){
       message(" type must be set to \"text\" or \"PLINK\". \n")
-      stop(" ReadMarker has terminated with errors \n", call. = FALSE)
+      message(" ReadMarker has terminated with errors")
+      return(NULL)
    }
 
 
@@ -1632,21 +1639,23 @@ ReadMarker <- function( filename=NULL, type="text",
        
        ## checking if a PLINK file has been specified. 
        if (is.null(filename)){
-            errormsg <- paste(" The name of the PLINK ped file is missing.  \n", 
-                              "  ReadMarker has terminated with errors \n", sep="")
-            stop(errormsg, call. = FALSE)
+            message(" The name of the PLINK ped file is missing.")
+            message(" ReadMarker has terminated with errors.")
+            return(NULL)
        }
        if (!file.exists(fullpath(filename) )){
-            errormsg <- paste(" The PLINK ped file ", filename, " could not be found. \n",
-                              " ReadMarker has terminated with errors \n", sep="")
-            stop(errormsg,  call. = FALSE)
+            message(" The PLINK ped file ", filename, " could not be found. ")
+            message(" ReadMarker has terminated with errors ")
+            return(NULL)
        }
 
        ## Rcpp function to get dimensions of PLINK ped  file
        dim_of_ascii_M <- getRowColumn(fname=fullpath(filename), csv=FALSE )
        dim_of_ascii_M[2] <- (dim_of_ascii_M[2] - 6)/2  ## adjusting for PLINK structure
        ## Rcpp function to create binary packed M and Mt file 
-       create.ascii(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M,  quiet=quiet  )
+       it_worked <- create.ascii(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M,  quiet=quiet  )
+       if(!it_worked)
+           return(NULL) 
        asciifileM <- fullpath("M.ascii")
        asciifileMt <- fullpath("Mt.ascii")
 
@@ -1656,14 +1665,17 @@ ReadMarker <- function( filename=NULL, type="text",
       ## Assuming a text file that may be comma separated with numeric genotypes that need to be mapped onto AA, AB, and BB. 
       ## check of parameters
       error.code <- check.inputs(file_genotype=filename, availmemGb=availmemGb)
-      if(error.code)
-          stop(" ReadMarker has terminated with errors.", call. = FALSE)
+      if(error.code){
+          message(" ReadMarker has terminated with errors.")
+          return(NULL)
+       }
  ## Has AA, AB, BB been assigned character values
   if(is.null(AA) ||  is.null(BB))
   { 
      message("Error: The function parameters AA and BB must be assigned a numeric or character value since a text file is being assumed. \n")
-     message("       Type help(ReadMarker) for help on how to read in the marker data. \n")
-     stop(" ReadMarker has terminated with errors \n", call. = FALSE)
+     message(" Type help(ReadMarker) for help on how to read in the marker data. \n")
+     message(" ReadMarker has terminated with errors")
+     return(NULL)
   }
 
   ## if there are no hets. 
@@ -1682,8 +1694,11 @@ ReadMarker <- function( filename=NULL, type="text",
 
   ## Rcpp function to create ascii  M and Mt file from 
 
-  create.ascii(file_genotype=genofile, type=type, AA=as.character(AA), AB=as.character(AB), BB=as.character(BB), 
+  it_worked <- create.ascii(file_genotype=genofile, type=type, AA=as.character(AA), AB=as.character(AB), BB=as.character(BB), 
               availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M, csv=csv, quiet=quiet  )
+    if(!it_worked)   ## error has occurred. 
+       return(NULL)
+
     asciifileM <- fullpath("M.ascii")
     asciifileMt <- fullpath("Mt.ascii")
 

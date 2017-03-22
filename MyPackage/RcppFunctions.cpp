@@ -808,7 +808,7 @@ fileOUT.close();
 
 // recode ascii as ascii but with no spaces
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-void  CreateASCIInospace(std::string fname, std::string asciifname, std::vector<long> dims,
+bool  CreateASCIInospace(std::string fname, std::string asciifname, std::vector<long> dims,
                          std::string  AA, 
                          std::string AB, 
                          std::string BB,
@@ -816,6 +816,8 @@ void  CreateASCIInospace(std::string fname, std::string asciifname, std::vector<
                          int  quiet, 
                          Function message)
 {
+
+
 long 
    colindx = 0;
 
@@ -847,8 +849,8 @@ if(csv)
 std::ifstream fileIN(fname.c_str());
 
 if(!fileIN.good()) {
-  os << "\n\nERROR: Text file could not be opened with filename  " << fname << "\n\n" << std::endl;
- //  Rcpp::stop(os.str() );
+  message("ERROR: Text file could not be opened with filename  " , fname , "\n" );
+  return false;
 }
 
 // open ascii file that is to hold  genotype data
@@ -895,16 +897,15 @@ while(getline(fileIN, line ))
              rowinfile[i] = '0';
         } else {
           if (AB=="NA"){
-              message( "Error: Marker text file contains marker genotypes that are different to " , AA , " " , BB);
-              message(" 1111111  For example , " , token );
-              Rcpp::warning("---- Unexpected condition occurred");
-              os << "ReadMarker has terminated with errors\n\n"; 
-               Rcpp::stop(os.str() );
+              message( "Marker file contains marker genotypes that are different to AA=" , AA , " BB=" , BB);
+              message(" For example , " , token );
+              message(" ReadMarker has terminated with errors");
+              return false;
           } else {
-              message( "Error: Marker text file contains marker genotypes that are different to " , AA , " " , AB , " " , BB);
-              message( " For example , " , token );
-              os << "ReadMarker has terminated with errors\n\n"; 
-               Rcpp::stop(os.str() );
+              message( "Marker file contains marker genotypes that are different to AA=" , AA , " AB=" , AB , " BB=" , BB);
+              message( "For example , " , token );
+              message( "ReadMarker has terminated with errors");
+              return false;
          }
        }  //end if else 
        i++;
@@ -919,8 +920,8 @@ while(getline(fileIN, line ))
              message("        The error has occurred at row " , counter+1 , " which contains " , number_of_columns , " but ");
              message("        it should contain " , dims[1] , " columns of data. ");
              message("\n");
-             os << " ReadMarkerData has terminated with errors\n" << std::endl;
-              Rcpp::stop(os.str() );
+             message(" ReadMarkerData has terminated with errors");
+             return false;
        }  // end if number_of_columns
   } // end if quiet
 
@@ -965,6 +966,7 @@ fileIN.close();
  fileOUT.close();
 // fclose(pfileOUT);
 
+  return true;
 }
 
 
@@ -1701,7 +1703,7 @@ std::clock_t    start;
 
 
 // [[Rcpp::export]]
-void createM_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii, 
+bool  createM_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii, 
                   CharacterVector  type,
                   string AA,
                   string AB, 
@@ -1712,6 +1714,9 @@ void createM_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii,
                   Function message) 
 {
   // Rcpp function to create space-removed ASCII file from ASCII and PLINK input files
+
+
+
 
 size_t found;
 
@@ -1762,7 +1767,10 @@ double
       // transpose. 
       if (quiet > 0 )
           message(" A text file is being assumed as the input data file type. ");
-       CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+       bool it_worked = CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+       if (!it_worked) // an error has occurred in forming ascii file
+             return false;
+
       // CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
    }  // end if type == "PLINK" 
 
@@ -1784,6 +1792,10 @@ message(" Number of loci:           "  , dims[1] );
 message( " File size (Gbytes):       "  , memory_needed_in_Gb );
 message(" Available memory (Gbytes):" , max_memory_in_Gbytes  );
 message("\n\n" );
+
+
+  return true; 
+
 
 }
 
