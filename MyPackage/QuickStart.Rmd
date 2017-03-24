@@ -1,0 +1,30 @@
+---
+title: "Quick Start Guide"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quick Start Guide}
+  %\VignetteEngine{knitr::knitr}
+  \usepackage[utf8]{inputenc}
+---
+
+
+
+```{r include = FALSE}
+library(Eagle)
+```
+
+## Quick Start Guide to Using Eagle
+
+
+
+
+
+
+
+
+
+
+
+
+
+

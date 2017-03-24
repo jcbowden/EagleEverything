@@ -131,7 +131,7 @@ message("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `
         # there is an issue with creating Xmat when it includes
         # factors that have some of their levels removed. 
         ph <- pheno[-indxNA,]
-        mat <- get_all_vars(fformula, data=ph)
+        mat <- get_all_vars(formula=fformula, data=ph)
         for(ii in names(mat)){
            if(is.factor(ph[,ii])){
               ph[,ii] <- as.factor(as.character(ph[,ii]))
@@ -167,7 +167,7 @@ if(length(indx) > 0)
     MMt <- calculateMMt(geno=geno[["asciifileM"]], availmemGb=availmemGb, 
                            ncpu=ncpu, 
                            dim_of_ascii_M = geno[["dim_of_ascii_M"]], 
-                           selected_loci=selected_loci, quiet = quiet) 
+                           selected_loci=selected_loci, quiet = quiet, message=message) 
     gc()
 
 
@@ -251,13 +251,13 @@ if(length(indx) > 0)
     if(quiet > 0){
        message(" quiet =", quiet, ": beginning calculation of H matrix. \n")
     }
-    H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg ) 
+    H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg, message=message ) 
     doquiet(dat=H, num_markers=quiet, lab="H")
 
     if(quiet>0){
        message(" quiet =", quiet, ": beginning calculation of P matrix. \n")
     }
-    P <- calculateP(H=H, X=currentX ) 
+    P <- calculateP(H=H, X=currentX , message=message) 
     doquiet(dat=P, num_markers=quiet, lab="P")
     rm(H)
     gc()
@@ -272,7 +272,7 @@ if(length(indx) > 0)
     if (quiet > 0)
        error_checking <- TRUE
     MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
-                              ngpu=ngpu ) 
+                              ngpu=ngpu , message=message) 
 
     doquiet(dat=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], num_markers=quiet, lab="sqrt(M %*% M^t)")
     doquiet(dat=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]], num_markers=quiet, lab="sqrt(M %*% M^t)^-1")
@@ -282,7 +282,7 @@ if(length(indx) > 0)
     }
     hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                       y=trait, quiet = quiet )   
+                       y=trait, quiet = quiet , message=message)   
     doquiet(dat=hat_a, num_markers=quiet, lab="BLUPs")
 
 
@@ -295,7 +295,7 @@ if(length(indx) > 0)
 
     var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
                                                 MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                                                quiet = quiet ) 
+                                                quiet = quiet, message=message ) 
     doquiet(dat=var_hat_a, num_markers=quiet, lab="SE of BLUPs")
 
 
@@ -312,7 +312,7 @@ if(length(indx) > 0)
                                             invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
                                             transformed_a=hat_a, 
                                             transformed_vara=var_hat_a,
-                                            quiet=quiet) 
+                                            quiet=quiet, message=message) 
 
      doquiet(dat=a_and_vara[["a"]], num_markers=quiet, lab="BLUPs for full model")
      doquiet(dat=a_and_vara[["vara"]], num_markers=quiet, lab="SE of BLUPs for full model")
@@ -354,7 +354,7 @@ if(length(indx) > 0)
 #'              be assumed. 
 #' @param ncpu a numeric value for the number of CPU that are available for distributed computing.  The default is to determine the number of CPU automatically. 
 #' @param ngpu   a integer value for the number of GPU available for computation.  The default
-#'               is to assume there are no gpu available. 
+#'               is to assume there are no gpu available.  This option has not yet been implemented.
 #' @param  quiet      an integer value specifying the number of marker loci for which diagnostic information is 
 #' to be printed to the screen. This is useful for error checking. 
 #' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
@@ -498,7 +498,7 @@ if(length(indx) > 0)
 #'   # File is a plain space separated text file with the first row 
 #'   # the column headings
 #'   complete.name <- system.file("extdata", "map.txt", 
-#'                                    package="AMplus")
+#'                                    package="Eagle")
 #'   map_obj <- ReadMap(filename=complete.name) 
 #'
 #'  # to look at the first few rows of the map file
@@ -509,7 +509,7 @@ if(length(indx) > 0)
 #'   # Reading in a PLINK ped file 
 #'   # and setting the available memory on the machine for the reading of the data to 8Gbytes
 #'   complete.name <- system.file("extdata", "geno.ped", 
-#'                                      package="AMplus")
+#'                                      package="Eagle")
 #'   geno_obj <- ReadMarker(filename=complete.name,  type="PLINK", availmemGb=8) 
 #'  
 #'   # read phenotypic data
@@ -517,7 +517,7 @@ if(length(indx) > 0)
 #'
 #'   # Read in a plain text file with data on a single trait and two covariates
 #'   # The first row of the text file contains the column names "trait", "cov1", and "cov2". 
-#'   complete.name <- system.file("extdata", "pheno.txt", package="AMplus")
+#'   complete.name <- system.file("extdata", "pheno.txt", package="Eagle")
 #'   
 #'   pheno_obj <- ReadPheno(filename=complete.name)
 #'            
@@ -567,6 +567,8 @@ AM <- function(trait=NULL,
 
  ## print tile
  .print_title()
+
+ ngpu <- 0  ### NEED TO CHANGE THIS WHEN GPU implemented. 
 
 
  error.code <- check.inputs.mlam(ncpu=ncpu , availmemGb=availmemGb, colname.trait=trait, 
@@ -619,7 +621,9 @@ AM <- function(trait=NULL,
 
 
  ## Turn fformula  into class formula with some checks
- if(!is.null(fformula)){
+ if(fformula=="")  ## added for shiny
+      fformula<-NULL
+ if(!is.null(fformula) ){
    if(length(grep("~", fformula))==0){
       if(length(fformula)==1){
           fformula <- as.formula(paste("~", fformula, sep="") )
@@ -640,7 +644,7 @@ AM <- function(trait=NULL,
   ## check that terms in  formula are in pheno file
  if(!is.null(fformula)){
   res <- tryCatch(
-     mat <- get_all_vars(fformula, data=pheno) , 
+     mat <- get_all_vars(formula=fformula, data=pheno) , 
      error = function(e) 
      {
          return(TRUE)
@@ -663,7 +667,7 @@ AM <- function(trait=NULL,
  ## If any, set individual's trait value to NA
  ## This means this individual will later be removed. 
  if(!is.null(fformula)){
-    mat <- get_all_vars(form=fformula, data=pheno)
+    mat <- get_all_vars(formula=fformula, data=pheno)
     mat.of.NA  <- which(is.na(mat), arr.ind=TRUE)
   if(!is.null(dim(mat.of.NA)[1]) ){
      if(dim(mat.of.NA)[1]>0){
@@ -677,12 +681,12 @@ AM <- function(trait=NULL,
 
 
   ## setting up gpu sevrver
-  if(ngpu > 0 ){
-     if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
-        library(rcppMagmaSYEVD)
-         rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_ascii_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
-     } 
-  }
+#  if(ngpu > 0 ){
+#     if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
+#        library(rcppMagmaSYEVD)
+#         rcppMagmaSYEVD::RunServer( matrixMaxDimension=geno[["dim_of_ascii_M"]][1],  numGPUsWanted=ngpu, memName="/syevd_mem", semName="/syevd_sem", print=0)
+#     } 
+#  }
 
 
  ## remove missing observations from trait
@@ -783,6 +787,8 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
 
     ## Print findings to screen
    .print_results(itnum, selected_loci, map,  extBIC)
+   
+
    ## Select new locus if extBIC is still decreasing 
    if(which(extBIC==min(extBIC))==length(extBIC) ){  ## new way of stoppint based on extBIC only
      ## find QTL
@@ -796,10 +802,6 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
    }  else {
      ## terminate while loop, 
      continue <- FALSE
-#     .print_header()
-#     .print_final(selected_loci, map, extBIC)
-#     sigres <- .form_results(trait, selected_loci, map,  feffects, 
-#                     indxNA, ncpu, availmemGb, quiet,  extBIC )   
    }  ## end if else
 
 
@@ -841,7 +843,7 @@ if( itnum > maxit){
    }  ## end inner  if(lenth(selected_locus)>1)
 }  ## end if( itnum > maxit)
 
-
+ 
 return( sigres )
 
 } ## end AM

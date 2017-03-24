@@ -1,26 +1,29 @@
-Package: AMplus
+Package: Eagle
 Type: Package
 Title: Multiple Locus Association Mapping  on a Genome-Wide Scale
 Version: 1.0.0
 Date: 2016-10-20
-Author: Andrew W. George
+Author: Andrew W. George, Ryan Stephenson, Joshua Bowden
 Maintainer: Andrew W. George  <andrew.george@csiro.au>
 email: andrew.george@csiro.au
-Description: An a R package to make association mapping with sophisticated multiple-locus models on a genome-wide scale routine. Data from any type of population can be analyzed. The user need only deal with a few functions. There is a function to read in the marker data (ReadMarker), a function to read in a marker map if available (ReadMap), a function to read in the phenotypic data (ReadPheno), a function to perform the association mapping (AM), and a function to give a summary of the results (SummaryAM). Upon running AM, a set of snp is returned as the results. This set of snp are the loci in strongest linkage disequilibrium with the genes that are influencing a trait. Our package can handle data sets larger than the memory capacity of a machine. Computations are also distributed across multiple CPU, implicitly, if multiple CPU are available.  We have designed our package for association mapping for  quantitative traits but disease traits (affected/unaffected), can also be analysed if the trait is converted into  0/1 data and if there is a reasonable number of affected and unaffected individuals.  
+Description:Eagle is an R package for genome wide association mapping. It can handle study populations of arbitrary complexity, and data larger than the memory capacity of a machine. Since Eagle is based on linear mixed models, it is best suited to the analysis of data on continuous traits but it is robust to violations of normality and can also be used on binary traits. Eagle reports, as its findings, the best set of snp in strongest association with a trait.
+Quick start: afdjklaa dflkjafd 
 License: GPL (>= 3)
 Depends:
-   R (>= 3.1.3), shiny
+   R (>= 3.1.3)
 Suggests:
-  rcppMagmaSYEVD
+  rcppMagmaSYEVD, knitr
 Imports: 
    Rcpp (>= 0.11.3),  
    RcppEigen, 
    matrixcalc, 
    Matrix,
-   data.table
+   data.table,
+   shiny
 LinkingTo: 
    Rcpp , 
    RcppEigen
 Roxygen: 
    list(wrap=FALSE)
 LazyData: true
+VignetteBuilder: knitr

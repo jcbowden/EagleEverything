@@ -55,7 +55,7 @@
 
 #' Package documentation
 #'
-#' @name AMplus-package
+#' @name Eagle-package
 #' @title A package for genome-wide association mapping with multiple-locus models and for populations of 
 #' arbitrary structure. 
 #' @docType package
@@ -106,7 +106,7 @@
 #'
 #'@section Where to get help: To see an overview of the package and its functions type
 #' \preformatted{
-#' library(, AMplus)
+#' library(, Eagle)
 #' }
 #'
 #' For detailed help on a function, type
@@ -734,7 +734,7 @@ if(is.null(map)){
 ##-------------------------------
 
 
-calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_ascii_M=NULL, quiet = 0)
+calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_ascii_M=NULL, quiet = 0, message=message)
 {
  ## R interface to Rcpp code to calculate M %*% t(M)
  ## Args
@@ -751,12 +751,13 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_a
 
   if(!file.exists(geno)){
     message(" Error: The binary packed file ", geno, " cannot be found.\n")
-    stop(" calculateMMt has terminated with errors.", call. = FALSE) 
+    message(" calculateMMt has terminated with errors.")
+    return(NULL)
    }
   if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
   MMt <- calculateMMt_rcpp( f_name_ascii=geno, selected_loci = selected_loci,
                                max_memory_in_Gbytes=availmemGb, num_cores=ncpu, 
-                               dims= dim_of_ascii_M, quiet = quiet) 
+                               dims= dim_of_ascii_M, quiet = quiet, message=message) 
   return(MMt)
 
 }  ## end function
@@ -770,7 +771,7 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_a
 
 
 calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, 
-                                           quiet = 0 , ngpu=0)
+                                           quiet = 0 , ngpu=0, message=message)
 {
   ## R function for calculating the square root of M * M^t
   ## and the inverse of the square root of MMt
@@ -787,7 +788,8 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
     message("        information. Please remove individuals with indentical marker \n")
     message("        information, remembering also to remove their associated phenotypic \n")
     message("        information as well. \n")
-    stop(" Internal function: calculateMMt_sqrt_and_sqrtinv has terminated with errors.\n", call. = FALSE)
+    message(" Internal function: calculateMMt_sqrt_and_sqrtinv has terminated with errors")
+    return(NULL)
   } 
    res <- list()
 
@@ -827,7 +829,7 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
 
 
 
-calculateH <- function(MMt=NULL, varE=NULL, varG=NULL )
+calculateH <- function(MMt=NULL, varE=NULL, varG=NULL, message=message )
 {
   ## R function for calculating the H variance matrix 
   ## which is
@@ -839,29 +841,35 @@ calculateH <- function(MMt=NULL, varE=NULL, varG=NULL )
   ##
   ## H matrix is returned. 
 
-  if(!is.numeric(varE))
-    stop(" The varE (residual variance) must be numeric.", call. = FALSE)
+  if(!is.numeric(varE)){
+    message(" The varE (residual variance) must be numeric.")
+    return(NULL)
+    }
 
-  if(varE < 0)
-    stop(" VarE cannot be negative.", call. = FALSE)
+  if(varE < 0){
+    message(" VarE cannot be negative.")
+    return(NULL)
+    }
+  if(!is.numeric(varG)){
+    message(" The varG (genotypic variance) must be numeric.")
+    return(NULL)
+    }
+  if(varG < 0){
+    message(" VarG cannot be negative.")
+    return(NULL)
+    }
 
-  if(!is.numeric(varG))
-    stop(" The varG (genotypic variance) must be numeric.", call. = FALSE)
-
-  if(varG < 0)
-    stop(" VarG cannot be negative.", call. = FALSE)
-
-
-  if(is.null(MMt))
-    stop("MMt cannot be null.")
-
+  if(is.null(MMt)){
+    message("MMt cannot be null.")
+    return(NULL)
+    }
   return( varE * diag(nrow(MMt)) + varG * MMt)
 
 
 }
 
 
-calculateP  <- function(H=NULL, X=NULL, ngpu=0)
+calculateP  <- function(H=NULL, X=NULL, ngpu=0, message=message)
 {
   ## R function to calculate P matrix
   ## Args:
@@ -871,13 +879,19 @@ calculateP  <- function(H=NULL, X=NULL, ngpu=0)
   ## Returns:
   ##   matrix object P
 
-  if(is.null(H))
-    stop(" H must be specified.", call. = FALSE)
-  if(is.null(X))
-    stop(" A design matrix has not be specified. ", call. = FALSE)
+  if(is.null(H)){
+    message(" H must be specified.")
+    return(NULL)
+  }
+  if(is.null(X)){
+    message(" A design matrix has not be specified. ")
+    return(NULL)
+  }
 
-   if(nrow(H) != nrow(X))
-      stop(" The number of rows in H and X are not the same.", call. = FALSE)
+   if(nrow(H) != nrow(X)){
+      message(" The number of rows in H and X are not the same.")
+    return(NULL)
+  }
 
  Hinv <- chol2inv(chol(H))
  P <- Hinv - Hinv %*% X %*% solve( t(X) %*% Hinv %*% X )  %*% t(X) %*% Hinv
@@ -887,7 +901,7 @@ calculateP  <- function(H=NULL, X=NULL, ngpu=0)
 }
 
 
-calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, quiet=FALSE)
+calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, quiet=FALSE, message=message)
 {
 
   if( !(nrow(P) ==  length(y))){
@@ -896,19 +910,25 @@ calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, quiet=F
     message(" The dimensions are: \n")
     message(" dim(P)      = ", dim(P), "\n")
     message(" length(y)   = ", length(y), "\n")
-    stop(call. = FALSE)
+    return(NULL)
 
   }
 
- if(is.null(varG))
-   stop(" VarG must be specified.", call. = FALSE)
+ if(is.null(varG)){
+   message(" VarG must be specified.")
+   return(NULL)
+   }
 
-  if(is.null(P))
-   stop(" P must be specified", call. = FALSE)
+  if(is.null(P)){
+   message(" P must be specified")
+   return(NULL)
+   }
 
 
-  if(is.null(y))
-   stop(" y must be specified", call. = FALSE)
+  if(is.null(y)){
+   message(" y must be specified")
+   return(NULL)
+   }
 
     a <- varG * MMtsqrt %*% P %*% y
 
@@ -919,7 +939,7 @@ return(a)
 
 
 mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8, dim_of_ascii_M=NULL, 
-                                 selected_loci=NA, quiet = 0)
+                                 selected_loci=NA, quiet = 0, message=message)
 {
  ## Rcpp function to calculate the BLUP (a) values under a dimension reduced model
  ## Args:
@@ -960,7 +980,7 @@ mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8,
   ar <- calculate_reduced_a_rcpp(f_name_ascii = fnameascii, varG=varG, P=P, 
                                  y=ycolmat, max_memory_in_Gbytes=availmemGb, 
                                  dims=dim_of_ascii_M , selected_loci = selected_loci , 
-                                 quiet = quiet )
+                                 quiet = quiet , message=message)
 
 
 
@@ -979,7 +999,7 @@ return(ar)
 calculate_a_and_vara <- function(geno=NULL, maxmemGb=8, 
                          selectedloci = NA,
                          invMMtsqrt=NULL, transformed_a=NULL, transformed_vara=NULL,
-                         quiet = 0)
+                         quiet = 0, message=message)
 {
  ## an Rcpp function to take dimension reduced a (BLUP) values 
  ## and transform them into the original a (BLUP) values and their variances 
@@ -1010,13 +1030,13 @@ calculate_a_and_vara <- function(geno=NULL, maxmemGb=8,
                     max_memory_in_Gbytes=maxmemGb, 
                     dims=dimsMt, 
                     a = transformed_a, 
-                    quiet = quiet)
+                    quiet = quiet, message=message)
                     
 
 }
 
 
-calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MMtsqrt=NULL, quiet=FALSE)
+calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MMtsqrt=NULL, quiet=FALSE, message=message)
 {
 ## Using var(\hat(a)) = simgaG - Cjj  where Cjj is the component from C^-1 (henerdsons 
 ##   mixed model equations coefficent matrix.   See Verbyla et al. TAG 2007.
@@ -1195,7 +1215,7 @@ if(!is.null(file_phenotype))
 #' # Read in  phenotypic data from ./extdata/
 #' 
 #' # find the full location of the phenotypic data 
-#' complete.name <- system.file("extdata", "pheno.txt", package="AMplus")
+#' complete.name <- system.file("extdata", "pheno.txt", package="Eagle")
 #'
 #' pheno_obj <- ReadPheno(filename=complete.name)
 #'   
@@ -1209,12 +1229,13 @@ ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, ...){
 
 
   error.code <- check.inputs(file_phenotype=phenofile)
-  if(error.code)
-     stop(" ReadPheno has terminated with errors.", call. = FALSE)
-
+  if(error.code){
+     message(" ReadPheno has terminated with errors.")
+     return(NULL)
+  }
   sep <- ""
   if(csv) sep=","
-  message("\n\n Loading Pheotype file ... \n\n")
+  message("\n\n Loading Phenotype file ... \n\n")
   phenos <- read.table(phenofile, header=header, sep=sep, ...)
   ## check for factors with only one level which will cause contrast code to crash
   for(ii in names(phenos)){
@@ -1222,7 +1243,8 @@ ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, ...){
        if(length(levels(phenos[[ii]]))==1){
           message(" The phenotype file contains factors that only have a single value. \n")
           message(" Please remove this factor. \n") 
-         stop(" ReadPheno has terminated with errors.", call. = FALSE)
+          message(" ReadPheno has terminated with errors.")
+          return(NULL)
 
        }
     }
@@ -1235,13 +1257,27 @@ message(" File name:                   ",  phenofile, "\n")
 message(" Number of individuals:       ", nrow(phenos), "\n")
 message(" Number of columns:           ", ncol(phenos), "\n\n")
 message(" First 5 rows of the phenotype file are \n")
-print(head(phenos,n=5))
+if(nrow(phenos)>5){
+    for(ii in 1:5){
+       lne <- paste(phenos[ii,], sep="   ")
+       message(lne)
+    }
+} else {
+    for(ii in 1:nrow(phenos)){
+       lne <- paste(phenos[ii,], sep="   ")
+       message(lne)
+    }
+
+
+}
 message("\n Column classes are  \n")
 for(ii in 1:ncol(phenos))
   message(c( sprintf("%20s   %15s", names(phenos)[ii], class(phenos[[ii]]) ), "\n"))
 
 
 message("\n WARNING: if the column classes are incorrect, these will need to be changed by the user.\n\n\n")
+
+ message("The phenotype file has been Uploaded.")
 
   return(phenos)
 
@@ -1281,7 +1317,7 @@ message("\n WARNING: if the column classes are incorrect, these will need to be 
 #' # Read in  example map data from ./extdata/
 #' 
 #' # find the full location of the map data 
-#' complete.name <- system.file("extdata", "map.txt", package="AMplus")
+#' complete.name <- system.file("extdata", "map.txt", package="Eagle")
 #'   
 #' # read in map data 
 #' map_obj <- ReadMap(filename=complete.name) 
@@ -1294,9 +1330,10 @@ ReadMap  <- function( filename = NULL, csv=FALSE)
 {
  mapfile <- fullpath(filename)
  error.code <-  check.inputs(file_genotype=filename)
- if(error.code)
-    stop(" ReadMap has terminated with errors.", call. = FALSE)
-
+ if(error.code){
+    message(" ReadMap has terminated with errors.")
+   return(NULL)
+  }
   sep=""
   if(csv) sep=","
   map <- read.table(mapfile, header=TRUE, sep=sep)
@@ -1541,7 +1578,7 @@ if (type=="text"){
 #'   # Read in the genotype data contained in the text file "geno.txt"
 #'   #
 #'   # The function system.file() gives the full file name (name + full path).
-#'   complete.name <- system.file("extdata", "geno.txt", package="AMplus")
+#'   complete.name <- system.file("extdata", "geno.txt", package="Eagle")
 #'
 #'   
 #'   # Here,  0 values are being treated as genotype AA,
@@ -1561,7 +1598,7 @@ if (type=="text"){
 #'   # Read in the allelic  data contained in the PLINK ped file "geno.ped"
 #'   #
 #'   # The function system.file() gives the full file name (name + full path).
-#'   complete.name <- system.file("extdata", "geno.ped", package="AMplus")
+#'   complete.name <- system.file("extdata", "geno.ped", package="Eagle")
 #'
 #'   
 #'   # Here,  the first 6 columns are being ignored and the allelic 
@@ -1762,12 +1799,14 @@ constructX <- function(fnameM=NULL, currentX=NULL, loci_indx=NULL,
 
 
 RunApp <- function() {
-  appDir <- system.file("shiny_app", package = "AMplus")
+  appDir <- system.file("shiny_app", package = "Eagle")
   if (appDir == "") {
-    stop("Could not find shiny-app directory. Try re-installing `AMplus` package.", call. = FALSE)
+    message("Could not find shiny-app directory. Try re-installing `Eagle` package.")
+    return(NULL)
   }
 
-  shiny::runApp(appDir, display.mode = "normal")
+  #shiny::runApp(appDir, display.mode = "normal")
+  shiny::shinyAppDir(appDir)
 }
 
 

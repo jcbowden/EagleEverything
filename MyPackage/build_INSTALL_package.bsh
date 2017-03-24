@@ -1,6 +1,8 @@
 #!/bin/bash
+module load pandoc/1.12.3
 
-## bash script to build AMplus package 
+
+## bash script to build Eagle package 
 
 DIR="/home/geo047/gitHUB_WMAM/MyPackage/"
 
@@ -11,19 +13,19 @@ cd $DIR
 echo " run SETUP Magma ............................................................"
 
 
-## removing AMplus and AMplus.Rcheck
-echo " Removing AMplus and AMplus.Rcheck"
-rm -rf ./AMplus  ./AMplus.Rcheck
+## removing Eagle and Eagle.Rcheck
+echo " Removing Eagle and Eagle.Rcheck"
+rm -rf ./Eagle  ./Eagle.Rcheck
 
 ## create and run Rcpp.package.skeleton
 echo   "library(Rcpp)" > ./tmp.R
 echo   "    " >> tmp.R  
-echo  " Rcpp.package.skeleton(\"AMplus\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
+echo  " Rcpp.package.skeleton(\"Eagle\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
 ## echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"svd_magma.R\", \"MAGMA.R\" ) ) " >> ./tmp.R
  echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"AM.R\", \"summary_am.R\"   ) ) " >> ./tmp.R
 echo  "  ## running roxygen2  " >> ./tmp.R
 echo  " library(roxygen2) " >> ./tmp.R
-echo  " setwd(\"./AMplus\")  " >> ./tmp.R
+echo  " setwd(\"./Eagle\")  " >> ./tmp.R
 echo  "  roxygenise() " >> ./tmp.R
 
 
@@ -36,11 +38,11 @@ R CMD BATCH ./tmp.R
 
 
 ## Replace generated NAMESPACE and DESCRIPTION with correct versions
-cp ./NAMESPACE.OLD ./AMplus/NAMESPACE
-cp ./DESCRIPTION.OLD ./AMplus/DESCRIPTION
-## Modify ./AMplus/src/RcppExports.cpp
+cp ./NAMESPACE.OLD ./Eagle/NAMESPACE
+cp ./DESCRIPTION.OLD ./Eagle/DESCRIPTION
+## Modify ./Eagle/src/RcppExports.cpp
 
- cd $DIR/AMplus/src
+ cd $DIR/Eagle/src
  awk 'NR>=1&&NR<=3' "RcppExports.cpp" > ./block1.tmp
 
 echo "#include <RcppEigen.h> " >> ./tmp1
@@ -76,44 +78,66 @@ cat ./block1.tmp ./tmp1  ./block2.tmp  > ./RcppExports.cpp
 echo  " Adding raw data to package ... "
 cd $DIR
 
-mkdir ./AMplus/inst
-mkdir ./AMplus/inst/extdata
-
+mkdir ./Eagle/inst
+mkdir ./Eagle/inst/extdata
+mkdir ./Eagle/inst/doc
+mkdir ./Eagle/vignettes
 cd $DIR
 
-cp ./pheno.txt ./AMplus/inst/extdata/.
-cp ./geno.txt ./AMplus/inst/extdata/.
-cp ./geno.ped ./AMplus/inst/extdata/.
-cp ./map.txt ./AMplus/inst/extdata/.
+cp ./pheno.txt ./Eagle/inst/extdata/.
+cp ./geno.txt ./Eagle/inst/extdata/.
+cp ./geno.ped ./Eagle/inst/extdata/.
+cp ./map.txt ./Eagle/inst/extdata/.
+cp ./installation.Rmd ./Eagle/vignettes/.
 
 cd $DIR
 
 ## add own Makevars to src with openmp compiler options
-## echo "PKG_CPPFLAGS=-fopenmp "  > ./AMplus/src/Makevars
+## echo "PKG_CPPFLAGS=-fopenmp "  > ./Eagle/src/Makevars
 ## -----------------------------------------------
 ## Note
 ## ------------------------------------------------
 ## User needs to set CUDA_HOME
 ##                   R_HOME
 ##                   MAGMA_HOME
-##echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./AMplus/src/Makevars
-##echo "PKG_LIBS=-fopenmp"  >> ./AMplus/src/Makevars
-##  echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./AMplus/src/Makevars
-#echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./AMplus/src/Makevars
+##echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./Eagle/src/Makevars
+##echo "PKG_LIBS=-fopenmp"  >> ./Eagle/src/Makevars
+##  echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./Eagle/src/Makevars
+#echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./Eagle/src/Makevars
 
-#echo "PKG_CPPFLAGS = -lnvblas " > ./AMplus/src/Makevars
+#echo "PKG_CPPFLAGS = -lnvblas " > ./Eagle/src/Makevars
 
-cp /home/geo047/gitHUB_WMAM/MyPackage/Makevars.gpu /home/geo047/gitHUB_WMAM/MyPackage/AMplus/src/Makevars
+cp /home/geo047/gitHUB_WMAM/MyPackage/Makevars.gpu /home/geo047/gitHUB_WMAM/MyPackage/Eagle/src/Makevars
 
 ## building shiny structure
-mkdir /home/geo047/gitHUB_WMAM/MyPackage/AMplus/inst/shiny_app
-cp ui.R /home/geo047/gitHUB_WMAM/MyPackage/AMplus/inst/shiny_app
-cp server.R /home/geo047/gitHUB_WMAM/MyPackage/AMplus/inst/shiny_app
+mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app
+mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www
+mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images
 
 
-R CMD check AMplus
+cp /home/geo047/ShinyApp/shinyApp.R /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/app.R
+cp /home/geo047/ShinyApp/css.css /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
+cp /home/geo047/ShinyApp/www/images/*banner* /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+cp /home/geo047/ShinyApp/www/images/pipeline.png /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
 
-R CMD INSTALL AMplus -l ~/RLibs
+
+
+cp  /home/geo047/ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
+
+
+
+R CMD Sweave ./installation.Rmd
+cp installation.html ./Eagle/inst/doc/.
+
+## remove object files
+rm ./Eagle/src/*.o ./Eagle/src/tmp1 ./Eagle/src/block?.tmp ./Eagle/src/*.so
+rm ./Eagle/.RData
+
+R CMD build Eagle 
+
+R CMD check Eagle_1.0.0.tar.gz 
+
+R CMD INSTALL Eagle -l ~/RLibs
 
 rm tmp.R  tmp.Rout 
 

@@ -1,7 +1,7 @@
-useDynLib(AMplus)
+useDynLib(Eagle)
 importFrom(Rcpp, evalCpp)
 importFrom(parallel, detectCores)
-import(RcppEigen,  matrixcalc, Matrix, data.table )
+import(shiny, RcppEigen,  matrixcalc, Matrix, data.table )
 
 
 export(

@@ -179,7 +179,7 @@ std::vector <long>    ReshapeM_rcpp( CharacterVector  fnameM,
 
 // ---- code developed by Ryan
 
-char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned long &sizeActual) {
+char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned long &sizeActual, Function message) {
 	// If set to true debugging information is displayed
 	// Otherwise these messages are suppressed
 	bool debugMsgs = true;
@@ -201,8 +201,8 @@ char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned 
 		if ( -1 == fd) throw "File could not be opened for reading";
 	}
 	catch (const char* msg) {
-		cout << "ERROR: " << msg << endl;
-		exit(-1);
+		message( "ERROR occurred in mapFileFromDisc " , msg );
+		return NULL;
 	}
 
 	// Get the file size on disc
@@ -212,7 +212,7 @@ char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned 
 	// of system page size;
 	sizeActual = s.st_size;
 	sizeUsed = sizeActual + (pagesize - (sizeActual % pagesize));
-	if (debugMsgs) printf("Memory used to map file: %d Mbytes\n", sizeUsed/1024/1024);
+	if (debugMsgs) message("Memory used to map file: %d Mbytes\n", sizeUsed/1024/1024);
 
 	// Memory mapped data file
 	char *fileMemMap;
@@ -230,7 +230,7 @@ char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned 
 	fileMemMap = (char *) mmap (0, sizeUsed, PROT_READ, MAP_PRIVATE, fd, 0);
 
 	if (madvise(fileMemMap, sizeUsed, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
-		cout << "madvise error" << endl;
+		message( "madvise error" );
 		return NULL;
 	}
 
@@ -243,12 +243,12 @@ char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned 
 
 
 
-void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vector<long> dims,
+bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vector<long> dims,
 		std::string  AA,
 		std::string AB,
 		std::string BB,
 		bool csv,
-		bool quiet, 
+		int quiet, 
                 Function message)
 {
 
@@ -260,13 +260,13 @@ void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 	unsigned long sizeActual = 0;
 
 	// Map file from hard-disk to memory
-	char* dataFile = mapFileFromDisc(fname.c_str(), sizeUsed, sizeActual);
+	char* dataFile = mapFileFromDisc(fname.c_str(), sizeUsed, sizeActual, message);
 
 	// Check that an error did not occur in the file mapping process
 	if ( dataFile == NULL )
 	{
 	        message("Error mapping file.");
-		return;
+		return false;
 	}
 
 	// Array used for buffering file output
@@ -301,6 +301,16 @@ void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 
 	int slidingInc = 0;
 	char windowBuffer[maxLenGen];
+
+
+        if (quiet > 0){
+              message("");
+              message(" Reading text File  ");
+              message("");
+              message(" Loading file ");
+       }
+
+
 
 	int latch = 0;
 	// Loop through file in memory
@@ -337,8 +347,19 @@ void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 					outputBuffer[inc] = '2';
 					inc++;
 				} else {
-					message("Error missing data point.");
-					exit(1);
+                                    std::string str(windowBuffer);
+                                    if (AB=="NA"){
+                                       message( "Marker file contains marker genotypes that are different to AA=" , AA , " BB=" , BB);
+                                       message(" For example  " ,  str);
+                                       message(" ReadMarker has terminated with errors");
+                                       return false;
+                                   } else {
+                                       message( "Marker file contains marker genotypes that are different to AA=" , AA , " AB=" , AB , " BB=" , BB);
+                                       message( "For example , " , str );
+                                       message( "ReadMarker has terminated with errors");
+                                       return false;
+                                  }
+
 				}
 
 				// Reset sliding index
@@ -369,9 +390,38 @@ void  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 	// No longer need to use memory mapped file, release it
 	munmap(dataFile, sizeUsed);
 
+
+
+  // write out a few lines of the file if quiet
+//  if(quiet > 0){
+     // open ascii  file
+     string line, tmp;
+     std::ifstream fileIN(fname.c_str());
+     long counter = 0;
+     message(" First 5 lines and 12 columns of the marker file. ");
+     string rowline;
+     while(getline(fileIN, line ) && counter < 5)
+     {
+       std::ostringstream oss;
+       istringstream streamA(line);
+       for(int i=0; i < 12 ; i++){
+           streamA >> tmp;
+           oss << tmp << " " ;
+        }
+        std::string rowline = oss.str();
+        message(rowline);
+        counter++;
+      }  // end  while(getline(fileIN, line ))
+//  } // end if(quiet)
+
+
+
+
+
+
 	// Close output file
 	fclose (outputFile);
-	return;
+	return true;
 }
 
 
@@ -404,61 +454,6 @@ vector<string> split(const char *str, char c = ' ')
     return result;
 }
 
-
-// check genotypes in file are correct numeric values AA, AB, BB
-// [[Rcpp::export]]
-void  checkGenotypes(CharacterVector f_name,
-                     int AA,
-                     int AB,
-                     int BB,
-                     bool csv)
-{
-std::string 
-     fname = Rcpp::as<std::string>(f_name),
-     token,
-     line;
- int 
-    genoval=-1,
-    linenum=0;
-
- ostringstream 
-      os;
-
- char 
-   sep = ' ';
- if(csv) sep = ',';
-
-
- // open file and check for its existence. 
- std::ifstream fileIN(fname.c_str());
- if(!fileIN.good()) {
-      os << "\n\nERROR: Could not open  " << fname << "\n\n" << std::endl;
-      Rcpp::stop(os.str() );
- }
-
- // Determine number of rows in file
- Rprintf("\n\n Checking genotype file for incorrect genotypes ... ");
- while(fileIN.good()){
-      while(getline(fileIN, line)){
-           Rprintf(".");
-           linenum++;
-           istringstream streamA(line);
-          //  while(streamA >> genoval)
-           // while(getline(streamA,  genoval, sep))
-            while(getline(streamA,  token, sep)){
-                genoval = atoi(token.c_str());
-           //  if(genoval !=0 & genoval !=1 & genoval != 2){
-             if(genoval !=AA & genoval !=AB & genoval != BB){
-               os << "\n\nERROR: File " << fname << " contains genotypes other than " << AA << "," << 
-                        AB << ", and " << BB << " For example genotype " << genoval << " has been found on line.  " << linenum << "\n\n";
-               Rcpp::stop(os.str() );
-             }
-           }
-      }
- }
-
-
-}
 
 
 
@@ -575,36 +570,6 @@ char
  ostringstream 
       os;
 
-// ------------------------- TESTING AREA mmap
-
-//unsigned long sizeUsed = 0;
-//unsigned long sizeActual = 0;
-
-//char* dataFile = mapFileFromDisc(fname.c_str(), sizeUsed, sizeActual);
-
-//if (dataFile == NULL){
-//   Rcout << "Error mapping file to memory." << endl;
-//   exit(-1);
-//}
-
-//Rcout << sizeUsed << endl;
-//Rcout << sizeActual << endl;
-
-
-//  char str[] ="- This, a sample string.";
-//  char * pch;
-//  printf ("Splitting string \"%s\" into tokens:\n",str);
-  // pch = strtok (str," ,.-");
-//  pch = strtok (dataFile," ");
-//  while (pch != NULL)
-//  {
-//    printf ("%s\n",pch);
-//    pch = strtok (NULL, " ,.-");
-//  }
-
- 
-
-//  Rcpp::stop("stop");
 
 
 
@@ -684,9 +649,9 @@ while(getline(fileIN, line ))
            if (printOnlyOnce == 0){
                  message("\n");
                  message(" Warning:  PLINK file contains missing alleles (i.e. 0 or - ) " );
-                 message("           These missing genotypes should be imputed before running AMplus." );
+                 message("           These missing genotypes should be imputed before running Eagle." );
                  message("           As an approximation, AMpus has set these missing genotypes to heterozygotes. " );
-                 message("           Since AMplus assumes an additive model, heterozygote genotypes do not contribute to the estimation of " );
+                 message("           Since Eagle assumes an additive model, heterozygote genotypes do not contribute to the estimation of " );
                  message("           the additive effects.  " );
                  message("\n");
                  printOnlyOnce = 1;
@@ -940,13 +905,14 @@ while(getline(fileIN, line ))
 
 
   // write out a few lines of the file if quiet
-  if(quiet > 0){
+//  if(quiet > 0){
      // open ascii  file
-     std::ifstream fileIN(fname.c_str());
+     line;
+     std::ifstream fileIN_backtobeginning(fname.c_str());
      counter = 0;
-     message(" First 5 lines and 12 columns of the text file. ");
+     message(" First 5 lines and 12 columns of the marker file. ");
      string rowline;
-     while(getline(fileIN, line ) && counter < 5)
+     while(getline(fileIN_backtobeginning, line ) && counter < 5)
      {
        std::ostringstream oss;
        istringstream streamA(line);
@@ -958,8 +924,7 @@ while(getline(fileIN, line ))
         message(rowline);
         counter++;
       }  // end  while(getline(fileIN, line ))
-  } // end if(quiet)
-
+//  } // end if(quiet)
 
 // close files
 fileIN.close();
@@ -1141,7 +1106,6 @@ if(mem_bytes < max_mem_in_bytes){
      fileOUT << rowinfile; // writing entire row of data
      fileOUT << "\n";
   }
- message( " File has been Uploaded ... ");
  
  fileIN.close();
  fileOUT.close();
@@ -1158,15 +1122,15 @@ if(mem_bytes < max_mem_in_bytes){
 
     // Calculate number of columns that can be read into available memory
     n_of_cols_to_be_read = max_mem_in_bytes * 1.0 / (3.5 * dims[0] * (bits_in_int/8.0)); //64 bit system
-    Rcout << n_of_cols_to_be_read << endl;
     // Calculate number of blocks needed
     long n_blocks = dims[1]/n_of_cols_to_be_read;
     if (dims[1] % n_of_cols_to_be_read != 0)
          n_blocks++;
-     message( " number of blocks is " , n_blocks);
-    if (quiet > 0)  
+    
+    if (quiet > 0) { 
          message( " Block Tranpose of ASCII genotype file beginning ... " );
-
+         message("  Due to marker data exceeding memory, data being processed in blocks. Number of blocks being processed is ", n_blocks);
+    }
     // Block read and transpose - requires n_blocks passes through the 
     // ASCII input file which could be slow if file is large and memory low
     for(long b=0; b < n_blocks; b++){
@@ -1239,7 +1203,7 @@ fileOUT.close();
 }  // end if else situation 
 
 
-
+message(" The marker file has been Uploaded");
 
 
 }  // end function 
@@ -1260,7 +1224,8 @@ MatrixXd calculate_reduced_a_rcpp ( CharacterVector f_name_ascii, double varG,
                                            double max_memory_in_Gbytes,  
                                            std::vector <long> dims,
                                            Rcpp::NumericVector  selected_loci,
-                                           int quiet)
+                                           int quiet,
+                                           Function message)
 {
   // function to calculate the BLUPs for the dimension reduced model. 
   // It is being performed in Rcpp because it makes use of Mt. 
@@ -1281,6 +1246,8 @@ Eigen::MatrixXd
 ostringstream
       os;
 
+Eigen::MatrixXd 
+      nullmat = MatrixXd::Zero(1,1);  // 0 matrix of size 1,1 for null purposes 
 
 
 const size_t bits_in_double = std::numeric_limits<double>::digits;
@@ -1291,7 +1258,7 @@ double mem_bytes_needed =   ( dims[0]*dims[1] + dims[0]*dims[0] + dims[0] ) *  (
 
 if (!quiet){
     // Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
-    Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
+    message("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
 }
 
 if(mem_bytes_needed < max_memory_in_Gbytes){
@@ -1315,22 +1282,20 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 } else {
 
       // calculation being processed in block form
-      Rprintf(" Note:  Increasing workingmemGb would improve performance... \n");
+      message(" Note:  Increasing workingmemGb would improve performance... ");
 
       // calculate the maximum number of rows in Mt that can be contained in the
       // block multiplication. This involves a bit of algrebra but it is comes to the following
       long num_rows_in_block = (max_memory_in_Gbytes * 1000000000.0/sizeof(double) - dims[0] * dims[0] - dims[0])/dims[0] ;
 
     if (num_rows_in_block < 0){
-        Rcpp::Rcout << std::endl;
-        Rcpp::Rcout << std::endl;
-        Rcpp::Rcout << "Error:  workingmemGb is set to " << max_memory_in_Gbytes << std::endl;
-        Rcpp::Rcout << "        Cannot even read in a single row of data into memory." << std::endl;
-        Rcpp::Rcout << "        Please increase workingmemGb for this data set." << std::endl;
-        Rcpp::Rcout << std::endl;
-        Rcpp::Rcout << std::endl;
-        os << " multiple_locus_am has terminated with errors\n" << std::endl;
-         Rcpp::stop(os.str() );
+        message("\n");
+        message("Error:  workingmemGb is set to " , max_memory_in_Gbytes );
+        message("        Cannot even read in a single row of data into memory." );
+        message("        Please increase workingmemGb for this data set." );
+        message("\n");
+        message( "AM has terminated with errors\n" );
+        return nullmat;
 
       }
 
@@ -1343,9 +1308,9 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
                  num_blocks++;
 
       if (quiet > 0){
-      Rprintf(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
-      Rprintf(" Block multiplication necessary. \n");
-      Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
+      message(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
+      message(" Block multiplication necessary. \n");
+      message(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
       } 
       for(long i=0; i < num_blocks; i++){
          long start_row1 = i * num_rows_in_block;
@@ -1390,7 +1355,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
               counter++;
          }
 
-       if (quiet > 0 )  Rcpp::Rcout << "block done ... " << std::endl;
+       if (quiet > 0 )  message( "block done ... ");
       } // end for long
 
 
@@ -1447,7 +1412,8 @@ Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_ascii,
                                     double  max_memory_in_Gbytes,  
                                     std::vector <long> dims,
                                     Eigen::VectorXd  a,
-                                    int  quiet)
+                                    int  quiet, 
+                                    Function message)
 {
 // Purpose: to calculate the untransformed BLUP (a) values from the 
 //          dimension reduced BLUP value estimates. 
@@ -1488,7 +1454,7 @@ const size_t bits_in_integer = std::numeric_limits<int>::digits;
 
 if (!quiet){
 //   Rprintf("Total memory (Gbytes) needed for a calculation is: %f \n",  mem_bytes_needed);
-   Rprintf("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
+   message("Max memory (Gbytes) available is: %f \n", max_memory_in_Gbytes);
 }
 
 
@@ -1522,7 +1488,6 @@ std::clock_t    start;
 
 
    
-//   Rcout << "Time2 Mtd *  inv_MMt_sqrt  * a : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 
 
@@ -1542,7 +1507,6 @@ std::clock_t    start;
 
 
 
-//     Rcout << "Time3 var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt : " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
 
     var_ans_tmp  =  Mt  *  var_ans_tmp_part1;
@@ -1551,12 +1515,10 @@ std::clock_t    start;
 
   // Added 26 April
   long i;
-  Rcout << "pragma var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;" << endl;
   #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
   for(i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
-  Rcout << "end pragma var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;" << endl;
 
 
 
@@ -1568,7 +1530,7 @@ std::clock_t    start;
       // ans.resize(dims[0],1);   //added AWG 12/03/16 in a bid to improve GPU performance
 
       // calculation being processed in block form
-      Rprintf(" Increasing maxmemGb would improve performance... \n");
+      message(" Increasing maxmemGb would improve performance... \n");
 
       // calculate the maximum number of rows in Mt that can be contained in the
       // block multiplication. This involves a bit of algrebra but it is comes to the following
@@ -1578,15 +1540,15 @@ std::clock_t    start;
 
 
       if (num_rows_in_block < 0){
-        Rcpp::Rcout << std::endl;
-        Rcpp::Rcout << std::endl;
-        Rcpp::Rcout << "Error:  workingmemGb is set to " << max_memory_in_Gbytes << std::endl;
-        Rcpp::Rcout << "        Cannot even read in a single row of data into memory." << std::endl;
-        Rcpp::Rcout << "        Please increase workingmemGb for this data set." << std::endl;
-        Rcpp::Rcout << std::endl;
-        Rcpp::Rcout << std::endl;
-        os << " multiple_locus_am has terminated with errors\n" << std::endl;
-         Rcpp::stop(os.str() );
+        message("\n");
+        message( "Error:  workingmemGb is set to " , max_memory_in_Gbytes );
+        message( "        Cannot even read in a single row of data into memory." );
+        message( "        Please increase workingmemGb for this data set." );
+        message("\n");
+        message(" multiple_locus_am has terminated with errors\n" );
+        
+       return Rcpp::List::create(Rcpp::Named("a")=0,
+                            Rcpp::Named("vara") = 0);
 
       }
      
@@ -1599,12 +1561,12 @@ std::clock_t    start;
       if (dims[0] % num_rows_in_block)
                  num_blocks++;
       if (quiet > 0 ){
-      Rprintf(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
-      Rprintf(" Block multiplication necessary. \n");
-      Rprintf(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
+      message(" Maximum memory has been set to %f Gb\n", max_memory_in_Gbytes);
+      message(" Block multiplication necessary. \n");
+      message(" Number of blocks needing block multiplication is ... % d \n", num_blocks);
       } 
       for(long i=0; i < num_blocks; i++){
-         Rcpp::Rcout << "Performing block iteration ... " << i << endl;
+         message("Performing block iteration ... " , i );
          long start_row1 = i * num_rows_in_block;
          long num_rows_in_block1 = num_rows_in_block;
          if ((start_row1 + num_rows_in_block1) > dims[0])
@@ -1612,8 +1574,6 @@ std::clock_t    start;
 
 
          Eigen::MatrixXd Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
-         // Rcout << Mt.rows() << endl;
-         // Rcout << Mt.cols() << endl;
 
 
 
@@ -1624,7 +1584,6 @@ std::clock_t    start;
         Eigen::MatrixXd   var_ans_tmp(num_rows_in_block1,1);
 
             if(!R_IsNA(selected_loci(0))){
-             Rcout << " in if(!R_IsNA(selected_loci(0))) " << endl;
             // setting columns (or row when Mt) to 0
                for(long ii=0; ii < selected_loci.size() ; ii++)
                {
@@ -1681,7 +1640,7 @@ std::clock_t    start;
                  counter++;
             }
     
-             if (quiet > 0 )  Rcpp::Rcout << "block done ... " << std::endl;
+             if (quiet > 0 )  message( "block done ... " );
 
 
       } // end for long
@@ -1767,11 +1726,19 @@ double
       // transpose. 
       if (quiet > 0 )
           message(" A text file is being assumed as the input data file type. ");
-       bool it_worked = CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
-       if (!it_worked) // an error has occurred in forming ascii file
-             return false;
 
-      // CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+
+       if ( 1.5 * memory_needed_in_Gb   > max_memory_in_Gbytes){
+           bool it_worked = CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+           if (!it_worked) // an error has occurred in forming ascii file
+                 return false;
+       } else {
+          bool it_worked =  CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+          if (!it_worked) // an error has occurred in forming ascii file
+                 return false;
+       } 
+
+
    }  // end if type == "PLINK" 
 
 //--------------------------------------
@@ -1896,13 +1863,13 @@ return(column_of_genos);
 Eigen::MatrixXd  calculateMMt_rcpp(CharacterVector f_name_ascii, 
                                    double  max_memory_in_Gbytes, int num_cores,
                                    Rcpp::NumericVector  selected_loci , std::vector<long> dims, 
-                                   int  quiet) 
+                                   int  quiet, Function message) 
 {
 // set multiple cores
 Eigen::initParallel();
 omp_set_num_threads(num_cores);
 Eigen::setNbThreads(num_cores);
-Rcpp::Rcout << " Number of cores being used for calculation is .. "  << Eigen::nbThreads() << endl;
+message(" Number of cores being used for calculation is .. ");
 
 
 std::string 
@@ -1973,7 +1940,7 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
     double part2 = 4.84*dims[1] * dims[1] +  4 * max_memory_in_Gbytes  * 1000000000.0/sizeof(double);
     part2 = sqrt(part2);
     long num_rows_in_block = (part1 + part2)/2.0;
-    Rcout << "number of rows in block is " << num_rows_in_block << endl;  
+    message( "number of rows in block is " , num_rows_in_block);
 
            // blockwise multiplication
 
@@ -1991,15 +1958,11 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               long num_rows_in_block1 = num_rows_in_block;
               if ((start_row1 + num_rows_in_block1) > dims[0])
                      num_rows_in_block1 = dims[0] - start_row1;
-            //  Rcpp::Rcout << num_rows_in_block1 << " num rows in block 1 " << std::endl;
 
 
-               Rcout << " Reading Block " << i << "  Data .... ------------- " << endl;
                Eigen::MatrixXd    
                     genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
-               Rcout << " Finished reading Block Data .... --------------- " << endl;
 
-              Rcout << " taking MMtsub(MatrixXd(num_rows_in_block1, num_rows_in_block1).setZero()) " << endl;
               Eigen::MatrixXd    
                    MMtsub(MatrixXd(num_rows_in_block1, num_rows_in_block1).setZero());
 
@@ -2012,9 +1975,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
              // Rcpp::Rcout << genoMat_block1.rows() << std::endl;
              // Rcpp::Rcout << genoMat_block1.cols() << std::endl;
 
-              Rcout << "---------------------GPU--C++ -------------------------   " << endl;
-              Rcout << " MMtsub = genoMat_block1 * genoMat_block1.transpose(); " << endl;
-              Rcout << "------------------------------------------------------ " << endl;
               MMtsub.noalias() = genoMat_block1 * genoMat_block1.transpose(); 
 
               //          i            j            num rows               num   cols
@@ -2026,7 +1986,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
                    long num_rows_in_block2 = num_rows_in_block;
                    if ((start_row2 + num_rows_in_block2) > dims[0])
                           num_rows_in_block2 = dims[0] - start_row2;
-                    Rcout << " Reading genoMat_block " << j << "  data ... "   << endl;
                     Eigen::MatrixXd    
                        genoMat_block2 ( ReadBlock(fnamebin,  start_row2, dims[1], num_rows_in_block2)) ;
 
@@ -2043,9 +2002,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
             //  Rcpp::Rcout << " Block 2 " << std::endl;
             //  Rcpp::Rcout << genoMat_block2.rows() << std::endl;
             //  Rcpp::Rcout << genoMat_block2.cols() << std::endl;
-              Rcout << "---------------------GPU--C++ -------------------------   " << endl;
-              Rcout << " MMtsub = genoMat_block1 * genoMat_block2.transpose(); " << endl;
-              Rcout << "------------------------------------------------------ " << endl;
                    MMtsub.noalias() = genoMat_block1 * genoMat_block2.transpose(); 
                    //          i,        j,     num rows,              num cols
                    MMt.block(start_row1, start_row2, num_rows_in_block1, num_rows_in_block2) = MMtsub;
