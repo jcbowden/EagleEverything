@@ -16,9 +16,7 @@ Suggests:
 Imports: 
    Rcpp (>= 0.11.3),  
    RcppEigen, 
-   matrixcalc, 
-   Matrix,
-   data.table,
+   matrixcalc,
    shiny
 LinkingTo: 
    Rcpp , 

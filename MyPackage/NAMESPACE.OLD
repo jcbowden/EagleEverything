@@ -1,7 +1,9 @@
 useDynLib(Eagle)
 importFrom(Rcpp, evalCpp)
 importFrom(parallel, detectCores)
-import(shiny, RcppEigen,  matrixcalc, Matrix, data.table )
+importFrom(matrixcalc, is.positive.definite)
+#import(shiny, RcppEigen,  matrixcalc, Matrix, data.table )
+import(shiny, RcppEigen  )
 
 
 export(

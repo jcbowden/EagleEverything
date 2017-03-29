@@ -82,13 +82,13 @@ mkdir ./Eagle/inst
 mkdir ./Eagle/inst/extdata
 mkdir ./Eagle/inst/doc
 mkdir ./Eagle/vignettes
+mkdir ./Eagle/vignettes/images
 cd $DIR
 
 cp ./pheno.txt ./Eagle/inst/extdata/.
 cp ./geno.txt ./Eagle/inst/extdata/.
 cp ./geno.ped ./Eagle/inst/extdata/.
 cp ./map.txt ./Eagle/inst/extdata/.
-cp ./installation.Rmd ./Eagle/vignettes/.
 
 cd $DIR
 
@@ -107,7 +107,7 @@ cd $DIR
 
 #echo "PKG_CPPFLAGS = -lnvblas " > ./Eagle/src/Makevars
 
-cp /home/geo047/gitHUB_WMAM/MyPackage/Makevars.gpu /home/geo047/gitHUB_WMAM/MyPackage/Eagle/src/Makevars
+#### NOT MAKEVARS of my OWN ---- cp /home/geo047/gitHUB_WMAM/MyPackage/Makevars.gpu /home/geo047/gitHUB_WMAM/MyPackage/Eagle/src/Makevars
 
 ## building shiny structure
 mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app
@@ -118,7 +118,11 @@ mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images
 cp /home/geo047/ShinyApp/shinyApp.R /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/app.R
 cp /home/geo047/ShinyApp/css.css /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
 cp /home/geo047/ShinyApp/www/images/*banner* /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+cp /home/geo047/ShinyApp/www/images/logo.jpg /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+
 cp /home/geo047/ShinyApp/www/images/pipeline.png /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.jpg ./Eagle/vignettes/images
+cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.png ./Eagle/vignettes/images
 
 
 
@@ -126,14 +130,26 @@ cp  /home/geo047/ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eag
 
 
 
-R CMD Sweave ./installation.Rmd
-cp installation.html ./Eagle/inst/doc/.
+R CMD Sweave ./Install.Rmd
+R CMD Sweave ./QuickStart.Rmd
+R CMD Sweave ./UserManual.Rmd
+cp Install.html ./Eagle/inst/doc/.
+cp ./Install.Rmd ./Eagle/vignettes/.
+cp QuickStart.html ./Eagle/inst/doc/.
+cp UserManual.html ./Eagle/inst/doc/.
+cp ./QuickStart.Rmd ./Eagle/vignettes/.
+cp ./UserManual.Rmd ./Eagle/vignettes/.
+
+
 
 ## remove object files
 rm ./Eagle/src/*.o ./Eagle/src/tmp1 ./Eagle/src/block?.tmp ./Eagle/src/*.so
 rm ./Eagle/.RData
 
 R CMD build Eagle 
+
+exit 1
+
 
 R CMD check Eagle_1.0.0.tar.gz 
 

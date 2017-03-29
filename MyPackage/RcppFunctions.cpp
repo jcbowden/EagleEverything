@@ -16,7 +16,10 @@
 //          5. read blocks of binarys to form submatrices of M.
 //          6. Perform M %*% t(M) as a block multiplication. 
 //
-#define EIGEN_USE_MKL_ALL
+
+// This was causing issues when building on clean linux system
+// creates reliance on mkl.h 
+//#define EIGEN_USE_MKL_ALL
 
 // [[Rcpp::depends(RcppEigen)]]
 
@@ -243,6 +246,8 @@ char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned 
 
 
 
+
+
 bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vector<long> dims,
 		std::string  AA,
 		std::string AB,
@@ -251,6 +256,7 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 		int quiet, 
                 Function message)
 {
+message("in here");
 
 	// Used to store size of memory used for mapping file
 	// Size is rounded up to memory page size, hence two variables
@@ -258,7 +264,6 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 	// SizeActual is used to determine the number of characters in the file
 	unsigned long sizeUsed = 0;
 	unsigned long sizeActual = 0;
-
 	// Map file from hard-disk to memory
 	char* dataFile = mapFileFromDisc(fname.c_str(), sizeUsed, sizeActual, message);
 
@@ -272,7 +277,11 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 	// Array used for buffering file output
 	const long long bufferSize = 8*1024*1024;
 
-	char outputBuffer[bufferSize];
+
+
+        char* outputBuffer = NULL;
+        outputBuffer = new char[bufferSize];
+	// char outputBuffer[bufferSize];
 	int inc = 0;
 
 	// Output file
@@ -329,7 +338,6 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 				// cout << "(" << windowBuffer << ")" << endl;
 
 				// Comparison magic
-
 				if ( AA == windowBuffer ) {
 					// cout << "AA Found" << endl;
 					outputBuffer[inc] = '0';
@@ -377,7 +385,7 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 		if ( inc >= bufferSize)
 		{
 			// Write buffer to file on disk
-			fwrite (outputBuffer , sizeof(char), sizeof(outputBuffer), outputFile);
+	                fwrite (outputBuffer , sizeof(char), sizeof(outputBuffer), outputFile);
 			//cout << inc << endl;
 			// Reset buffer index
 			inc = 0;
@@ -385,11 +393,15 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 	}
 
 	// Writing remaining data in output buffer to output file
-	fwrite (outputBuffer , sizeof(char), inc, outputFile);
+
+
+        fwrite (outputBuffer , sizeof(char), inc, outputFile);
 
 	// No longer need to use memory mapped file, release it
 	munmap(dataFile, sizeUsed);
 
+   delete [] outputBuffer;  // When done, free memory pointed to by a.
+   outputBuffer = NULL;     // Clear a to prevent using invalid memory reference.
 
 
   // write out a few lines of the file if quiet
@@ -398,13 +410,20 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
      string line, tmp;
      std::ifstream fileIN(fname.c_str());
      long counter = 0;
-     message(" First 5 lines and 12 columns of the marker file. ");
+     int nrowsp =  5;
+     int ncolsp = 12;
+     if(dims[0] < 5)
+         nrowsp = dims[0];
+     if(dims[1] < 12)
+          ncolsp = dims[1];
+
+     message(" First ", nrowsp, " lines and ", ncolsp, " columns of the marker file. ");
      string rowline;
-     while(getline(fileIN, line ) && counter < 5)
+     while(getline(fileIN, line ) && counter < nrowsp)
      {
        std::ostringstream oss;
        istringstream streamA(line);
-       for(int i=0; i < 12 ; i++){
+       for(int i=0; i < ncolsp ; i++){
            streamA >> tmp;
            oss << tmp << " " ;
         }
@@ -735,14 +754,25 @@ while(getline(fileIN, line ))
 // open PLINK ped  file
 std::ifstream fileIN_backtobeginning(fname.c_str());
 counter = 0;
-message(" First 5 lines and 12 columns of the PLINK ped  file. ");
+
+
+int nrowsp =  5;
+int ncolsp = 24;
+if(dims[0] < 5)
+nrowsp = dims[0];
+if(dims[1] < 25)
+ncolsp = dims[1];
+
+message(" First ", nrowsp, " lines and ", ncolsp, " columns of the PLINK ped file. ");
+ 
+
 string rowline;
 
-while(getline(fileIN_backtobeginning, line ) && counter < 5)
+while(getline(fileIN_backtobeginning, line ) && counter < nrowsp)
 {
        std::ostringstream oss;
        istringstream streamB(line);
-       for(int i=0; i < 12 ; i++){
+       for(int i=0; i < ncolsp ; i++){
            streamB >> tmp;
            oss << tmp << " " ;
         }
@@ -782,7 +812,6 @@ bool  CreateASCIInospace(std::string fname, std::string asciifname, std::vector<
                          Function message)
 {
 
-
 long 
    colindx = 0;
 
@@ -790,25 +819,19 @@ int
    genovec[dims[1]];
 
 
- std::string 
-     rowvec[dims[1]]; // holds entire row worth of genotypes from ascii file
- 
 
 std::string
    tmp,
    token,
    line;
 //    rowinfile;
-
 char 
    sep = ' ';
 if(csv) 
    sep = ',';
 
-
  ostringstream 
       os;
-
 
 // open marker text  file
 std::ifstream fileIN(fname.c_str());
@@ -817,7 +840,6 @@ if(!fileIN.good()) {
   message("ERROR: Text file could not be opened with filename  " , fname , "\n" );
   return false;
 }
-
 // open ascii file that is to hold  genotype data
  std::ofstream fileOUT(asciifname.c_str(), ios::out );
  if (quiet > 0){
@@ -839,6 +861,8 @@ long
 
 while(getline(fileIN, line ))
 {
+
+
   Rcout << "\r" << 100.0*counter/dims[0] << "% read of text file.       " << flush;
 
 
@@ -910,13 +934,25 @@ while(getline(fileIN, line ))
      line;
      std::ifstream fileIN_backtobeginning(fname.c_str());
      counter = 0;
-     message(" First 5 lines and 12 columns of the marker file. ");
+
+int nrowsp =  5;
+int ncolsp = 12;
+if(dims[0] < 5)
+nrowsp = dims[0];
+if(dims[1] < 12)
+ncolsp = dims[1];
+
+message(" First ", nrowsp, " lines and ", ncolsp, " columns of the marker text  file. ");
+
+
+
+
      string rowline;
-     while(getline(fileIN_backtobeginning, line ) && counter < 5)
+     while(getline(fileIN_backtobeginning, line ) && counter < nrowsp)
      {
        std::ostringstream oss;
        istringstream streamA(line);
-       for(int i=0; i < 12 ; i++){
+       for(int i=0; i < ncolsp ; i++){
            streamA >> tmp;
            oss << tmp << " " ;
         }
@@ -1032,8 +1068,6 @@ std::string
      fname = Rcpp::as<std::string>(f_name),
      fnameascii = Rcpp::as<std::string>(f_name_ascii);
 
-std::string 
-  rowvec[dims[1]];
 
 char 
    sep = ' ';
@@ -1729,10 +1763,12 @@ double
 
 
        if ( 1.5 * memory_needed_in_Gb   > max_memory_in_Gbytes){
+           message(" loop old ");
            bool it_worked = CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
            if (!it_worked) // an error has occurred in forming ascii file
                  return false;
        } else {
+           message(" loop mmap new");
           bool it_worked =  CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
           if (!it_worked) // an error has occurred in forming ascii file
                  return false;
