@@ -256,7 +256,6 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 		int quiet, 
                 Function message)
 {
-message("in here");
 
 	// Used to store size of memory used for mapping file
 	// Size is rounded up to memory page size, hence two variables
@@ -279,9 +278,9 @@ message("in here");
 
 
 
+	// char outputBuffer[bufferSize];
         char* outputBuffer = NULL;
         outputBuffer = new char[bufferSize];
-	// char outputBuffer[bufferSize];
 	int inc = 0;
 
 	// Output file
@@ -309,7 +308,9 @@ message("in here");
 	}
 
 	int slidingInc = 0;
-	char windowBuffer[maxLenGen];
+	// char windowBuffer[maxLenGen];
+        char* windowBuffer = NULL;
+        windowBuffer = new char[maxLenGen];
 
 
         if (quiet > 0){
@@ -403,6 +404,8 @@ message("in here");
    delete [] outputBuffer;  // When done, free memory pointed to by a.
    outputBuffer = NULL;     // Clear a to prevent using invalid memory reference.
 
+   delete [] windowBuffer;  // When done, free memory pointed to by a.
+   windowBuffer = NULL;     // Clear a to prevent using invalid memory reference.
 
   // write out a few lines of the file if quiet
 //  if(quiet > 0){
@@ -566,11 +569,15 @@ int
 
 
 
-int
-  genovec[n_of_cols_in_geno];
 
-char
-   alleles [ 2 ][ n_of_cols_in_geno ];  // holds alleles  
+
+
+// char alleles [ 2 ][ n_of_cols_in_geno ];  // holds alleles  
+char* alleles0 = NULL;
+      alleles0 = new char[ n_of_cols_in_geno ];
+char* alleles1 = NULL;
+      alleles1 = new char[ n_of_cols_in_geno ];
+
 
 
 std::vector<char>
@@ -651,11 +658,11 @@ while(getline(fileIN, line ))
          for(long i=0; i < n_of_cols_in_geno ; i++){
             if( rowvec[ (2*i ) ] == '0' ||  rowvec[ (2*i + 1) ] == '0' || rowvec[ (2*i ) ] == '-' ||  rowvec[ (2*i + 1) ] == '-'){
                // missing allele
-               alleles[ 0 ][ i ] = 'I';
-               alleles[ 1 ][ i ] = 'I';
+               alleles0[ i ] = 'I';
+               alleles1[ i ] = 'I';
             } else {
-               alleles[ 0 ][ i ] =  rowvec[ (2*i ) ];
-               alleles[ 1 ][ i ] =  rowvec[ (2*i + 1) ];
+               alleles0[ i ] =  rowvec[ (2*i ) ];
+               alleles1[ i ] =  rowvec[ (2*i + 1) ];
             } //end  if (rowvec 
          }
    }
@@ -683,22 +690,22 @@ while(getline(fileIN, line ))
         // Check if allele has been seen before in allele file. 
         // If so, make sure alleles doesn't already  contain two alleles - otherwise generate error message
         for(int j = 1; j >= 0; --j){ // looping over the two alleles with indexes 0 and 1
-           if (rowvec[ (2*i + j) ] != alleles[ 0 ][ i ] && rowvec[ (2*i + j) ] != alleles[ 1 ][ i ]){
+           if (rowvec[ (2*i + j) ] != alleles0[ i ] && rowvec[ (2*i + j) ] != alleles1[ i ]){
               // situation 1: rowvec contains missing values ie 'I' then do nothing
               if (rowvec[ (2*i + j) ] == 'I' ){
                  // do nothing here
 
               } else {
                 // situation 2: alleles contain missing values I
-                if (alleles[0][i] == 'I'){
-                     alleles[0][i] = rowvec[ (2*i + j) ];
+                if (alleles0[i] == 'I'){
+                     alleles0[i] = rowvec[ (2*i + j) ];
                 } else {
-                      if (alleles[1][i] == 'I'){
-                           alleles[1][i] = rowvec[ (2*i + j) ];
+                      if (alleles1[i] == 'I'){
+                           alleles1[i] = rowvec[ (2*i + j) ];
                        } else {
-                         if (alleles[ 0 ][ i ] == alleles[ 1 ][ i ] ){
+                         if (alleles0[ i ] == alleles1[ i ] ){
                              // this is okay. alleles only contains a single allele at the moment. Re-initialise alleles
-                             alleles[ 1 ][ i ] = rowvec[ (2*i + j) ];
+                             alleles1[ i ] = rowvec[ (2*i + j) ];
                            } else {
                               // Error - we have more than two alleles segregating at a locus
                             message("\n");
@@ -709,13 +716,13 @@ while(getline(fileIN, line ))
                              Rcpp::stop(os.str() );
                           } // end inner if else
 
-                       } // end if (alleles[1][i] == 'I')
-                } // end  if (alleles[0][i] == 'I')
+                       } // end if (alleles1[i] == 'I')
+                } // end  if (alleles0[i] == 'I')
 
               } // end if (rowvec[ (2*i + j) ] == 'I' )
 
 
-           }  // end if (rowvec[ (2*i + j) ] != alleles[ 0 ][ i ] && rowvec[ (2*i + j) ] != alleles[ 1 ][ i ])
+           }  // end if (rowvec[ (2*i + j) ] != alleles0[ i ] && rowvec[ (2*i + j) ] != alleles1[ i ])
 
 
 
@@ -727,7 +734,7 @@ while(getline(fileIN, line ))
         if (rowvec[ (2*i + 1) ] !=   rowvec[ (2*i) ] ){
           rowinfile[i] = '1' ;  // AB
         } else {
-          if (rowvec[ (2*i ) ] == alleles[ 0 ][ i ] ){  // matches first allele
+          if (rowvec[ (2*i ) ] == alleles0[ i ] ){  // matches first allele
                rowinfile[i] = '0';  // AA
           }  else {
                rowinfile[i] = '2';  // BB
@@ -815,8 +822,6 @@ bool  CreateASCIInospace(std::string fname, std::string asciifname, std::vector<
 long 
    colindx = 0;
 
-int 
-   genovec[dims[1]];
 
 
 
@@ -856,7 +861,13 @@ long
 
 
  // initializing input line 
- std::string rowinfile(dims[1], '0'); // s == "000000"
+// std::string rowinfile(dims[1], '0'); // s == "000000"
+
+ std::string* rowinfile = NULL;
+ rowinfile = new string  [ dims[1] ];
+ for(long i=0; i < dims[1]; i++)
+    rowinfile[i] = '0';
+
 
 
 while(getline(fileIN, line ))
@@ -1131,7 +1142,14 @@ if(mem_bytes < max_mem_in_bytes){
   MatrixXi Mt = M.transpose();
   
   // write out contents fo Mt to file (no spaces)a
-  std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
+ // std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
+ std::string* rowinfile = NULL;
+ rowinfile = new string  [ Mt.cols()  ];
+ for(long i=0; i < Mt.cols() ; i++)
+    rowinfile[i] = '0';
+
+
+
   for(long rowi=0; rowi<Mt.rows(); rowi++){
      for(long coli=0; coli<Mt.cols(); coli++){
          // fileOUT << Mt(rowi, coli);
@@ -1211,7 +1229,13 @@ if(mem_bytes < max_mem_in_bytes){
 
 
       // write out contents fo Mt to file (no spaces)a
-      std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
+ //     std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
+ std::string* rowinfile = NULL;
+ rowinfile = new string  [ Mt.cols() ];
+ for(long i=0; i < Mt.cols(); i++)
+    rowinfile[i] = '0';
+
+
       for(long rowi=0; rowi<Mt.rows(); rowi++){
          for(long coli=0; coli<Mt.cols(); coli++){
              // fileOUT << Mt(rowi, coli);
