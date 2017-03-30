@@ -13,34 +13,39 @@ vignette: >
 ```{r include = FALSE}
 library(Eagle)
 ```
-<font style="font-variant: small-caps"><center> <h1>Eagle V1.0</h1> </center></font>
-<font style="font-variant: small-caps"><center> <h2>Quick Start Guide</h2> </center></font>
-<center> <h4>Andrew W. George</h4> </center>
-<br><br>
+<font style="color:darkred; font-variant: small-caps"><center> <h1>Eagle 1.0</h1> </center>
+<center> <h1>Quick Start Guide</h1> </center></font>
+<font style="color:grey"> <center> <h3>Andrew W. George</h3> </center></font>
+<br>
 
+<font style="color:darkred"> <h1> Where to Start </h1></font>
+<font size="3"> As a starting point, we will assume that you have a current version of  [R](https://www.r-project.org/about.html) and that you have successful installed Eagle (see our InstallationGuide vignette for details). You have your marker data in one 
+file and your phenotypic data in a separate file. You may or may not have a map file. You are looking to use Eagle to find the regions of the genome that house genes that are influencing a trait of interest. You want to perform an association mapping analysis to find these regions. This guide will help you get started analysing your data with Eagle. </font>
 
-Our starting point in writing this guide is that you have a current version 
-of  [R](https://www.r-project.org/about.html)
- on your computer and that you have 
-managed to install the R package,  Eagle.
+<font style="color:darkred"> <h1> Marker Data Format </h1> </font>
 
-# Formats for the marker data
+<font size="3"> Eagle can handle the marker data in two different formats; as a  space separated
+[PLINK](https://www.cog-genomics.org/plink/1.9/) ped file or as a plain space separated ASCII text file. Missing 
+marker genotypes are allowed but ideally, would be imputed prior to analysis. 
 
-The marker data can either be in [PLINK](https://www.cog-genomics.org/plink/1.9/) ped format 
-
+An example of a PLINK file is as follows:
+ </font>
 ![optional caption text](images/QS_PLINK.jpg)
 
 
-or a plain space delimited text file. 
-
-
+<font size="3"> and an example the same marker data coded as a plain ASCII marker genotype file is:
 ![optional caption text](images/QS_plaintext.jpg)
 
+<font size="3"> Notice that neither file has column headings. Also, the genotype codes used in the plain ASCII file can be any alphanumeric value, as long as the same coding is used for all the loci. For example, we could have coded the snp genotypes 11, 12, and 22, or aa, ab, or bb, or even orange, apple, pear. The only restriction is that the plain ASCII file can  have only a single heterozygous class, i.e. we cannot have 12 and 21, or ab and ba. Eagle will terminate with an error otherwise. 
+</font>
 
-# Format for the phenotypic data
+<font style="color:darkred"> <h1> Phenotypic Data Format </h1> </font>
 
-The phenotypic data file is a plain, space delimited, text file with or without column headings
+<font size="3">The data file for the phenotypic data can be space separated or comma separate. The first row of the file can be the column headings. The file can contain data on multiple traits and fixed effects. Missing values, coded as `NA` is allowed for the traits
+and fixed effects. 
 
+An example of a phenotypic file is:
+<\font>
 
 
 ![optional caption text](images/QS_pheno.jpg)

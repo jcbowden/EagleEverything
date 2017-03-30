@@ -151,7 +151,7 @@ R CMD build Eagle
 exit 1
 
 
-R CMD check Eagle_1.0.0.tar.gz 
+ R CMD check Eagle_1.0.0.tar.gz 
 
 R CMD INSTALL Eagle -l ~/RLibs
 

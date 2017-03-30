@@ -182,6 +182,66 @@ std::vector <long>    ReshapeM_rcpp( CharacterVector  fnameM,
 
 // ---- code developed by Ryan
 
+char* mapFileFromDiscBlocked(const char * file_name, unsigned long &sizeUsed, unsigned long &sizeActual, unsigned long blockSize, unsigned long offset) {
+	// If set to true debugging information is displayed
+	// Otherwise these messages are suppressed
+	bool debugMsgs = true;
+
+	// Read file size and system page file size
+	int pagesize = getpagesize();
+
+	// Open file descriptor for given file name
+	// Read-only permission
+	int fd;
+
+	// Open file and get file descriptor
+	try {
+		fd = open (file_name, O_RDONLY);
+		// File descriptor returned as -1 if file cannot be opened
+		if ( -1 == fd) throw "File could not be opened for reading";
+	}
+	catch (const char* msg) {
+		cout << "ERROR: " << msg << endl;
+		exit(-1);
+	}
+
+	// Round up file size to next multiple
+	// of system page size;
+	sizeActual = blockSize;
+	sizeUsed = sizeActual + (pagesize - (sizeActual % pagesize));
+	// if (debugMsgs) printf("Memory used to map file: %2.5f Mbytes\n", sizeUsed/1024/1024);
+
+	// Memory mapped data file
+	char *fileMemMap;
+
+	// Map file to memory using mmap() system function
+	// File may now be treated as a character array in memory
+	// Syntax:
+	// 		void *mmap(void *addr, size_t length,
+	//			  int prot, int flags, int fd, off_t offset);
+	// Permissions:
+	//		PROT_READ: Pages in memory only allow read-only operations
+	//		MAP_PRIVATE: Changes not visible to other processes
+	//					 Underlying file is no altered
+
+	// cout << "Page Size " << pagesize << endl;
+	// cout << "Size Used " << sizeUsed << endl;
+	// cout << "Size Actual " << sizeActual << endl;
+
+	fileMemMap = (char *) mmap (0, sizeUsed, PROT_READ, MAP_PRIVATE, fd, offset);
+
+	//if (madvise(fileMemMap, sizeUsed-1024, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
+	//	cout << "madvise error" << endl;
+	//	return NULL;
+	//}
+
+	// Close the file descriptor
+	// Frees resources associated with the file descriptor
+	close(fd);
+
+	return fileMemMap;
+}
+
 char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned long &sizeActual, Function message) {
 	// If set to true debugging information is displayed
 	// Otherwise these messages are suppressed
@@ -279,8 +339,12 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 
 
 	// char outputBuffer[bufferSize];
-        char* outputBuffer = NULL;
-        outputBuffer = new char[bufferSize];
+//        char* outputBuffer = NULL;
+//        outputBuffer = new char[bufferSize];
+
+std::vector<char> outputBuffer (bufferSize);  // allocated on stack, with a data buffer that is probably on the heap
+ 
+
 	int inc = 0;
 
 	// Output file
@@ -308,9 +372,7 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 	}
 
 	int slidingInc = 0;
-	// char windowBuffer[maxLenGen];
-        char* windowBuffer = NULL;
-        windowBuffer = new char[maxLenGen];
+	 char windowBuffer[maxLenGen];
 
 
         if (quiet > 0){
@@ -386,7 +448,8 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 		if ( inc >= bufferSize)
 		{
 			// Write buffer to file on disk
-	                fwrite (outputBuffer , sizeof(char), sizeof(outputBuffer), outputFile);
+                        for(long ii=0; ii < outputBuffer.size(); ii++)
+	                   fwrite (&outputBuffer[ii] , sizeof(char), 1 , outputFile);
 			//cout << inc << endl;
 			// Reset buffer index
 			inc = 0;
@@ -395,17 +458,13 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 
 	// Writing remaining data in output buffer to output file
 
-
-        fwrite (outputBuffer , sizeof(char), inc, outputFile);
+        for(long ii=0; ii < inc; ii++)
+          fwrite (&outputBuffer[ii] , sizeof(char), 1 , outputFile);
 
 	// No longer need to use memory mapped file, release it
 	munmap(dataFile, sizeUsed);
 
-   delete [] outputBuffer;  // When done, free memory pointed to by a.
-   outputBuffer = NULL;     // Clear a to prevent using invalid memory reference.
 
-   delete [] windowBuffer;  // When done, free memory pointed to by a.
-   windowBuffer = NULL;     // Clear a to prevent using invalid memory reference.
 
   // write out a few lines of the file if quiet
 //  if(quiet > 0){
@@ -573,11 +632,12 @@ int
 
 
 // char alleles [ 2 ][ n_of_cols_in_geno ];  // holds alleles  
-char* alleles0 = NULL;
-      alleles0 = new char[ n_of_cols_in_geno ];
-char* alleles1 = NULL;
-      alleles1 = new char[ n_of_cols_in_geno ];
-
+//char* alleles0 = NULL;
+//      alleles0 = new char[ n_of_cols_in_geno ];
+//char* alleles1 = NULL;
+//      alleles1 = new char[ n_of_cols_in_geno ];
+std::vector<char> alleles0( n_of_cols_in_geno );
+std::vector<char> alleles1( n_of_cols_in_geno );
 
 
 std::vector<char>
@@ -863,8 +923,12 @@ long
  // initializing input line 
 // std::string rowinfile(dims[1], '0'); // s == "000000"
 
- std::string* rowinfile = NULL;
- rowinfile = new string  [ dims[1] ];
+ // std::string* rowinfile = NULL;
+ // rowinfile = new string  [ dims[1] ];
+
+std::vector<char> rowinfile( dims[1] );
+
+
  for(long i=0; i < dims[1]; i++)
     rowinfile[i] = '0';
 
@@ -924,8 +988,9 @@ while(getline(fileIN, line ))
              return false;
        }  // end if number_of_columns
   } // end if quiet
-
-  fileOUT << rowinfile;
+  for(long ii=0; ii< number_of_columns; ii++){
+     fileOUT << rowinfile[ii];
+  }
   fileOUT << "\n";
   counter++;
 
@@ -983,6 +1048,93 @@ fileIN.close();
 
 
 
+
+
+// Ryan's ReadBlock code which uses mmap() system call
+// Not fully tested, use with caution
+Eigen::MatrixXd  ReadBlockFast(std::string asciifname,
+		long start_row,
+		long numcols,
+		long numrows_in_block) {
+
+	// Start settable parameters
+	const unsigned long long maxMemory = 16ull*1024*1024*1024; // Mbytes
+	// End settable parameters
+
+	int pagesize = getpagesize();
+	unsigned long sizeUsed = 0;
+	unsigned long sizeActual = 0;
+
+	// Used for offseting to a newline from a loaded block
+	unsigned long realPos = (start_row)*(numcols+1);
+	unsigned long allignedPos = realPos - (realPos % pagesize);
+	unsigned long offsetCol = (realPos - allignedPos) % numcols;
+	unsigned long offsetRow = floor((realPos - allignedPos) / numcols);
+
+	// Debugging information
+	/*cout << "NUM COLS: " << numcols << endl;
+	/cout << "NUM ROWS: " << numrows_in_block << endl;
+	cout << "REAL: " << realPos << endl;
+	cout << "ALLIGNED: " << allignedPos << endl;
+	cout << "Offset Col: " << offsetCol << endl;
+	cout << "Offset Row: " << offsetRow << endl;
+	cout << "Eigen Dimensions: (" << numrows_in_block << ", " << numcols << ")" << endl;
+	cout << "Starting Point: " << offsetRow*(numcols) + offsetCol << endl;
+	cout << "To Read: " << numrows_in_block * (numcols+1) << endl;
+	*/
+
+	// Eigen matrix to store block of data in
+	Eigen::MatrixXd M(numrows_in_block, numcols) ;
+
+	// Offset point to start reading mapped file from
+	unsigned long startingPoint = offsetRow*(numcols) + offsetCol;
+
+	// Memory required to read block of data
+	unsigned long long requiredMemory = startingPoint + ( numrows_in_block*(numcols+1)) * 8; // bytes
+
+	// Memory usage check
+	if (requiredMemory <= maxMemory) {
+
+		// Memory map file
+		char* dataFile = mapFileFromDiscBlocked(asciifname.c_str(), sizeUsed, sizeActual, requiredMemory, allignedPos);
+
+		// Used to load through the mapped file
+		unsigned long rowInc = 0;
+		unsigned long colInc = 0;
+
+		// Loop through file data, reads data in as column major (Default for Eigen)
+		for (unsigned int i = 0; i < numrows_in_block * (numcols+1); i++) {
+			// If newline character is encountered
+			if ( dataFile[startingPoint+i] == '\n') {
+				colInc++;
+				rowInc = 0;
+			} else {
+				// Read value from data file and convert to number format and subtract one
+				// 0 -> -1, 1 -> 0, 2 -> 1 as per original ReadBlock code
+				signed int value = (dataFile[startingPoint+i]  - '0') - 1;
+
+				// Store value in Eigen matrix
+				M(colInc,rowInc) = value;
+
+				// Used for debugging purposes
+				// cout << "Row: " << rowInc << " :: " << "Col: " << colInc << " :: " << value << endl;
+
+				rowInc++;
+			}
+
+		}
+
+		// Done using memory mapped file, release it
+		munmap(dataFile, sizeUsed);
+
+	} else {
+		cout << "ERROR: Insufficent memory allocated to reading block of data." << endl;
+		cout << "Required: " << requiredMemory/1024/1024/1024 << endl;
+		exit(1);
+	}
+
+	return M;
+}
 
 
 
@@ -1143,8 +1295,10 @@ if(mem_bytes < max_mem_in_bytes){
   
   // write out contents fo Mt to file (no spaces)a
  // std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
- std::string* rowinfile = NULL;
- rowinfile = new string  [ Mt.cols()  ];
+ // std::string* rowinfile = NULL;
+ // rowinfile = new string  [ Mt.cols()  ];
+
+ std::vector<char> rowinfile( Mt.cols() );
  for(long i=0; i < Mt.cols() ; i++)
     rowinfile[i] = '0';
 
@@ -1155,7 +1309,10 @@ if(mem_bytes < max_mem_in_bytes){
          // fileOUT << Mt(rowi, coli);
         rowinfile[coli] =  Mt(rowi, coli) + '0'; // forming string row before writing to file
      } 
-     fileOUT << rowinfile; // writing entire row of data
+ for(long ii=0; ii< Mt.cols() ; ii++){
+     fileOUT << rowinfile[ii];
+  }
+
      fileOUT << "\n";
   }
  
@@ -1230,8 +1387,11 @@ if(mem_bytes < max_mem_in_bytes){
 
       // write out contents fo Mt to file (no spaces)a
  //     std::string rowinfile(Mt.cols(), '0');  // initialising string with 0's
- std::string* rowinfile = NULL;
- rowinfile = new string  [ Mt.cols() ];
+// std::string* rowinfile = NULL;
+// rowinfile = new string  [ Mt.cols() ];
+std::vector<char> rowinfile( Mt.cols() ) ;
+
+
  for(long i=0; i < Mt.cols(); i++)
     rowinfile[i] = '0';
 
@@ -1241,7 +1401,8 @@ if(mem_bytes < max_mem_in_bytes){
              // fileOUT << Mt(rowi, coli);
             rowinfile[coli] =  Mt(rowi, coli) + '0'; // forming string row before writing to file
          }
-         fileOUT << rowinfile; // writing entire row of data
+         for(long ii=0; ii < Mt.cols(); ii++)
+            fileOUT << rowinfile[ii]; // writing entire row of data
          fileOUT << "\n";
       }
 
@@ -1544,7 +1705,6 @@ std::clock_t    start;
 
     ans.noalias() =   Mt  * ans_part1; 
 
-
    
 
 
@@ -1573,7 +1733,7 @@ std::clock_t    start;
 
   // Added 26 April
   long i;
-  #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
+//  #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
   for(i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
@@ -1684,7 +1844,7 @@ std::clock_t    start;
 
    //    var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
            // Added 26 April
-            #pragma omp parallel for
+//            #pragma omp parallel for
             for(long j=0; j < num_rows_in_block1; j++){
                       var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
             }
@@ -1793,7 +1953,8 @@ double
                  return false;
        } else {
            message(" loop mmap new");
-          bool it_worked =  CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+            bool it_worked =  CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+          //  bool it_worked =  CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
           if (!it_worked) // an error has occurred in forming ascii file
                  return false;
        } 
@@ -2089,5 +2250,49 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 }
 
 
+
+
+
+unsigned long getNumColumns(std::string fname) {
+	unsigned long numcols = 0;
+
+	string line;
+
+	std::ifstream fileIN(fname.c_str());
+
+	getline(fileIN, line);
+	istringstream streamA(line);
+
+	string token;
+
+	numcols = line.length();
+
+	return numcols;
+
+}
+
+unsigned long getNumRows(std::string fname) {
+	unsigned long numrows = 0;
+
+	string line;
+
+	std::ifstream fileIN(fname.c_str());
+
+	istringstream streamA(line);
+
+	// Determine number of columns in file
+	fileIN.clear(); // returns to beginning of line
+	fileIN.seekg(0, ios::beg);
+
+	// Determine number of rows in file
+		while(fileIN.good()){
+			while(getline(fileIN, line )){
+				numrows++;
+			}
+		}
+
+	return numrows;
+
+}
 
 

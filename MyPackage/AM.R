@@ -323,7 +323,11 @@ if(length(indx) > 0)
     if (quiet > 0) 
         message(" quiet = ", quiet, ": beginning calculation of  outlier test statistics. \n")
     tsq <- a_and_vara[["a"]]**2/a_and_vara[["vara"]]
+ #   print(a_and_vara[["a"]][1:10])
+ #   print(a_and_vara[["vara"]][1:10])
+
     doquiet(dat=tsq, num_markers=quiet, lab="outlier test statistic")
+
 
     indx <- which(tsq == max(tsq, na.rm=TRUE))   ## index of largest test statistic. However, need to account for other loci 
                                          ## already having been removed from M which affects the indexing
@@ -621,8 +625,10 @@ AM <- function(trait=NULL,
 
 
  ## Turn fformula  into class formula with some checks
+if(!is.null(fformula)){
  if(fformula=="")  ## added for shiny
       fformula<-NULL
+ }
  if(!is.null(fformula) ){
    if(length(grep("~", fformula))==0){
       if(length(fformula)==1){
