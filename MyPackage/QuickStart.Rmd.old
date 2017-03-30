@@ -1,0 +1,145 @@
+---
+title: "Quick Start Guide"
+output: 
+    rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quick Start Guide}
+  %\VignetteEngine{knitr::knitr}
+  \usepackage[utf8]{inputenc}
+---
+
+
+
+```{r include = FALSE}
+library(Eagle)
+```
+<font style="font-variant: small-caps"><center> <h1>Eagle V1.0</h1> </center></font>
+<font style="font-variant: small-caps"><center> <h2>Quick Start Guide</h2> </center></font>
+<center> <h4>Andrew W. George</h4> </center>
+<br><br>
+
+
+Our starting point in writing this guide is that you have a current version 
+of  [R](https://www.r-project.org/about.html)
+ on your computer and that you have 
+managed to install the R package,  Eagle.
+
+# Formats for the marker data
+
+The marker data can either be in [PLINK](https://www.cog-genomics.org/plink/1.9/) ped format 
+
+
+
+```{r, out.width = "800px", echo=FALSE}
+knitr::include_graphics("images/QS_PLINK.jpg")
+```
+
+
+or a plain space delimited text file. 
+
+```{r, out.width = "800px", echo=FALSE}
+knitr::include_graphics("images/QS_plaintext.jpg")
+```
+# Format for the phenotypic data
+
+The phenotypic data file is a plain, space delimited, text file with or without column headings
+
+
+
+```{r, out.width = "800px", echo=FALSE}
+knitr::include_graphics("images/QS_pheno.jpg")
+```
+
+
+
+# How to load Eagle
+
+Eagle is an R package that is best run from an interactive session in R. Once an interactive R session has been opened, type the following command
+
+```{r eval=FALSE}
+library("Eagle")
+```
+
+This loads the Eagle package into the R session, making all the Eagle functions available to the user. 
+
+
+# Running Eagle via the Web App
+
+The easiest way to perform an analysis with Eagle is via our web application. At the R command prompt, 
+just type
+
+```{r eval=FALSE}
+RunApp()
+```
+which will open your web browser to the following 
+
+```{r, out.width = "400px", echo=FALSE}
+knitr::include_graphics("images/QS_home.png")
+```
+
+The menu items at the top of the page can then be used to read in the marker data, read in the
+phenotypic data, read in a marker map if known, and perform the analysis. 
+
+```{r, out.width = "1000px", echo=FALSE}
+knitr::include_graphics("images/QS_shinypages.jpg")
+```
+
+# Running Eagle from the R prompt
+
+Here, we will present the Eagle functions 
+for reading in the data, performing an analysis, and 
+summarizing the results. 
+
+## Reading in marker data
+The Eagle function for reading in marker data is `ReadMarker`. 
+It can be used in three ways:
+
+1. for a quick load. If the marker data has been loaded in a previous Eagle session, and you are running R from the same directory as your previous Eagle session, then a quick load is possible.  
+2. for reading a text file containing marker genotypes.
+3. for reading a PLINK ped file
+
+
+
+```{r, out.width = "1000px", echo=FALSE}
+knitr::include_graphics("images/QS_ReadMarker.jpg")
+```
+
+## Reading in phenotypic data
+
+The Eagle function for reading in the phenotypic data is `ReadPheno`. It accepts 
+space or comma separated data. The first row of the file can contain column names. 
+
+```{r, out.width = "1000px", echo=FALSE}
+knitr::include_graphics("images/QS_ReadPheno.jpg")
+```
+
+## Reading in map data
+
+The Eagle function for reading in a marker map is 'ReadMap'. 
+Eagle does not require a marker map for association mapping. However,
+a marker map can be useful for interpreting results. 
+
+```{r, out.width = "1000px", echo=FALSE}
+knitr::include_graphics("images/QS_ReadMap.jpg")
+```
+## Analysing data 
+
+The function for performing genome-wide association mapping of data 
+under a multiple-locus model is `AM`. 
+
+```{r, out.width = "1000px", echo=FALSE}
+knitr::include_graphics("images/QS_AM.jpg")
+```
+
+## Summarizing the findings
+
+Once `AM` has been run, a summary of the results can be obtained by running 
+`SummaryAM`. 
+
+
+```{r, out.width = "1000px", echo=FALSE}
+knitr::include_graphics("images/QS_SummaryAM.jpg")
+```
+
+
+
