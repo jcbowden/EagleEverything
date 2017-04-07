@@ -314,7 +314,8 @@ bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vec
 		std::string BB,
 		bool csv,
 		int quiet, 
-                Function message)
+                Function message, 
+                string missing)
 {
 
 	// Used to store size of memory used for mapping file
@@ -417,6 +418,10 @@ std::vector<char> outputBuffer (bufferSize);  // allocated on stack, with a data
 					// cout << "BB Found" << endl;
 					outputBuffer[inc] = '2';
 					inc++;
+                               } else if ( missing == windowBuffer ) {
+                                   // setting any missing values to het code
+                                        outputBuffer[inc] = '1';
+                                        inc++;
 				} else {
                                     std::string str(windowBuffer);
                                     if (AB=="NA"){
@@ -876,7 +881,8 @@ bool  CreateASCIInospace(std::string fname, std::string asciifname, std::vector<
                          std::string BB,
                          bool csv, 
                          int  quiet, 
-                         Function message)
+                         Function message, 
+                         string missing)
 {
 
 long 
@@ -959,6 +965,9 @@ while(getline(fileIN, line ))
              rowinfile[i] = '1';
         } else if (token == AA) {
              rowinfile[i] = '0';
+        } else if (token == missing){
+            // setting any missing genotypes to hets
+             rowinfile[i] = '1'; 
         } else {
           if (AB=="NA"){
               message( "Marker file contains marker genotypes that are different to AA=" , AA , " BB=" , BB);
@@ -1888,7 +1897,8 @@ bool  createM_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii,
                   double  max_memory_in_Gbytes,  std::vector <long> dims,
                   bool csv, 
                   int quiet,
-                  Function message) 
+                  Function message, 
+                  string missing) 
 {
   // Rcpp function to create space-removed ASCII file from ASCII and PLINK input files
 
@@ -1948,12 +1958,12 @@ double
 
        if ( 1.5 * memory_needed_in_Gb   > max_memory_in_Gbytes){
            message(" loop old ");
-           bool it_worked = CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+           bool it_worked = CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message, missing);
            if (!it_worked) // an error has occurred in forming ascii file
                  return false;
        } else {
            message(" loop mmap new");
-            bool it_worked =  CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
+            bool it_worked =  CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message, missing);
           //  bool it_worked =  CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message);
           if (!it_worked) // an error has occurred in forming ascii file
                  return false;

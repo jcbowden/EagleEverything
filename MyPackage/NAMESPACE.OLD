@@ -3,7 +3,7 @@ importFrom(Rcpp, evalCpp)
 importFrom(parallel, detectCores)
 importFrom(matrixcalc, is.positive.definite)
 #import(shiny, RcppEigen,  matrixcalc, Matrix, data.table )
-import(shiny, RcppEigen  )
+import(shiny, RcppEigen, shinythemes, shinyBS, shinyjs  )
 
 
 export(

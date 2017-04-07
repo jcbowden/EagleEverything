@@ -1355,7 +1355,7 @@ return(map)
 
 
 create.ascii  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB=NULL, 
-                         availmemGb=8, dim_of_ascii_M=NULL, csv=FALSE, quiet=FALSE){
+                         availmemGb=8, dim_of_ascii_M=NULL, csv=FALSE, quiet=FALSE, missing=NULL){
  ## an Rcpp function to create the no-space file of the genotype data M and Mt
  ## from marker data. The marker data may be from an ASCII file or PLINK ped file.
  ## Args
@@ -1364,15 +1364,28 @@ create.ascii  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB
  ## availmemGb     available memory for converstion to packed binary
  ## dim_of_ascii_M             row, column dimensions of M.  
  ## type            where file type is text or PLINK
- asciiMfile <- fullpath("M.ascii")
- asciiMtfile <- fullpath("Mt.ascii")
+ #asciiMfile <- fullpath("M.ascii")
+ #asciiMtfile <- fullpath("Mt.ascii")
+ if(.Platform$OS.type == "unix") {
+       asciiMfile <- paste(dirname(file_genotype), "/", "M.ascii", sep="")
+       asciiMtfile <- paste(dirname(file_genotype), "/", "Mt.ascii", sep="")
+ } else {
+       asciiMfile <- paste(dirname(file_genotype), "\\", "M.ascii", sep="")
+       asciiMtfile <- paste(dirname(file_genotype), "\\", "Mt.ascii", sep="")
+ }
+
 
 
 if (type=="text"){
     ## text genotype file
+    if(!is.null(missing)) {
+        missing <- as.character(missing)
+    } else {
+      missing <- "NA"
+    }
     it_worked <- createM_ASCII_rcpp(f_name = file_genotype, type=type ,  f_name_ascii = asciiMfile, AA = AA, AB = AB, BB = BB,
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv = csv,
-               quiet = quiet, message=message)
+               quiet = quiet, message=message, missing=missing)
     if(!it_worked) #  creation of ASCII file has failed 
        return(FALSE)
  
@@ -1385,7 +1398,7 @@ if (type=="text"){
     dim_of_ascii_M[2] <- 2*dim_of_ascii_M[2] + 6  ## number of cols in a PLINK file
     createM_ASCII_rcpp(f_name = file_genotype, type=type,  f_name_ascii = asciiMfile, AA ="-9", AB = "-9", BB = "-9",
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv=csv, quiet = quiet,   
-               message=message)
+               message=message, missing="NA")
 
     dim_of_ascii_M[2] <- ncol ## setting back to number of cols in no-space ASCII file
     createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,   
@@ -1406,6 +1419,7 @@ if (type=="text"){
 #' A function for reading in marker data. Three different types of data can be read. 
 #' @param filename contains the name of the marker  file. The file name needs to be in quotes. 
 #' @param type  specify the type of file. Choices are "text" and "PLINK".
+#' @param missing the number or character for a missing genotype in the text file. 
 #' @param AA     the character(s) or number corresponding to the AA genotype in the marker genotype file. 
 #' This must be specified if the file type is "text".  The character(s) must be in quotes.
 #' @param AB     the  character(s) or number  corresponding to the AB genotype in the marker genotype file. This can be left unspecified 
@@ -1454,6 +1468,7 @@ if (type=="text"){
 #' We make the following assumptions
 #' \itemize{
 #' \item{The text file does not contain row or column headings}
+#' \item{The file is allowed to contain missing genotypes that have been coded according to \code{missing}}
 #' \item{Individuals are diploid}
 #' \item{The rows of the text file are the individuals and the columns are the marker loci}
 #' \item{The file is either space or comma separated}
@@ -1544,21 +1559,6 @@ if (type=="text"){
 #'}
 #'
 #'
-#' \subsection{Dealing with missing marker data}{
-#'
-#' In running \code{\link{AM}}, we assume there are no missing marker genotypes. 
-#' In fact, \code{ReadMarker} will generate errors if there are missing marker data.  
-#' However, most genome-wide data sets have missing genotypes (sometimes by design).  
-#' Ideally, a genotype imutation program such as  BEAGLE, MACH, fastPHASE, or PHASE2, should be 
-#' used to impute the missing marker data. 
-#'
-#'
-#' Alternately, for quick results, remove those loci with a high proportion of missing data (> 10\%) 
-#' and  replace the remaining missing marker genotypes with  heterozygote genotypes. 
-#' Since we assume an additive model in \code{AM}, this will not cause false positives but it 
-#' can reduce power. We found though that the loss in  power is minimal if the 
-#' proportion of missing data is low.  See  George and Cavanagh (2015) for details.  
-#' }
 #'
 #' @return  To allow \code{\link{AM}} to handle data larger than the memory capacity of a machine, \code{ReadMarker} doesn't load 
 #' the marker data into memory. Instead, it creates a packed binary file of the marker data and its transpose. The object returned by
@@ -1611,7 +1611,7 @@ if (type=="text"){
 #'   print(geno_obj)
 #'
 #'
-ReadMarker <- function( filename=NULL, type="text",
+ReadMarker <- function( filename=NULL, type="text", missing=NULL,
                            AA=NULL, AB=NULL, BB=NULL, 
                            availmemGb=8, 
                            csv = FALSE,
@@ -1693,8 +1693,19 @@ ReadMarker <- function( filename=NULL, type="text",
        it_worked <- create.ascii(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M,  quiet=quiet  )
        if(!it_worked)
            return(NULL) 
-       asciifileM <- fullpath("M.ascii")
-       asciifileMt <- fullpath("Mt.ascii")
+# prompted by issues with ubuntu and file permissions with shiny and shiny being run from install library
+#       asciifileM <- fullpath("M.ascii")
+#       asciifileMt <- fullpath("Mt.ascii")
+
+    if(.Platform$OS.type == "unix") {
+       asciifileM <- paste(dirname(filename), "/", "M.ascii", sep="")
+       asciifileMt <- paste(dirname(filename), "/", "Mt.ascii", sep="")
+     } else {
+       asciifileM <- paste(dirname(filename), "\\", "M.ascii", sep="")
+       asciifileMt <- paste(dirname(filename), "\\", "Mt.ascii", sep="")
+     }
+
+
 
 
    }  else {
@@ -1732,20 +1743,40 @@ ReadMarker <- function( filename=NULL, type="text",
   ## Rcpp function to create ascii  M and Mt file from 
 
   it_worked <- create.ascii(file_genotype=genofile, type=type, AA=as.character(AA), AB=as.character(AB), BB=as.character(BB), 
-              availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M, csv=csv, quiet=quiet  )
+              availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M, csv=csv, quiet=quiet, missing=missing  )
     if(!it_worked)   ## error has occurred. 
        return(NULL)
 
-    asciifileM <- fullpath("M.ascii")
-    asciifileMt <- fullpath("Mt.ascii")
+  #  causing issues with shiny on VB on ubuntu
+  #  asciifileM <- fullpath("M.ascii")
+  #  asciifileMt <- fullpath("Mt.ascii")
+
+
+     if(.Platform$OS.type == "unix") {
+       asciifileM <- paste(dirname(filename), "/", "M.ascii", sep="")
+       asciifileMt <- paste(dirname(filename), "/", "Mt.ascii", sep="")
+     } else {
+       asciifileM <- paste(dirname(filename), "\\", "M.ascii", sep="")
+       asciifileMt <- paste(dirname(filename), "\\", "Mt.ascii", sep="")
+     }
+
 
  
   }  ## end if else nargs()==1  (PLINK case)
 
-
   geno <- list("asciifileM"=asciifileM, "asciifileMt"=asciifileMt,
                "dim_of_ascii_M" = dim_of_ascii_M)
-  save(geno, file="M.RData")
+
+  if(.Platform$OS.type == "unix") {
+       RDatafile <- paste(dirname(filename), "/", "M.RData", sep="")
+  } else {
+       RDatafile <- paste(dirname(filename), "\\", "M.RData", sep="")
+  }
+
+
+
+
+  save(geno, file=RDatafile)
   ## create M.Rdata file in current directory
   return(geno)
 

@@ -1,5 +1,6 @@
 #!/bin/bash
-module load pandoc/1.12.3
+module load pandoc
+export RSTUDIO_PANDOC=$PANDOC_HOME
 
 
 ## bash script to build Eagle package 
@@ -120,9 +121,9 @@ cp /home/geo047/ShinyApp/css.css /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/s
 cp /home/geo047/ShinyApp/www/images/*banner* /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
 cp /home/geo047/ShinyApp/www/images/logo.jpg /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
 
-cp /home/geo047/ShinyApp/www/images/pipeline.png /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
-cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.jpg ./Eagle/vignettes/images
-cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.png ./Eagle/vignettes/images
+cp /home/geo047/ShinyApp/www/images/pipeline.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+#cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.jpg ./Eagle/vignettes/images
+#cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.png ./Eagle/vignettes/images
 
 
 
@@ -130,9 +131,13 @@ cp  /home/geo047/ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eag
 
 
 
-R CMD Sweave ./Install.Rmd
-R CMD Sweave ./QuickStart.Rmd
+R CMD BATCH   ./QuickStart.me
+
+#exit -1
+
+
 R CMD Sweave ./UserManual.Rmd
+R CMD Sweave ./Install.Rmd
 cp Install.html ./Eagle/inst/doc/.
 cp ./Install.Rmd ./Eagle/vignettes/.
 cp QuickStart.html ./Eagle/inst/doc/.
@@ -148,10 +153,9 @@ rm ./Eagle/.RData
 
 R CMD build Eagle 
 
-exit 1
 
 
- R CMD check Eagle_1.0.0.tar.gz 
+ R CMD check --as-cran Eagle_1.0.0.tar.gz 
 
 R CMD INSTALL Eagle -l ~/RLibs
 

@@ -41,7 +41,7 @@ install.packages("Eagle_1.0.0.0.tar.gz", repos=NULL)
 Notes - Ubuntu 
 29/03/17
 R CMD INSTALL Eagle_1.0.0.tar.gz on virgin R system failed due to dependencies 
-   Rcpp, RcppEigen, shiny, matrixcal
+   Rcpp, RcppEigen, shiny, matrixcal, shinythemes
 
 Now failing due to mkl.h not being found
  - I've changed ./build pipeline to remove mention of mkl by removing Makevars.gpu
@@ -61,28 +61,13 @@ outputBuffer = new char[bufferSize];
 
 
 
+## how to generate html code 
 
-
-
-
-
-
-
-
-There are a couple of different ways in which Eagle can be installed, depending upon your operating 
-system. 
-
-
-## Linux
-
-
-## Windows
-
-
-## Mac
-
-
-
+1. module load pandoc
+2. export RSTUDIO_PANDOC=$PANDOC_HOME
+3. R
+4. load(rmarkdown)
+5. run render("QuickStart.Rmd")   ## this allows you to use different style themes. 
 
 
 
