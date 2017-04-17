@@ -10,7 +10,7 @@ output:
 vignette: >
   %\VignetteIndexEntry{Quick Start Guide}
   %\VignetteEngine{knitr::knitr}
-  \usepackage[utf8]{inputenc}
+  %\usepackage[utf8]{inputenc}
 ---
 <head>
 <meta charset=utf-8>
@@ -31,14 +31,11 @@ vignette: >
 </div>
 <div class=content>
 <div class=main>
-<h1><b> Some Background on the Methods</b> </h1>
+<h1><b> Some Background </b> </h1>
 <p>
-Eagle is a software package for genome-wide association mapping in populations of arbitary structure. The 
-population may be of plants, animals, or humans. Our association mapping method is based on linear mixed 
-models. As such, it is best suited to the analysis of data from quantitative/continuous traits. However, 
-linear mixed models are robust, and we have had success in also analysing data from disease/binary traits. 
-Our association mapping method differs from most other methods in that we do not test each marker-trait association separately. Instead, we construct a model that fits all marker-trait associations simultaneously and identifies the "best" set of loci in strongest association with a trait. 
-
+Eagle is a software package for genome-wide association mapping in animal, plant, or human populations of arbitary structure.  Our method differs from most other association mapping methods in that we fit all 
+marker-trait associations simultaneously, while still identifying the "best" set of marker loci in 
+strongest association with a trait.  Our method is threshold free.  
 
 
 <h1><b> Getting Started </b> </h1>
@@ -77,222 +74,92 @@ To read in your marker data into Eagle, begin by clicking on the  <mark>Read Gen
 </p>
 <p>
 Eagle can handle two types of file; a plain text file containing the marker genotypes and a PLINK ped file. 
+Missing data is allowed in either file type.  
 </p>
 
 <h2>Reading in a PLINK ped file</h2>
-<ul>
-<li><p>Step 1: leave the file type set to PLINK</p></li>
-<p>
-<img class=img-responsive src="images/ReadMarkerScreen_PLINK_Step1.jpg" alt="" style="width:60%;height:60%";>
+
+<p> To read in a PLINK ped file, set the text type to "PLINK", set the available memory, click on "Select File" 
+to open a file browser and select the marker file, and click on "Upload file" to begin reading the file. 
+As the file is being read, output from running the R function will appear on the left hand side of the page, 
+along with a loading animation. Once the file has finished being read, the loading animation will disappear.
+</p>
 
 
-<li>Step 2: set the amount of available memory in Gbytes. For large files, performance improves with increased memory.
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/ReadMarkerScreen_PLINK.jpg")
+```
 
-<img class=img-responsive src="images/ReadMarkerScreen_PLINK_Step2.jpg" alt="" style="width:60%;height:60%";>
 
-<li>Step 3: select the file containing the marker data.
-
-<img class=img-responsive src="images/ReadMarkerScreen_PLINK_Step3.jpg" alt="" style="width:60%;height:60%";>
-
-<li>Step 4: click the <mark>Upload file</mark> button to read in the marker data into Eagle. 
-
-<img class=img-responsive src="images/ReadMarkerScreen_PLINK_Step4.jpg" alt="" style="width:60%;height:60%";>
-</ul>
 <h2>Reading in a text file</h2>
 
-Eagle can also handle marker data in a plain text file. Here the rows are the individuals and the columns 
-are the marker loci.   The individuals can be outbred or inbred. If outbred, then the data contains 
-three different genotypes, which Eagle codes as AA, AB, and BB. 
-Note that we do not distingiush between AB and BA.  If 
-the individuals are inbred, then the data contains two marker genotypes which Eagle codes as AA and BB. 
-Any alphanumeric value is allowed to be used to represent genotypes AA, AB, and BB. The only requirement 
-is that the alphanumeric values that correspond to AA, AB, and BB do not change across loci. 
+Eagle can also handle marker data in a plain text file where the file contains marker genotypes. 
+Here, if it is a  population of outbred individuals, the file is assumed to contain three marker genotypes 
+AA, AB, and BB. These three genotypes can be coded as any alphanumeric value, as long as the coding is 
+consistent across all loci. For inbred populations, the marker file is assumed to contain two 
+marker genotypes AA and BB. See the UserManual for details. 
 
 
-To read in a text file, in Step 1, the file type is set to "text". In doing so, the page changes to 
-allow entry of the alphanumeric values in the marker file that correspond to marker genotypes AA, AB, and 
-BB.
-
-<img class=img-responsive src="images/ReadMarkerScreen_plain_Step1.jpg" alt="" style="width:60%;height:60%";>
-
-The remaining steps are the same as there are for reading in a PLINK file as described above. 
-
-<h1><b> Reading in the Phenotypic Data </b></h1>
-
-Click on the <mark>Read Phenotype</mark> tab in the navigation bar at the top of the page. This will 
-open the page for reading in the phenotypic data. The phenotypic data are those data collected from 
-the individuals on one or more traits and any fixed effects (such as age, sex, etc).  
-The file is assumed to be a plain text file that 
-can be space or comma separated. The first row is allowed to contain column headings. 
-
-To read in the phenotypic file, there are four steps. 
-<img class=img-responsive src="images/ReadPhenoScreen.jpg" alt="" style="width:60%;height:60%";>
+The reading in of a text file is similar to reading in a PLINK ped file as described above. 
+The difference is in the first step. In Step 1, the file type is set to "text". 
+In doing so, the input section changes slightly to 
+allow entry of the alphanumeric values in the marker file that correspond to marker genotypes AA, AB,   
+BB, and the missing genotype. 
 
 
+<h1><b> Reading in the Phenotypic and Map Data </b></h1>
 
-
-
-
-
-
-
+<p>
+Reading in the phenotypic data (i.e., data on one or more traits and any fixed effects) and a 
+marker map is very similar to the above desribed process. We assume both the phenotypic file and map file 
+are either space or comma separated. There is the option for the first row to contain column names in 
+the phenotypic file. Click on the 
+<mark>Read Phenotype</mark> or <mark>Read Map</mark> tab in the navigation bar at the top of the page. Work 
+through the steps, with the final step being the "Upload file" step. A loading animation will appear while the file is being read, and ouput is displayed on the right of the page. It is safe to move to another page when the 
+loading animation disappears. 
 </p>
-<h3>Ordered list</h3>
-<p>Ordered lists are used to markup lists where list items require numbering.</p>
-<ol>
-<li>Hendrerit in vulputate velit esse</li>
-<li>Olestie consequat</li>
-<li>Vel illum dolore eu feugiat</li>
-<li>Nulla facilisis at vero eros</li>
-<li>Accumsan et iusto odio</li>
-</ol>
-<hr>
-<h3>Unstyled list</h3>
-<p>You can make the list unstyled using the <code>list-unstyled</code> class.</p>
-<ul class=list-unstyled>
-<li>Ut wisi enim ad minim veniam</li>
-<li>Quis nostrud exerci tation</li>
-<li>Lamcorper suscipit lobortis nis</li>
-<li>Ut aliquip ex ea commodo consequat</li>
-<li>Duis autem vel eum iriure dolor</li>
-</ul>
-<hr>
-<h3>Inline list</h3>
-<p>You can make the list display inline using the <code>list-inline</code> class.</p>
-<ul class=list-inline>
-<li>One</li>
-<li>Two</li>
-<li>Three</li>
-<li>Four</li>
-</ul>
-<hr>
-<h3>Blockquotes</h3>
-<p>The blockquote element is used to markup long quotations. Ideally, content inside should be wrapped in paragraph elements.</p>
-<blockquote>
-<p>The real names of our people were destroyed during slavery. The last name of my forefathers was taken from them when they were brought to America and made slaves, and then the name of the slave master was given, which we refuse, we reject that name today and refuse it. I never acknowledge it whatsoever.</p>
-<footer><a href="http://en.wikipedia.org/wiki/Malcolm_X">Malcolm X</a></footer>
-</blockquote>
-<hr>
-<h3>Buttons</h3>
-<p>You can apply the <code>btn</code> class to any element that requires a button style.</p>
-<p><a href="#" class=btn>Submit</a></p>
-<hr>
-<h3>Tables</h3>
-<p>Tables should be given the class of <code>table</code>.</p>
-<table class="table table-striped">
-<thead>
-<tr>
-<th>#</th>
-<th>First Name</th>
-<th>Last Name</th>
-<th>Username</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th scope=row>1</th>
-<td>Mark</td>
-<td>Otto</td>
-<td>@mdo</td>
-</tr>
-<tr>
-<th scope=row>2</th>
-<td>Jacob</td>
-<td>Thornton</td>
-<td>@fat</td>
-</tr>
-<tr>
-<th scope=row>3</th>
-<td>Larry</td>
-<td>the Bird</td>
-<td>@twitter</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class=footer>
-&copy; Copyright 2015
-</div>
-</div>
 
+<h1><b> Analysing the Data </b></h1>
+To perform a genome-wide association mapping analysis of the data, click on the <mark>Analyse</mark> tab 
+in the navigation bar at the top of the page.  This will take you to the page for analysing your data. 
+How the page looks will be dependent, partially, on the data contained in your phenotypic file. However, 
+the five steps remain the same. First, choose the trait by selecting from the list of available  variables.  
+Second, select which variable are to act as fixed effects in the model, if any. 
+Third,  set the number of cpu available for distributed computing.  Fourth, 
+click on "Additional Options" if you would like to set the maximum number of iterations, 
+and/or have Eagle generate verbose output.  For most analyses, there shouldn't be any need to click on 
+"Additional Options".  The last step is to click on "Perform genome-wide analysis". As before, a 
+processing animation will appear and output will start being printed to the right of the page. Once the 
+analysis is complete, click on <mark>Findings</mark>. 
 
-
-# The Easy Way to Run Eagle
-<font size="3"> The easiest way to run Eagle is through our web application. 
-At the R prompt, just type 
-
-```{r eval=FALSE}
-RunApp()
+ 
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/AnalysisScreen.jpg")
 ```
-and the following will appear   </font>
-
- <figure>
-  <img src="images/QS_home.png" >
-  <figcaption>Figure 4: The home screen for our Eagle app.</figcaption>
-</figure>
-
-<font size="3"> Here, everything is remaining local to your computer. We are just using your web browser to run our app.   </font>
-
-<font size="3"> To enter your marker data, just click the Read Genotype menu item at the top of the screen and complete the form, with the Upload of the data the final step. 
 
 
+<h1><b> Findings </b></h1>
+To view the results, click on the <mark>Findings</mark> tab at the top of the page. On the right hand size 
+of the page, the "best" set of snp in strongest association with the trait are displayed in tabular form. 
+By clicking on the  button on the left hand side, additional summary results are displayed. 
 
 
-The menu items at the top of the page can then be used to read in the marker data, read in the
-phenotypic data, read in a marker map if known, and perform the analysis. 
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/FindingsScreen.jpg")
+```
 
-
-![optional caption text](images/QS_shinypages.jpg)
-
-
-# Running Eagle from the R prompt
-
-Here, we will present the Eagle functions 
-for reading in the data, performing an analysis, and 
-summarizing the results. 
-
-## Reading in marker data
-The Eagle function for reading in marker data is `ReadMarker`. 
-It can be used in three ways:
-
-1. for a quick load. If the marker data has been loaded in a previous Eagle session, and you are running R from the same directory as your previous Eagle session, then a quick load is possible.  
-2. for reading a text file containing marker genotypes.
-3. for reading a PLINK ped file
-
-![optional caption text](images/QS_ReadMarker.jpg)
-
-
-
-## Reading in phenotypic data
-
-The Eagle function for reading in the phenotypic data is `ReadPheno`. It accepts 
-space or comma separated data. The first row of the file can contain column names. 
-
-![optional caption text](images/QS_ReadPheno.jpg)
-
-## Reading in map data
-
-The Eagle function for reading in a marker map is 'ReadMap'. 
-Eagle does not require a marker map for association mapping. However,
-a marker map can be useful for interpreting results. 
-
-![optional caption text](images/QS_ReadMap.jpg)
-
-## Analysing data 
-
-The function for performing genome-wide association mapping of data 
-under a multiple-locus model is `AM`. 
-
-![optional caption text](images/QS_AM.jpg)
-
-## Summarizing the findings
-
-Once `AM` has been run, a summary of the results can be obtained by running 
-`SummaryAM`. 
-
-
-
-![optional caption text](images/QS_SummaryAM.jpg)
+<br>
+<hr>
+<h1><b>Where to Go for Help</b></h1>
+<ul>
+<li><p>The UI has built-in help. By hovering over any of the input widgets, a popup help box appears</p>  </li>
+<li><p> Detailed help is available on every page. Just hover the cursor over the <mark>Details</mark> bar and 
+a popup box with a detailed description will appear.</p></li>
+<li><p>At the top of any page is the <mark>Help</mark> tab. By clicking on this tab, a menu of items appears. 
+Frequently asked questions, and other documents such as a worked example can be accessed.</p>  </li>
+<li> <p>Youtube videos have been created on how to install Eagle, and how to perform a genome-wide analysis.
+</p> </ul>
+<li><p> Email your question to <code>eaglehelp@csiro.au</code> </p></li>
+</p>
 
 

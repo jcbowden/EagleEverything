@@ -354,14 +354,14 @@ emma.delta.ML.LL.wo.Z <- function (logdelta, lambda, etas, xi)
 
 emma.eigen.L.wo.Z <- function (K, ngpu=0) 
 {  
-    if(ngpu > 0){
-      if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
-         eig <- rcppMagmaSYEVD::eigen_mgpu(K, symmetric=TRUE)
-       }
+#    if(ngpu > 0){
+#      if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
+#         eig <- rcppMagmaSYEVD::eigen_mgpu(K, symmetric=TRUE)
+#       }
 
-     } else {
+#     } else {
       eig <- eigen(K, symmetric = TRUE)
-     }
+#     }
     return(list(values = eig$values, vectors = eig$vectors))
 }
 
@@ -372,13 +372,13 @@ emma.eigen.R.wo.Z <-  function (K, X, ngpu=0)
     dn <- diag(n)
     S <- dn - X %*% solve(crossprod(X, X)) %*% t(X)
     gc()
-    if(ngpu > 0){
-     if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
-       eig <- rcppMagmaSYEVD::eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
-     }
-    } else {
+#    if(ngpu > 0){
+#     if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
+#       eig <- rcppMagmaSYEVD::eigen_mgpu(S %*% (K + dn) %*% S, symmetric = TRUE, only_values=FALSE)
+#     }
+#    } else {
        eig <- eigen(S %*% (K + dn) %*% S, symmetric = TRUE)
-    }
+#    }
 
 
     stopifnot(!is.complex(eig$values))
@@ -793,19 +793,19 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
   } 
    res <- list()
 
-   if(ngpu == 0){
+#   if(ngpu == 0){
       MMt.eigen <- eigen(MMt, symmetric=TRUE )
       sqrt_evals <- diag(sqrt(MMt.eigen$values))
       res[["sqrt"]] <- MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)
       rm(MMt.eigen, sqrt_evals)
       gc()
       res[["invsqrt"]] <- chol2inv(chol(res[["sqrt"]]))
-   }  else {
-      #res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
-      if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
-        res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
-      }
-   } 
+#   }  else {
+#      #res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
+#      if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
+#        res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
+#      }
+#   } 
 
 
 
@@ -1508,10 +1508,11 @@ if (type=="text"){
 #'}
 #'
 #' \subsection{\strong{Reading in a PLINK ped file}}{
-#' PLINK is a well known toolkit for the analysis of genome-wide association data. See  \url{http://pngu.mgh.harvard.edu/~purcell/plink/}
+#' PLINK is a well known toolkit for the analysis of genome-wide association data. See  
+#' \url{https://www.cog-genomics.org/plink2}
 #' for details. 
 #'
-#' Full details of PLINK ped files can be found \url{http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped}. Briefly, 
+#' Full details of PLINK ped files can be found \url{https://www.cog-genomics.org/plink/1.9/formats#ped}. Briefly, 
 #' the PED file is a space delimited file (tabs are not allowed): the first six columns are mandatory:
 #'
 #' \tabular{l}{
@@ -1547,7 +1548,7 @@ if (type=="text"){
 #'
 #'
 #' \subsection{Reading in other formats}{
-#' It is possible to convert other file formats into PLINK ped files. See \url{http://pngu.mgh.harvard.edu/~purcell/plink/} for details. 
+#' It is possible to convert other file formats into PLINK ped files. See \url{https://www.cog-genomics.org/plink/1.9/formats} for details. 
 #' For example, to convert  vcf file into a PLINK ped file, use the PLINK command
 #' 
 #' \preformatted{PLINK --vcf filename.vcf --recode --out newfilename}
@@ -1837,7 +1838,7 @@ RunApp <- function() {
   }
 
   #shiny::runApp(appDir, display.mode = "normal")
-  shiny::shinyAppDir(appDir)
+  shinyAppDir(appDir)
 }
 
 

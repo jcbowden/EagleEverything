@@ -3,15 +3,10 @@ module load pandoc
 export RSTUDIO_PANDOC=$PANDOC_HOME
 
 
-## bash script to build Eagle package 
 
 DIR="/home/geo047/gitHUB_WMAM/MyPackage/"
-
 cd $DIR
 
-## setup node for MAGMA - complicated
-###   source ./SETUP_Magma_Node
-echo " run SETUP Magma ............................................................"
 
 
 ## removing Eagle and Eagle.Rcheck
@@ -21,15 +16,12 @@ rm -rf ./Eagle  ./Eagle.Rcheck
 ## create and run Rcpp.package.skeleton
 echo   "library(Rcpp)" > ./tmp.R
 echo   "    " >> tmp.R  
-echo  " Rcpp.package.skeleton(\"Eagle\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
-## echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"svd_magma.R\", \"MAGMA.R\" ) ) " >> ./tmp.R
- echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"AM.R\", \"summary_am.R\"   ) ) " >> ./tmp.R
+echo  " Rcpp.package.skeleton(\"Eagle\", cpp_files=c(\"RcppFunctions.cpp\"  ),    " >> ./tmp.R
+echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"AM.R\", \"summary_am.R\"   ) ) " >> ./tmp.R
 echo  "  ## running roxygen2  " >> ./tmp.R
 echo  " library(roxygen2) " >> ./tmp.R
 echo  " setwd(\"./Eagle\")  " >> ./tmp.R
 echo  "  roxygenise() " >> ./tmp.R
-
-
 
 echo "  " >> tmp.R
 
@@ -37,61 +29,88 @@ echo "  " >> tmp.R
 echo "Running R CMD BATCH ./tmp.R"  
 R CMD BATCH ./tmp.R
 
+# copy Makevars to Eagle
+cp $DIR/Makevars $DIR/Eagle/src
+cp $DIR/Makevars.win $DIR/Eagle/src
+
+
+
 
 ## Replace generated NAMESPACE and DESCRIPTION with correct versions
 cp ./NAMESPACE.OLD ./Eagle/NAMESPACE
 cp ./DESCRIPTION.OLD ./Eagle/DESCRIPTION
 ## Modify ./Eagle/src/RcppExports.cpp
 
- cd $DIR/Eagle/src
- awk 'NR>=1&&NR<=3' "RcppExports.cpp" > ./block1.tmp
 
-echo "#include <RcppEigen.h> " >> ./tmp1
-echo " #include <omp.h> "  >>  ./tmp1
+
+ cd $DIR/Eagle/src
+# awk 'NR>=1&&NR<=3' "RcppExports.cpp" > ./block1.tmp
+
+
+## modify RcppExports.cpp
+
+## this works on bragg
+#awk '{if (NR==3) print "#include \"../inst/include/Eagle.h\" "; else print $0 }' $DIR/Eagle/src/RcppExports.cpp >  $DIR/Eagle/src/tmp
+#awk '{if (NR==4) print "#include <RcppEigen.h>"; else print $0 }' $DIR/Eagle/src/tmp >  $DIR/Eagle/src/tmpnew
+#awk '{if (NR==5) print "#include <Rcpp.h>"; else print $0 }' $DIR/Eagle/src/tmpnew >  $DIR/Eagle/src/tmp
+#awk '{if (NR==6) print "using namespace Rcpp ; "; else print $0 }' $DIR/Eagle/src/tmp  >  $DIR/Eagle/src/tmpnew
+#mv $DIR/Eagle/src/tmpnew  $DIR/Eagle/src/RcppExports.cpp
+
+## this abreviated form also works on bragg
+awk '{if (NR==4) print "#include <RcppEigen.h>"; else print $0 }' $DIR/Eagle/src/RcppExports.cpp  >  $DIR/Eagle/src/tmpnew
+awk '{if (NR==5) print "#include <Rcpp.h>"; else print $0 }' $DIR/Eagle/src/tmpnew >  $DIR/Eagle/src/tmp
+awk '{if (NR==6) print "using namespace Rcpp ; "; else print $0 }' $DIR/Eagle/src/tmp  >  $DIR/Eagle/src/tmpnew
+mv $DIR/Eagle/src/tmpnew  $DIR/Eagle/src/RcppExports.cpp
+
+rm  $DIR/Eagle/src/tmp
+
+
+mkdir $DIR/Eagle/inst
+mkdir $DIR/Eagle/inst/include
+
+# cp Eagle.h to Eagle direcotry 
+## added by AWG 14/04/17 to be consistent with windows pipeline
+#echo "#include <RcppEigen.h> " > ./tmp1
+echo " #include <omp.h> "  >  ./tmp1
 echo " #include <iostream> " >> ./tmp1
 echo " #include <fstream> " >> ./tmp1
 echo " #include <istream> " >> ./tmp1
 echo " #include <vector> " >> ./tmp1
 echo " #include <bitset> " >> ./tmp1
 echo " #include <string> " >> ./tmp1
-##echo " #include <Rinternals.h>"  >> ./tmp1
-##echo " #include \"Rcpp.h\" "  >> ./tmp1
-##echo " #include <magma.h> "  >> ./tmp1
-
-
-
-
-
 echo " using namespace std;"  >> ./tmp1
-echo " using namespace Rcpp;"  >> ./tmp1
-echo " using Eigen::MatrixXi;"  >> ./tmp1
-echo " using Eigen::MatrixXd;"  >> ./tmp1
-echo " using Eigen::Lower;"  >> ./tmp1
-echo " using Eigen::Map;  "  >> ./tmp1
-
 echo "    " >> tmp1
+mv tmp1 Eagle.h
 
-awk 'NR > 7' "RcppExports.cpp" > ./block2.tmp
+mv  ./Eagle.h  $DIR/Eagle/inst/include/Eagle.h
 
-cat ./block1.tmp ./tmp1  ./block2.tmp  > ./RcppExports.cpp
+
+cd $DIR
+
+
+
+
+
+
 
 ## add raw data to package
 echo  " Adding raw data to package ... "
 cd $DIR
 
-mkdir ./Eagle/inst
-mkdir ./Eagle/inst/extdata
-mkdir ./Eagle/inst/doc
-mkdir ./Eagle/vignettes
-mkdir ./Eagle/vignettes/images
+#mkdir $DIR/Eagle/inst
+mkdir $DIR/Eagle/inst/extdata
+mkdir $DIR/Eagle/inst/doc
+mkdir $DIR/Eagle/vignettes
+mkdir $DIR/Eagle/vignettes/images
 cd $DIR
 
-cp ./pheno.txt ./Eagle/inst/extdata/.
-cp ./geno.txt ./Eagle/inst/extdata/.
-cp ./geno.ped ./Eagle/inst/extdata/.
-cp ./map.txt ./Eagle/inst/extdata/.
+cp ./pheno.txt $DIR/Eagle/inst/extdata/.
+cp ./geno.txt $DIR/Eagle/inst/extdata/.
+cp ./geno.ped $DIR/Eagle/inst/extdata/.
+cp ./map.txt $DIR/Eagle/inst/extdata/.
 
 cd $DIR
+
 
 ## add own Makevars to src with openmp compiler options
 ## echo "PKG_CPPFLAGS=-fopenmp "  > ./Eagle/src/Makevars
@@ -136,14 +155,16 @@ R CMD BATCH   ./QuickStart.me
 #exit -1
 
 
-R CMD Sweave ./UserManual.Rmd
-R CMD Sweave ./Install.Rmd
-cp Install.html ./Eagle/inst/doc/.
-cp ./Install.Rmd ./Eagle/vignettes/.
+#R CMD Sweave ./QuickStart.Rmd
+#R CMD Sweave ./UserManual.Rmd
+#R CMD Sweave ./Install.Rmd
+#cp Install.html ./Eagle/inst/doc/.
+#cp ./Install.Rmd ./Eagle/vignettes/.
 cp QuickStart.html ./Eagle/inst/doc/.
-cp UserManual.html ./Eagle/inst/doc/.
+#cp QuickStart.pdf ./Eagle/inst/doc/.
+#cp UserManual.html ./Eagle/inst/doc/.
 cp ./QuickStart.Rmd ./Eagle/vignettes/.
-cp ./UserManual.Rmd ./Eagle/vignettes/.
+#cp ./UserManual.Rmd ./Eagle/vignettes/.
 
 
 
@@ -151,11 +172,16 @@ cp ./UserManual.Rmd ./Eagle/vignettes/.
 rm ./Eagle/src/*.o ./Eagle/src/tmp1 ./Eagle/src/block?.tmp ./Eagle/src/*.so
 rm ./Eagle/.RData
 
+
+
 R CMD build Eagle 
 
 
 
  R CMD check --as-cran Eagle_1.0.0.tar.gz 
+
+
+
 
 R CMD INSTALL Eagle -l ~/RLibs
 
