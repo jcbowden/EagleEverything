@@ -1,8 +1,12 @@
 #!/bin/bash
+
+echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUn to set up PaTHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
 module load pandoc
 export RSTUDIO_PANDOC=$PANDOC_HOME
-
-
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/geo047/Software/usr/local/lib
+#
+#export PATH=$PATH:/home/geo047/Software/usr/local/bin
 
 DIR="/home/geo047/gitHUB_WMAM/MyPackage/"
 cd $DIR
@@ -137,20 +141,23 @@ mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images
 
 cp /home/geo047/ShinyApp/shinyApp.R /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/app.R
 cp /home/geo047/ShinyApp/css.css /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
+cp /home/geo047/ShinyApp/www/images/HomeScreen.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
 cp /home/geo047/ShinyApp/www/images/*banner* /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
 cp /home/geo047/ShinyApp/www/images/logo.jpg /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
 
-cp /home/geo047/ShinyApp/www/images/pipeline.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
-#cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.jpg ./Eagle/vignettes/images
-#cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.png ./Eagle/vignettes/images
+#cp /home/geo047/ShinyApp/www/images/pipeline.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.jpg ./Eagle/vignettes/images
+cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.png ./Eagle/vignettes/images
 
 
 
 cp  /home/geo047/ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
 
 
-
+# create html and pdf of static vignette item
 R CMD BATCH   ./QuickStart.me
+cp ./QuickStart.html ./Eagle/vignettes/.
+
 
 #exit -1
 

@@ -1,8 +1,6 @@
 ---
-title: "Test"
-author: "Andrew W. George"
 output:
-  html_vignette:
+  html_document:
     toc: false
     fig_caption: yes
     css: "/home/geo047/gitHUB_WMAM/MyPackage/CSS/example/assets/css/styles.css"
@@ -88,7 +86,9 @@ along with a loading animation. Once the file has finished being read, the loadi
 </p>
 
 
-![optional caption text](images/ReadMarkerScreen_PLINK.jpg)
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/ReadMarkerScreen_PLINK.jpg")
+```
 
 
 <h2>Reading in a text file</h2>
@@ -107,103 +107,59 @@ allow entry of the alphanumeric values in the marker file that correspond to mar
 BB, and the missing genotype. 
 
 
-<h1><b> Reading in the Phenotypic Data </b></h1>
+<h1><b> Reading in the Phenotypic and Map Data </b></h1>
 
-Click on the <mark>Read Phenotype</mark> tab in the navigation bar at the top of the page. This will 
-open the page for reading in the phenotypic data. The phenotypic data are those data collected from 
-the individuals on one or more traits and any fixed effects (such as age, sex, etc).  
-The file is assumed to be a plain text file that 
-can be space or comma separated. The first row is allowed to contain column headings. 
-
-To read in the phenotypic file, there are four steps. 
-<img class=img-responsive src="images/ReadPhenoScreen.jpg" alt="" style="width:60%;height:60%";>
-
-
-
-
-
-
-
-
-
+<p>
+Reading in the phenotypic data (i.e., data on one or more traits and any fixed effects) and a 
+marker map is very similar to the above desribed process. We assume both the phenotypic file and map file 
+are either space or comma separated. There is the option for the first row to contain column names in 
+the phenotypic file. Click on the 
+<mark>Read Phenotype</mark> or <mark>Read Map</mark> tab in the navigation bar at the top of the page. Work 
+through the steps, with the final step being the "Upload file" step. A loading animation will appear while the file is being read, and ouput is displayed on the right of the page. It is safe to move to another page when the 
+loading animation disappears. 
 </p>
-<h3>Ordered list</h3>
-<p>Ordered lists are used to markup lists where list items require numbering.</p>
-<ol>
-<li>Hendrerit in vulputate velit esse</li>
-<li>Olestie consequat</li>
-<li>Vel illum dolore eu feugiat</li>
-<li>Nulla facilisis at vero eros</li>
-<li>Accumsan et iusto odio</li>
-</ol>
+
+<h1><b> Analysing the Data </b></h1>
+To perform a genome-wide association mapping analysis of the data, click on the <mark>Analyse</mark> tab 
+in the navigation bar at the top of the page.  This will take you to the page for analysing your data. 
+How the page looks will be dependent, partially, on the data contained in your phenotypic file. However, 
+the five steps remain the same. First, choose the trait by selecting from the list of available  variables.  
+Second, select which variable are to act as fixed effects in the model, if any. 
+Third,  set the number of cpu available for distributed computing.  Fourth, 
+click on "Additional Options" if you would like to set the maximum number of iterations, 
+and/or have Eagle generate verbose output.  For most analyses, there shouldn't be any need to click on 
+"Additional Options".  The last step is to click on "Perform genome-wide analysis". As before, a 
+processing animation will appear and output will start being printed to the right of the page. Once the 
+analysis is complete, click on <mark>Findings</mark>. 
+
+ 
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/AnalysisScreen.jpg")
+```
+
+
+<h1><b> Findings </b></h1>
+To view the results, click on the <mark>Findings</mark> tab at the top of the page. On the right hand size 
+of the page, the "best" set of snp in strongest association with the trait are displayed in tabular form. 
+By clicking on the  button on the left hand side, additional summary results are displayed. 
+
+
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/FindingsScreen.jpg")
+```
+
+<br>
 <hr>
-<h3>Unstyled list</h3>
-<p>You can make the list unstyled using the <code>list-unstyled</code> class.</p>
-<ul class=list-unstyled>
-<li>Ut wisi enim ad minim veniam</li>
-<li>Quis nostrud exerci tation</li>
-<li>Lamcorper suscipit lobortis nis</li>
-<li>Ut aliquip ex ea commodo consequat</li>
-<li>Duis autem vel eum iriure dolor</li>
-</ul>
-<hr>
-<h3>Inline list</h3>
-<p>You can make the list display inline using the <code>list-inline</code> class.</p>
-<ul class=list-inline>
-<li>One</li>
-<li>Two</li>
-<li>Three</li>
-<li>Four</li>
-</ul>
-<hr>
-<h3>Blockquotes</h3>
-<p>The blockquote element is used to markup long quotations. Ideally, content inside should be wrapped in paragraph elements.</p>
-<blockquote>
-<p>The real names of our people were destroyed during slavery. The last name of my forefathers was taken from them when they were brought to America and made slaves, and then the name of the slave master was given, which we refuse, we reject that name today and refuse it. I never acknowledge it whatsoever.</p>
-<footer><a href="http://en.wikipedia.org/wiki/Malcolm_X">Malcolm X</a></footer>
-</blockquote>
-<hr>
-<h3>Buttons</h3>
-<p>You can apply the <code>btn</code> class to any element that requires a button style.</p>
-<p><a href="#" class=btn>Submit</a></p>
-<hr>
-<h3>Tables</h3>
-<p>Tables should be given the class of <code>table</code>.</p>
-<table class="table table-striped">
-<thead>
-<tr>
-<th>#</th>
-<th>First Name</th>
-<th>Last Name</th>
-<th>Username</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th scope=row>1</th>
-<td>Mark</td>
-<td>Otto</td>
-<td>@mdo</td>
-</tr>
-<tr>
-<th scope=row>2</th>
-<td>Jacob</td>
-<td>Thornton</td>
-<td>@fat</td>
-</tr>
-<tr>
-<th scope=row>3</th>
-<td>Larry</td>
-<td>the Bird</td>
-<td>@twitter</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class=footer>
-&copy; Copyright 2015
-</div>
-</div>
+<h1><b>Where to Go for Help</b></h1>
+<ul>
+<li><p>The UI has built-in help. By hovering over any of the input widgets, a popup help box appears</p>  </li>
+<li><p> Detailed help is available on every page. Just hover the cursor over the <mark>Details</mark> bar and 
+a popup box with a detailed description will appear.</p></li>
+<li><p>At the top of any page is the <mark>Help</mark> tab. By clicking on this tab, a menu of items appears. 
+Frequently asked questions, and other documents such as a worked example can be accessed.</p>  </li>
+<li> <p>Youtube videos have been created on how to install Eagle, and how to perform a genome-wide analysis.
+</p> </ul>
+<li><p> Email your question to <code>eaglehelp@csiro.au</code> </p></li>
+</p>
 
 

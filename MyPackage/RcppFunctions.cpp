@@ -123,7 +123,7 @@ std::vector <long>    ReshapeM_rcpp( CharacterVector  fnameM,
  while(fileIN.good()){
       while(getline(fileIN, line)){
           writeline = true;
-          for(long ii=0; ii<indxNA.size(); ii++){
+          for(unsigned long ii=0; ii<indxNA.size(); ii++){
             if(indxNA[ii] == rownum)
                 writeline = false;
           }
@@ -165,7 +165,7 @@ std::vector <long>    ReshapeM_rcpp( CharacterVector  fnameM,
       while(getline(fileINt, line)){
           // removing columns
           // this is okay since indxNA is in decreasing size
-          for(long ii=0; ii<indxNA.size(); ii++){
+          for(unsigned long ii=0; ii<indxNA.size(); ii++){
             line.erase ( indxNA[ii], 1 );
           }  // end fora
           fileOUTt << line << endl;

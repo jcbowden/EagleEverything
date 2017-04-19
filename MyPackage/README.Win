@@ -1,0 +1,39 @@
+19/04/17
+
+On mac, i microsoft remote desktop'ed in to bragg-w-test.csiro.au 
+
+Here, I have set the machine up to be a windows R development machine
+    1. installed latest version of R (R.3.3.2)
+    2. installed latest version of RStudio 
+    3. installed latest version of Rtools (that matches R3.3)
+    4. installped qpdf from zip file. Needed to set path
+    5. set up Eagle directory with Step1 and Step2 subdirectories
+    
+    6. In step 1, I have copied the basics needed for a package (wgEMMA.R, RcppFunctions.cpp)
+       I then ran josh's run_rstidio.bat script to run Rstudio with clean path
+       From RStudio
+         Go into File tab
+             Go into New Project
+               Go into New Directory
+                  Select R w/ Rcpp
+                  Select wgEMMA.R and RcppFunctions.cpp
+
+               Build 
+                 Build new project in Step2
+        => this generates a Eagle.Rproj file
+     8 copy Eagle.Rproj C:\Users\geo047\Eagle\Step2\.
+     9. build Eagle_1.0.0.tar.gz from bragg build (unix)
+     10. copy Eagle_1.0.0.tar.gz to /flush1/geo047/Files_For_Windows (flush1 is also mounted by windows)
+     11. goto /flush1/geo047/Files_For_Windows 
+     12. tar xvfz Eagle_1.0.0.tar.gz  to create Eagle directory
+     13. cp -rf Eagle C:\Users\geo047\Eagle\Step2
+     14  cd  C:\Users\geo047\Eagle\Step2
+     15  cp Eagle.Rproj Step2
+     16  run_rstudio.bat 
+     17   from RStuio
+             using files window (bottom left), go to Eagle.Rproj in Step2
+             click to open project mode
+             use build tools to check code and build binaries. 
+
+ 
+                 

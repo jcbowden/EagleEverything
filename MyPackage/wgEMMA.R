@@ -1830,7 +1830,23 @@ constructX <- function(fnameM=NULL, currentX=NULL, loci_indx=NULL,
 
 
 
-RunApp <- function() {
+#' @title Browser-based User Interface
+#' @description Opens a web browser to act as a user-friendly user interface to Eagle
+#' @details
+#' We have created this app as a user-friendly alternative to running Eagle through function calls.  
+#' By point-and-click, data can be read and analysed. Upon running \code{OpenUI()}, the web-browser is 
+#' run, pointing to the Eagle home page. From there, users can use the navagation bar at the top to enter 
+#' the marker, phenotypic, and map data and perform an analysis. 
+#'
+#' Note that even though a web browser is being used as the user interface, everything remains local to the computer. We are just using 
+#' the web browser to interpret our html code, upon which our app is written. 
+#' @examples
+#'\dontrun{
+#'# opens a web browser 
+#' OpenUI()
+#'}
+#'
+OpenUI <- function() {
   appDir <- system.file("shiny_app", package = "Eagle")
   if (appDir == "") {
     message("Could not find shiny-app directory. Try re-installing `Eagle` package.")
