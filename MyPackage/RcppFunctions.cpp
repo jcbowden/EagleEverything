@@ -45,7 +45,7 @@
 #include <fcntl.h>
 #include <malloc.h>
 #include <stdlib.h>
-// #include <sys/mman.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <ctime>
@@ -177,375 +177,376 @@ std::vector <long>    ReshapeM_rcpp( CharacterVector  fnameM,
   return newdims;
 
 }  //end ReshapeM
-//
-//
-//
-//
-//// ---- code developed by Ryan
-//
-//char* mapFileFromDiscBlocked(const char * file_name, unsigned long &sizeUsed, unsigned long &sizeActual, unsigned long blockSize, unsigned long offset) {
-//	// If set to true debugging information is displayed
-//	// Otherwise these messages are suppressed
-//	bool debugMsgs = true;
-//
-//	// Read file size and system page file size
-//	int pagesize = getpagesize();
-//
-//	// Open file descriptor for given file name
-//	// Read-only permission
-//	int fd;
-//
-//	// Open file and get file descriptor
-//	try {
-//		fd = open (file_name, O_RDONLY);
-//		// File descriptor returned as -1 if file cannot be opened
-//		if ( -1 == fd) throw "File could not be opened for reading";
-//	}
-//	catch (const char* msg) {
-//                Rcpp::stop(msg);
-//                return "";
-//
-//	}
-//
-//	// Round up file size to next multiple
-//	// of system page size;
-//	sizeActual = blockSize;
-//	sizeUsed = sizeActual + (pagesize - (sizeActual % pagesize));
-//	// if (debugMsgs) printf("Memory used to map file: %2.5f Mbytes\n", sizeUsed/1024/1024);
-//
-//	// Memory mapped data file
-//	char *fileMemMap;
-//
-//	// Map file to memory using mmap() system function
-//	// File may now be treated as a character array in memory
-//	// Syntax:
-//	// 		void *mmap(void *addr, size_t length,
-//	//			  int prot, int flags, int fd, off_t offset);
-//	// Permissions:
-//	//		PROT_READ: Pages in memory only allow read-only operations
-//	//		MAP_PRIVATE: Changes not visible to other processes
-//	//					 Underlying file is no altered
-//
-//	// cout << "Page Size " << pagesize << endl;
-//	// cout << "Size Used " << sizeUsed << endl;
-//	// cout << "Size Actual " << sizeActual << endl;
-//
-//	fileMemMap = (char *) mmap (0, sizeUsed, PROT_READ, MAP_PRIVATE, fd, offset);
-//
-//	//if (madvise(fileMemMap, sizeUsed-1024, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
-//	//	cout << "madvise error" << endl;
-//	//	return NULL;
-//	//}
-//
-//	// Close the file descriptor
-//	// Frees resources associated with the file descriptor
-//	close(fd);
-//
-//	return fileMemMap;
-//}
-//
-//char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned long &sizeActual, Rcpp::Function message) {
-//	// If set to true debugging information is displayed
-//	// Otherwise these messages are suppressed
-//	bool debugMsgs = true;
-//
-//	// Read file size and system page file size
-//	int pagesize = getpagesize();
-//
-//	// Stores information about file
-//	struct stat s;
-//
-//	// Open file descriptor for given file name
-//	// Read-only permission
-//	int fd;
-//
-//	// Open file and get file descriptor
-//	try {
-//		fd = open (file_name, O_RDONLY);
-//		// File descriptor returned as -1 if file cannot be opened
-//		if ( -1 == fd) throw "File could not be opened for reading";
-//	}
-//	catch (const char* msg) {
-//		message( "ERROR occurred in mapFileFromDisc " , msg );
-//		return NULL;
-//	}
-//
-//	// Get the file size on disc
-//	int status = fstat (fd, &s);
-//
-//	// Round up file size to next multiple
-//	// of system page size;
-//	sizeActual = s.st_size;
-//	sizeUsed = sizeActual + (pagesize - (sizeActual % pagesize));
-//	if (debugMsgs) message("Memory used to map file: %d Mbytes\n", sizeUsed/1024/1024);
-//
-//	// Memory mapped data file
-//	char *fileMemMap;
-//
-//	// Map file to memory using mmap() system function
-//	// File may now be treated as a character array in memory
-//	// Syntax:
-//	// 		void *mmap(void *addr, size_t length,
-//	//			  int prot, int flags, int fd, off_t offset);
-//	// Permissions:
-//	//		PROT_READ: Pages in memory only allow read-only operations
-//	//		MAP_PRIVATE: Changes not visible to other processes
-//	//					 Underlying file is no altered
-//
-//	fileMemMap = (char *) mmap (0, sizeUsed, PROT_READ, MAP_PRIVATE, fd, 0);
-//
-//	if (madvise(fileMemMap, sizeUsed, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
-//		message( "madvise error" );
-//		return NULL;
-//	}
-//
-//	// Close the file descriptor
-//	// Frees resources associated with the file descriptor
-//	close(fd);
-//
-//	return fileMemMap;
-//}
-//
-//
-//
-//
-//
-//bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vector<long> dims,
-//		std::string  AA,
-//		std::string AB,
-//		std::string BB,
-//		bool csv,
-//		int quiet, 
-//                Rcpp::Function message, 
-//                std::string missing)
-//{
-//
-//	// Used to store size of memory used for mapping file
-//	// Size is rounded up to memory page size, hence two variables
-//	// SizeUsed is used to ummap the mapped memory
-//	// SizeActual is used to determine the number of characters in the file
-//	unsigned long sizeUsed = 0;
-//	unsigned long sizeActual = 0;
-//	// Map file from hard-disk to memory
-//	char* dataFile = mapFileFromDisc(fname.c_str(), sizeUsed, sizeActual, message);
-//
-//	// Check that an error did not occur in the file mapping process
-//	if ( dataFile == NULL )
-//	{
-//	        message("Error mapping file.");
-//		return false;
-//	}
-//
-//	// Array used for buffering file output
-//	const long long bufferSize = 8*1024*1024;
-//
-//
-//
-//	// char outputBuffer[bufferSize];
-////        char* outputBuffer = NULL;
-////        outputBuffer = new char[bufferSize];
-//
-//std::vector<char> outputBuffer (bufferSize);  // allocated on stack, with a data buffer that is probably on the heap
-// 
-//
-//	int inc = 0;
-//
-//	// Output file
-//	FILE *outputFile;
-//	outputFile = fopen (asciifname.c_str(), "wb");
-//
-//	// Assuming BA is the reverse of AB
-//	std::string BA = std::string ( AB.rbegin(), AB.rend() );
-//	// Find a more elegant way to do this
-//	const short AALen = AA.length();
-//	const short ABLen = AB.length();
-//	const short BBLen = BB.length();
-//	int maxLenGen = 0;
-//	if ( AALen > ABLen )
-//	{
-//		maxLenGen = AALen;
-//	}else
-//	{
-//		if ( BBLen > ABLen )
-//		{
-//			maxLenGen = BBLen;
-//		} else {
-//			maxLenGen = ABLen;
-//		}
-//	}
-//
-//	int slidingInc = 0;
-//	 char windowBuffer[maxLenGen];
-//
-//
-//        if (quiet > 0){
-//              message("");
-//              message(" Reading text File  ");
-//              message("");
-//              message(" Loading file ");
-//       }
-//
-//
-//
-//	int latch = 0;
-//	// Loop through file in memory
-//	for (unsigned long long i = 0; i <= sizeActual; i++ ) {
-//
-//		if ( dataFile[i] != ' ' && dataFile[i] != '\n' && i != sizeActual)
-//		{
-//			latch = 0;
-//			windowBuffer[slidingInc] = dataFile[i];
-//			slidingInc++;
-//		}else {
-//			if ( latch == 0 )
-//			{
-//				// Output magic
-//				windowBuffer[slidingInc] = '\0';
-//				// cout << "(" << windowBuffer << ")" << endl;
-//
-//				// Comparison magic
-//				if ( AA == windowBuffer ) {
-//					// cout << "AA Found" << endl;
-//					outputBuffer[inc] = '0';
-//					inc++;
-//				} else if ( AB == windowBuffer ) {
-//					// cout << "AB Found" << endl;
-//					outputBuffer[inc] = '1';
-//					inc++;
-//				} else if ( BA == windowBuffer ) {
-//					// cout << "BA Found" << endl;
-//					outputBuffer[inc] = '1';
-//					inc++;
-//				} else if ( BB == windowBuffer ) {
-//					// cout << "BB Found" << endl;
-//					outputBuffer[inc] = '2';
-//					inc++;
-//                               } else if ( missing == windowBuffer ) {
-//                                   // setting any missing values to het code
-//                                        outputBuffer[inc] = '1';
-//                                        inc++;
-//				} else {
-//                                    std::string str(windowBuffer);
-//                                    if (AB=="NA"){
-//                                       message( "Marker file contains marker genotypes that are different to AA=" , AA , " BB=" , BB);
-//                                       message(" For example  " ,  str);
-//                                       message(" ReadMarker has terminated with errors");
-//                                       return false;
-//                                   } else {
-//                                       message( "Marker file contains marker genotypes that are different to AA=" , AA , " AB=" , AB , " BB=" , BB);
-//                                       message( "For example , " , str );
-//                                       message( "ReadMarker has terminated with errors");
-//                                       return false;
-//                                  }
-//
-//				}
-//
-//				// Reset sliding index
-//				slidingInc = 0;
-//				latch = 1;
-//			}
-//			if ( dataFile[i] == '\n' )
-//			{
-//				outputBuffer[inc] = '\n';
-//				inc++;
-//			}
-//		}
-//
-//		// If output buffer is full
-//		if ( inc >= bufferSize)
-//		{
-//			// Write buffer to file on disk
-//                        for(long ii=0; ii < outputBuffer.size(); ii++)
-//	                   fwrite (&outputBuffer[ii] , sizeof(char), 1 , outputFile);
-//			//cout << inc << endl;
-//			// Reset buffer index
-//			inc = 0;
-//		}
-//	}
-//
-//	// Writing remaining data in output buffer to output file
-//
-//        for(long ii=0; ii < inc; ii++)
-//          fwrite (&outputBuffer[ii] , sizeof(char), 1 , outputFile);
-//
-//	// No longer need to use memory mapped file, release it
-//	munmap(dataFile, sizeUsed);
-//
-//
-//
-//  // write out a few lines of the file if quiet
-////  if(quiet > 0){
-//     // open ascii  file
-//     std::string line, tmp;
-//     std::ifstream fileIN(fname.c_str());
-//     long counter = 0;
-//     int nrowsp =  5;
-//     int ncolsp = 12;
-//     if(dims[0] < 5)
-//         nrowsp = dims[0];
-//     if(dims[1] < 12)
-//          ncolsp = dims[1];
-//
-//     message(" First ", nrowsp, " lines and ", ncolsp, " columns of the marker file. ");
-//     std::string rowline;
-//     while(getline(fileIN, line ) && counter < nrowsp)
-//     {
-//       std::ostringstream oss;
-//       std::istringstream streamA(line);
-//       for(int i=0; i < ncolsp ; i++){
-//           streamA >> tmp;
-//           oss << tmp << " " ;
-//        }
-//        std::string rowline = oss.str();
-//        message(rowline);
-//        counter++;
-//      }  // end  while(getline(fileIN, line ))
-////  } // end if(quiet)
-//
-//
-//
-//
-//
-//
-//	// Close output file
-//	fclose (outputFile);
-//	return true;
-//}
-//
-//
-//
-//
-//
-//
-//// ----- end of code by Ryan
-//
-//
-//
-//
-//
-//
-//
-//std::vector<std::string> split(const char *str, char c = ' ')
-//{
-//    std::vector<std::string> result;
-//
-//    do
-//    {
-//        const char *begin = str;
-//
-//        while(*str != c && *str)
-//            str++;
-//
-//        result.push_back(std::string(begin, str));
-//    } while (0 != *str++);
-//
-//    return result;
-//}
-//
-//
-//
-//
-//
+
+
+
+
+
+// ---- code developed by Ryan
+
+char* mapFileFromDiscBlocked(const char * file_name, unsigned long long &sizeUsed, unsigned long long &sizeActual, unsigned long long blockSize, unsigned long long offset) {
+	// If set to true debugging information is displayed
+	// Otherwise these messages are suppressed
+	bool debugMsgs = true;
+
+	// Read file size and system page file size
+	int pagesize = getpagesize();
+
+	// Open file descriptor for given file name
+	// Read-only permission
+	int fd;
+
+	// Open file and get file descriptor
+	try {
+		fd = open (file_name, O_RDONLY);
+		// File descriptor returned as -1 if file cannot be opened
+		if ( -1 == fd) throw "File could not be opened for reading";
+	}
+	catch (const char* msg) {
+                Rcpp::stop(msg);
+                return "";
+
+	}
+
+	// Round up file size to next multiple
+	// of system page size;
+	sizeActual = blockSize;
+	sizeUsed = sizeActual + (pagesize - (sizeActual % pagesize));
+	// if (debugMsgs) printf("Memory used to map file: %2.5f Mbytes\n", sizeUsed/1024/1024);
+
+	// Memory mapped data file
+	char *fileMemMap;
+
+	// Map file to memory using mmap() system function
+	// File may now be treated as a character array in memory
+	// Syntax:
+	// 		void *mmap(void *addr, size_t length,
+	//			  int prot, int flags, int fd, off_t offset);
+	// Permissions:
+	//		PROT_READ: Pages in memory only allow read-only operations
+	//		MAP_PRIVATE: Changes not visible to other processes
+	//					 Underlying file is no altered
+
+	// cout << "Page Size " << pagesize << endl;
+	// cout << "Size Used " << sizeUsed << endl;
+	// cout << "Size Actual " << sizeActual << endl;
+
+	fileMemMap = (char *) mmap (0, sizeUsed, PROT_READ, MAP_PRIVATE, fd, offset);
+
+	//if (madvise(fileMemMap, sizeUsed-1024, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
+	//	cout << "madvise error" << endl;
+	//	return NULL;
+	//}
+
+	// Close the file descriptor
+	// Frees resources associated with the file descriptor
+	close(fd);
+
+	return fileMemMap;
+}
+
+char* mapFileFromDisc(const char * file_name, unsigned long &sizeUsed, unsigned long &sizeActual, Rcpp::Function message) {
+	// If set to true debugging information is displayed
+	// Otherwise these messages are suppressed
+	bool debugMsgs = true;
+
+	// Read file size and system page file size
+	int pagesize = getpagesize();
+
+	// Stores information about file
+	struct stat s;
+
+	// Open file descriptor for given file name
+	// Read-only permission
+	int fd;
+
+	// Open file and get file descriptor
+	try {
+		fd = open (file_name, O_RDONLY);
+		// File descriptor returned as -1 if file cannot be opened
+		if ( -1 == fd) throw "File could not be opened for reading";
+	}
+	catch (const char* msg) {
+		message( "ERROR occurred in mapFileFromDisc " , msg );
+		return NULL;
+	}
+
+	// Get the file size on disc
+	int status = fstat (fd, &s);
+
+	// Round up file size to next multiple
+	// of system page size;
+	sizeActual = s.st_size;
+	sizeUsed = sizeActual + (pagesize - (sizeActual % pagesize));
+	if (debugMsgs) message("Memory used to map file: %d Mbytes\n", sizeUsed/1024/1024);
+
+	// Memory mapped data file
+	char *fileMemMap;
+
+	// Map file to memory using mmap() system function
+	// File may now be treated as a character array in memory
+	// Syntax:
+	// 		void *mmap(void *addr, size_t length,
+	//			  int prot, int flags, int fd, off_t offset);
+	// Permissions:
+	//		PROT_READ: Pages in memory only allow read-only operations
+	//		MAP_PRIVATE: Changes not visible to other processes
+	//					 Underlying file is no altered
+
+	fileMemMap = (char *) mmap (0, sizeUsed, PROT_READ, MAP_PRIVATE, fd, 0);
+
+	if (madvise(fileMemMap, sizeUsed, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
+		message( "madvise error" );
+		return NULL;
+	}
+
+	// Close the file descriptor
+	// Frees resources associated with the file descriptor
+	close(fd);
+
+	return fileMemMap;
+}
+
+
+
+
+
+bool  CreateASCIInospaceFast(std::string fname, std::string asciifname, std::vector<long> dims,
+		std::string  AA,
+		std::string AB,
+		std::string BB,
+		bool csv,
+		int quiet, 
+                Rcpp::Function message, 
+                std::string missing)
+{
+
+	// Used to store size of memory used for mapping file
+	// Size is rounded up to memory page size, hence two variables
+	// SizeUsed is used to ummap the mapped memory
+	// SizeActual is used to determine the number of characters in the file
+	unsigned long sizeUsed = 0;
+	unsigned long sizeActual = 0;
+	// Map file from hard-disk to memory
+	char* dataFile = mapFileFromDisc(fname.c_str(), sizeUsed, sizeActual, message);
+
+	// Check that an error did not occur in the file mapping process
+	if ( dataFile == NULL )
+	{
+	        message("Error mapping file.");
+		return false;
+	}
+
+	// Array used for buffering file output
+	const long long bufferSize = 8*1024*1024;
+
+
+
+	// char outputBuffer[bufferSize];
+//        char* outputBuffer = NULL;
+//        outputBuffer = new char[bufferSize];
+
+std::vector<char> outputBuffer (bufferSize);  // allocated on stack, with a data buffer that is probably on the heap
+ 
+
+	int inc = 0;
+
+	// Output file
+	FILE *outputFile;
+	outputFile = fopen (asciifname.c_str(), "wb");
+
+	// Assuming BA is the reverse of AB
+	std::string BA = std::string ( AB.rbegin(), AB.rend() );
+	// Find a more elegant way to do this
+	const short AALen = AA.length();
+	const short ABLen = AB.length();
+	const short BBLen = BB.length();
+	int maxLenGen = 0;
+	if ( AALen > ABLen )
+	{
+		maxLenGen = AALen;
+	}else
+	{
+		if ( BBLen > ABLen )
+		{
+			maxLenGen = BBLen;
+		} else {
+			maxLenGen = ABLen;
+		}
+	}
+
+	int slidingInc = 0;
+	 char windowBuffer[maxLenGen];
+
+
+        if (quiet > 0){
+              message("");
+              message(" Reading text File  ");
+              message("");
+              message(" Loading file ");
+       }
+
+
+
+	int latch = 0;
+	// Loop through file in memory
+	for (unsigned long long i = 0; i <= sizeActual; i++ ) {
+
+		if ( dataFile[i] != ' ' && dataFile[i] != '\n' && i != sizeActual)
+		{
+			latch = 0;
+			windowBuffer[slidingInc] = dataFile[i];
+			slidingInc++;
+		}else {
+			if ( latch == 0 )
+			{
+				// Output magic
+				windowBuffer[slidingInc] = '\0';
+				// cout << "(" << windowBuffer << ")" << endl;
+
+				// Comparison magic
+				if ( AA == windowBuffer ) {
+					// cout << "AA Found" << endl;
+					outputBuffer[inc] = '0';
+					inc++;
+				} else if ( AB == windowBuffer ) {
+					// cout << "AB Found" << endl;
+					outputBuffer[inc] = '1';
+					inc++;
+				} else if ( BA == windowBuffer ) {
+					// cout << "BA Found" << endl;
+					outputBuffer[inc] = '1';
+					inc++;
+				} else if ( BB == windowBuffer ) {
+					// cout << "BB Found" << endl;
+					outputBuffer[inc] = '2';
+					inc++;
+                               } else if ( missing == windowBuffer ) {
+                                   // setting any missing values to het code
+                                        outputBuffer[inc] = '1';
+                                        inc++;
+				} else {
+                                    std::string str(windowBuffer);
+                                    if (AB=="NA"){
+                                       message( "Marker file contains marker genotypes that are different to AA=" , AA , " BB=" , BB);
+                                       message(" For example  " ,  str);
+                                       message(" ReadMarker has terminated with errors");
+                                       return false;
+                                   } else {
+                                       message( "Marker file contains marker genotypes that are different to AA=" , AA , " AB=" , AB , " BB=" , BB);
+                                       message( "For example , " , str );
+                                       message( "ReadMarker has terminated with errors");
+                                       return false;
+                                  }
+
+				}
+
+				// Reset sliding index
+				slidingInc = 0;
+				latch = 1;
+			}
+			if ( dataFile[i] == '\n' )
+			{
+				outputBuffer[inc] = '\n';
+				inc++;
+			}
+		}
+
+		// If output buffer is full
+		if ( inc >= bufferSize)
+		{
+			// Write buffer to file on disk
+                        for(long ii=0; ii < outputBuffer.size(); ii++)
+	                   fwrite (&outputBuffer[ii] , sizeof(char), 1 , outputFile);
+			//cout << inc << endl;
+			// Reset buffer index
+			inc = 0;
+		}
+	}
+
+	// Writing remaining data in output buffer to output file
+
+        for(long ii=0; ii < inc; ii++)
+          fwrite (&outputBuffer[ii] , sizeof(char), 1 , outputFile);
+
+	// No longer need to use memory mapped file, release it
+	munmap(dataFile, sizeUsed);
+
+
+
+  // write out a few lines of the file if quiet
+//  if(quiet > 0){
+     // open ascii  file
+     std::string line, tmp;
+     std::ifstream fileIN(fname.c_str());
+     long counter = 0;
+     int nrowsp =  5;
+     int ncolsp = 12;
+     if(dims[0] < 5)
+         nrowsp = dims[0];
+     if(dims[1] < 12)
+          ncolsp = dims[1];
+
+     message(" First ", nrowsp, " lines and ", ncolsp, " columns of the marker file. ");
+     std::string rowline;
+     while(getline(fileIN, line ) && counter < nrowsp)
+     {
+       std::ostringstream oss;
+       std::istringstream streamA(line);
+       for(int i=0; i < ncolsp ; i++){
+           streamA >> tmp;
+           oss << tmp << " " ;
+        }
+        std::string rowline = oss.str();
+        message(rowline);
+        counter++;
+      }  // end  while(getline(fileIN, line ))
+//  } // end if(quiet)
+
+
+
+
+
+
+	// Close output file
+	fclose (outputFile);
+	return true;
+}
+
+
+
+
+
+
+// ----- end of code by Ryan
+
+
+
+
+
+
+
+std::vector<std::string> split(const char *str, char c = ' ')
+{
+    std::vector<std::string> result;
+
+    do
+    {
+        const char *begin = str;
+
+        while(*str != c && *str)
+            str++;
+
+        result.push_back(std::string(begin, str));
+    } while (0 != *str++);
+
+    return result;
+}
+
+
+
+
+
 
 
 
@@ -1060,92 +1061,91 @@ fileIN.close();
 
 
 
-//
-//// Ryan's ReadBlock code which uses mmap() system call
-//// Not fully tested, use with caution
-//Eigen::MatrixXd  ReadBlockFast(std::string asciifname,
-//		long start_row,
-//		long numcols,
-//		long numrows_in_block) {
-//
-//	// Start settable parameters
-//	const unsigned long long maxMemory = 16ull*1024*1024*1024; // Mbytes
-//	// End settable parameters
-//
-//	int pagesize = getpagesize();
-//	unsigned long sizeUsed = 0;
-//	unsigned long sizeActual = 0;
-//
-//	// Used for offseting to a newline from a loaded block
-//	unsigned long realPos = (start_row)*(numcols+1);
-//	unsigned long allignedPos = realPos - (realPos % pagesize);
-//	unsigned long offsetCol = (realPos - allignedPos) % numcols;
-//	unsigned long offsetRow = floor((realPos - allignedPos) / numcols);
-//
-//	// Debugging information
-//	/*cout << "NUM COLS: " << numcols << endl;
-//	/cout << "NUM ROWS: " << numrows_in_block << endl;
-//	cout << "REAL: " << realPos << endl;
-//	cout << "ALLIGNED: " << allignedPos << endl;
-//	cout << "Offset Col: " << offsetCol << endl;
-//	cout << "Offset Row: " << offsetRow << endl;
-//	cout << "Eigen Dimensions: (" << numrows_in_block << ", " << numcols << ")" << endl;
-//	cout << "Starting Point: " << offsetRow*(numcols) + offsetCol << endl;
-//	cout << "To Read: " << numrows_in_block * (numcols+1) << endl;
-//	*/
-//
-//	// Eigen matrix to store block of data in
-//	Eigen::MatrixXd M(numrows_in_block, numcols) ;
-//
-//	// Offset point to start reading mapped file from
-//	unsigned long startingPoint = offsetRow*(numcols) + offsetCol;
-//
-//	// Memory required to read block of data
-//	unsigned long long requiredMemory = startingPoint + ( numrows_in_block*(numcols+1)) * 8; // bytes
-//
-//	// Memory usage check
-//	if (requiredMemory <= maxMemory) {
-//
-//		// Memory map file
-//		char* dataFile = mapFileFromDiscBlocked(asciifname.c_str(), sizeUsed, sizeActual, requiredMemory, allignedPos);
-//
-//		// Used to load through the mapped file
-//		unsigned long rowInc = 0;
-//		unsigned long colInc = 0;
-//
-//		// Loop through file data, reads data in as column major (Default for Eigen)
-//		for (unsigned int i = 0; i < numrows_in_block * (numcols+1); i++) {
-//			// If newline character is encountered
-//			if ( dataFile[startingPoint+i] == '\n') {
-//				colInc++;
-//				rowInc = 0;
-//			} else {
-//				// Read value from data file and convert to number format and subtract one
-//				// 0 -> -1, 1 -> 0, 2 -> 1 as per original ReadBlock code
-//				signed int value = (dataFile[startingPoint+i]  - '0') - 1;
-//
-//				// Store value in Eigen matrix
-//				M(colInc,rowInc) = value;
-//
-//				// Used for debugging purposes
-//				// cout << "Row: " << rowInc << " :: " << "Col: " << colInc << " :: " << value << endl;
-//
-//				rowInc++;
-//			}
-//
-//		}
-//
-//		// Done using memory mapped file, release it
-//		munmap(dataFile, sizeUsed);
-//
+
+// Ryan's ReadBlock code which uses mmap() system call
+// Not fully tested, use with caution
+Eigen::MatrixXd  ReadBlockFast(std::string asciifname,
+		long start_row,
+		long numcols,
+		long numrows_in_block) {
+
+	// Start settable parameters
+	// const unsigned long long maxMemory = 16ull*1024*1024*1024; // Mbytes
+	// End settable parameters
+
+	long long pagesize = getpagesize();
+	unsigned long long sizeUsed = 0;
+	unsigned long long sizeActual = 0;
+
+	// Used for offseting to a newline from a loaded block
+	unsigned long long realPos = (start_row)*(numcols+1);
+	unsigned long long allignedPos = realPos - (realPos % pagesize);
+	unsigned long long offsetCol = (realPos - allignedPos) % numcols;
+	unsigned long long offsetRow = floor((realPos - allignedPos) / numcols);
+
+	// Debugging information
+	/*cout << "NUM COLS: " << numcols << endl;
+	/cout << "NUM ROWS: " << numrows_in_block << endl;
+	cout << "REAL: " << realPos << endl;
+	cout << "ALLIGNED: " << allignedPos << endl;
+	cout << "Offset Col: " << offsetCol << endl;
+	cout << "Offset Row: " << offsetRow << endl;
+	cout << "Eigen Dimensions: (" << numrows_in_block << ", " << numcols << ")" << endl;
+	cout << "Starting Point: " << offsetRow*(numcols) + offsetCol << endl;
+	cout << "To Read: " << numrows_in_block * (numcols+1) << endl;
+	*/
+	// Eigen matrix to store block of data in
+	Eigen::MatrixXd M(numrows_in_block, numcols) ;
+
+	// Offset point to start reading mapped file from
+	unsigned long startingPoint = offsetRow*(numcols) + offsetCol;
+
+	// Memory required to read block of data
+	unsigned long long requiredMemory = startingPoint + ( numrows_in_block*(numcols+1)) * 8; // bytes
+
+
+	// Memory usage check
+// 	if (requiredMemory <= maxMemory){ 
+
+		// Memory map file
+		char* dataFile = mapFileFromDiscBlocked(asciifname.c_str(), sizeUsed, sizeActual, requiredMemory, allignedPos);
+
+		// Used to load through the mapped file
+		unsigned long long rowInc = 0;
+		unsigned long long colInc = 0;
+
+		// Loop through file data, reads data in as column major (Default for Eigen)
+		for (unsigned long long int i = 0; i < numrows_in_block * (numcols+1); i++) {
+			// If newline character is encountered
+			if ( dataFile[startingPoint+i] == '\n') {
+				colInc++;
+				rowInc = 0;
+			} else {
+				// Read value from data file and convert to number format and subtract one
+				// 0 -> -1, 1 -> 0, 2 -> 1 as per original ReadBlock code
+				signed int value = (dataFile[startingPoint+i]  - '0') - 1;
+
+				// Store value in Eigen matrix
+                                //  Rcout << "colInc= " << colInc << " rowInc " << rowInc << " value = " << value << endl;
+				 M(colInc,rowInc) = value;
+
+				// Used for debugging purposes
+				// cout << "Row: " << rowInc << " :: " << "Col: " << colInc << " :: " << value << endl;
+
+				rowInc++;
+			}
+               } 
+		// Done using memory mapped file, release it
+		munmap(dataFile, sizeUsed);
+
 //	} else {
-//		cout << "ERROR: Insufficent memory allocated to reading block of data." << endl;
+//   cout << "ERROR: Insufficent memory allocated to reading block of data." << endl;
 //		cout << "Required: " << requiredMemory/1024/1024/1024 << endl;
 //		exit(1);
-//	}
-//
-//	return M;
-//}
+// 	}
+
+	return M;
+}
 
 
 
@@ -1497,7 +1497,8 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
    Eigen::MatrixXd
                    Mt;
 
-  Mt = ReadBlock(fnamebin, 0, dims[0], dims[1]);
+  // Mt = ReadBlock(fnamebin, 0, dims[0], dims[1]);
+  Mt = ReadBlockFast(fnamebin, 0, dims[0], dims[1]);
 
   if(!R_IsNA(selected_loci(0))){
    // setting columns to 0
@@ -1550,7 +1551,8 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
           Eigen::MatrixXd
                   Mt;
-          Mt = ReadBlock(fnamebin, start_row1, dims[0], num_rows_in_block1) ;
+          //  Mt = ReadBlock(fnamebin, start_row1, dims[0], num_rows_in_block1) ;
+           Mt = ReadBlockFast(fnamebin, start_row1, dims[0], num_rows_in_block1) ;
 
          Eigen::MatrixXd
              ar_tmp;
@@ -1693,7 +1695,8 @@ if (!quiet){
 
 if(mem_bytes_needed < max_memory_in_Gbytes){
  // calculation will fit into memory
-    Eigen::MatrixXd Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
+  //   Eigen::MatrixXd Mt = ReadBlock(fnamebin, 0, dims[1], dims[0]);
+     Eigen::MatrixXd Mt = ReadBlockFast(fnamebin, 0, dims[1], dims[0]);
 
 
    if(!R_IsNA(selected_loci(0))){
@@ -1802,7 +1805,8 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
             num_rows_in_block1 = dims[0] - start_row1;
 
 
-         Eigen::MatrixXd Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+        //   Eigen::MatrixXd Mt = ReadBlock(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
+          Eigen::MatrixXd Mt = ReadBlockFast(fnamebin, start_row1, dims[1], num_rows_in_block1) ;
 
 
 
@@ -1956,17 +1960,19 @@ double
       // transpose. 
       if (quiet > 0 )
           message(" A text file is being assumed as the input data file type. ");
+     message("======================================"); 
+    message(memory_needed_in_Gb);
+    message(max_memory_in_Gbytes);
 
-
-       if ( 1.5 * memory_needed_in_Gb   > max_memory_in_Gbytes){
+       if ( 1.0 * memory_needed_in_Gb   > max_memory_in_Gbytes){
            message(" loop old ");
            bool it_worked = CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message, missing);
            if (!it_worked) // an error has occurred in forming ascii file
                  return false;
        } else {
            message(" loop mmap new");
-        //    bool it_worked =  CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message, missing);
-            bool it_worked =  CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message, missing);
+            bool it_worked =  CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message, missing);
+        //    bool it_worked =  CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, csv, quiet, message, missing);
           if (!it_worked) // an error has occurred in forming ascii file
                  return false;
        } 
@@ -2040,7 +2046,8 @@ Eigen::VectorXi
 
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
-    Eigen::MatrixXd genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
+   //  Eigen::MatrixXd genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
+    Eigen::MatrixXd genoMat =  ReadBlockFast(fnamebin,  0, dims[1], dims[0]);
 
    column_of_genos = genoMat.col(selected_locus).cast<int>() ;
    
@@ -2060,8 +2067,10 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
               if ((start_row1 + num_rows_in_block1) > dims[0])
                      num_rows_in_block1 = dims[0] - start_row1  ;
 
+              //Eigen::MatrixXd    
+              //  genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
               Eigen::MatrixXd    
-                genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
+                genoMat_block1 ( ReadBlockFast(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
 
               // removing rows that correspond to individuals with no 
               // trait data
@@ -2152,7 +2161,8 @@ double
 //-------------------------
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
-    Eigen::MatrixXd genoMat = ReadBlock(fnamebin,  0, dims[1], dims[0] );
+   //  Eigen::MatrixXd genoMat = ReadBlock(fnamebin,  0, dims[1], dims[0] );
+     Eigen::MatrixXd genoMat = ReadBlockFast(fnamebin,  0, dims[1], dims[0] );
    if(!R_IsNA(selected_loci(0))){
      // setting columns to 0
      for(long ii=0; ii < selected_loci.size() ; ii++) 
@@ -2168,16 +2178,16 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
     // based on user defined memory. Doing MMt via blockwise multiplication
     // long num_rows_in_block = (max_memory_in_Gbytes  * (double) 1000000000 )/(sizeof(double)  * dims[1]);
  //   long num_rows_in_block = (max_memory_in_Gbytes  * 1000000000 - dims[0] * dims[0] * sizeof(double) )/( 2* sizeof(double)  * dims[1]);
-   // its 2.2 instead of 2 and 4.84 instead of 4 to give us a 10% memory buffuer
-    double part1 = -2.2 *  dims[1];
-    double part2 = 4.84*dims[1] * dims[1] +  4 * max_memory_in_Gbytes  * 1000000000.0/sizeof(double);
+    double part1 = -2 *  dims[1];
+    double part2 = 4*dims[1] * dims[1] +  4 * max_memory_in_Gbytes  * 1000000000.0/sizeof(double);
     part2 = sqrt(part2);
-    long num_rows_in_block = (part1 + part2)/2.0;
+    long num_rows_in_block = (part1 + part2)/2.2;
     message( "number of rows in block is " , num_rows_in_block);
 
            // blockwise multiplication
 
           // find out the number of blocks needed
+        message( " 1 ");
           long num_blocks = dims[0]/num_rows_in_block;
 
 
@@ -2193,9 +2203,10 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
                      num_rows_in_block1 = dims[0] - start_row1;
 
 
+        //        Eigen::MatrixXd    
+        //             genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
                Eigen::MatrixXd    
-                    genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
-
+                    genoMat_block1 ( ReadBlockFast(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
               Eigen::MatrixXd    
                    MMtsub(Eigen::MatrixXd(num_rows_in_block1, num_rows_in_block1).setZero());
 
@@ -2207,21 +2218,20 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
              // Rcpp::Rcout << "  Block 1  "  << std::endl;
              // Rcpp::Rcout << genoMat_block1.rows() << std::endl;
              // Rcpp::Rcout << genoMat_block1.cols() << std::endl;
-
               MMtsub.noalias() = genoMat_block1 * genoMat_block1.transpose(); 
-
               //          i            j            num rows               num   cols
               MMt.block(start_row1, start_row1, num_rows_in_block1, num_rows_in_block1) = MMtsub;
-
-
+       
               for(long j=i+1;j<num_blocks; j++){
                    long start_row2 = j * num_rows_in_block;
                    long num_rows_in_block2 = num_rows_in_block;
                    if ((start_row2 + num_rows_in_block2) > dims[0])
                           num_rows_in_block2 = dims[0] - start_row2;
-                    Eigen::MatrixXd    
-                       genoMat_block2 ( ReadBlock(fnamebin,  start_row2, dims[1], num_rows_in_block2)) ;
+              //       Eigen::MatrixXd    
+              //          genoMat_block2 ( ReadBlock(fnamebin,  start_row2, dims[1], num_rows_in_block2)) ;
 
+                     Eigen::MatrixXd    
+                        genoMat_block2 ( ReadBlockFast(fnamebin,  start_row2, dims[1], num_rows_in_block2)) ;
 
 
 

@@ -183,14 +183,15 @@ rm ./Eagle/.RData
 
 R CMD build Eagle 
 
-
+R CMD INSTALL Eagle -l ~/RLibs
+exit -1
 
  R CMD check --as-cran Eagle_1.0.0.tar.gz 
 
 
-
-
 R CMD INSTALL Eagle -l ~/RLibs
+
+
 
 rm tmp.R  tmp.Rout 
 

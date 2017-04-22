@@ -701,7 +701,7 @@ if(!is.null(fformula)){
 
     if(quiet > 0){
      message(" The following rows are being removed from pheno due to missing data: \n")
-     message("             ", indxNA, "\n\n")
+     message(cat("             ", indxNA, "\n\n"))
     }
 
  }
@@ -711,9 +711,25 @@ if(!is.null(fformula)){
 ## remove rows in M.ascii and columns in Mt.ascii of those individuals listed in indxNA 
 if(length(indxNA)>0){
     res <- ReshapeM(fnameM=geno$asciifileM, fnameMt=geno$asciifileMt, indxNA=indxNA, dims=geno$dim_of_ascii_M)
-    message("new dimensions of reshaped M", res, "\n")
-    geno$asciifileM  <-  fullpath("M.asciitmp")
-    geno$asciifileMt <-  fullpath("Mt.asciitmp")
+    message(cat("new dimensions of reshaped M", res, "\n"))
+
+     if(.Platform$OS.type == "unix") {
+       geno$asciifileM <- paste(dirname(geno$asciifileM), "/", "M.asciitmp", sep="")
+     } else {
+       geno$asciifileM <- paste(dirname(geno$asciifileM), "\\", "M.asciitmp", sep="")
+     }
+
+     if(.Platform$OS.type == "unix") {
+       geno$asciifileMt <- paste(dirname(geno$asciifileMt), "/", "Mt.asciitmp", sep="")
+     } else {
+       geno$asciifileMt <- paste(dirname(geno$asciifileMt), "\\", "Mt.asciitmp", sep="")
+     }
+
+    #geno$asciifileM  <-  fullpath("M.asciitmp")
+    #geno$asciifileMt <-  fullpath("Mt.asciitmp")
+    print(" in indxNA ================== ")
+    print(getwd())
+    print(geno)
     geno$dim_of_ascii_M <- res
 }
 

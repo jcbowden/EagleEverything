@@ -559,12 +559,14 @@ check.for.NA.in.trait <- function(trait=NULL)
         } else {
           ## place in reverse order
           indxNA <- sort(indxNA, decreasing = TRUE)
-message("\n\n WARNING!!!! The individuals in rows ", indxNA, " either have missing trait data ")
+message(cat("\n\n WARNING!!!! The individuals in rows ", indxNA, " either have missing trait data "))
 message("             and/or missing explanatory variable values. These individuals have ")
-message("             been removed from the analysis.  \n")
+message(cat("             been removed from the analysis.  \n"))
           if(any(is.na(indxNA))){
             message("Error:  (internal).  indxNA contains NA values. ")
-            stop(" AM has terminated with errors. ", call. = FALSE)
+            message(" AM has terminated with errors. ")
+            return(NULL)
+            #stop(" AM has terminated with errors. ", call. = FALSE)
           }
         }
 
@@ -1388,6 +1390,7 @@ if (type=="text"){
                quiet = quiet, message=message, missing=missing)
     if(!it_worked) #  creation of ASCII file has failed 
        return(FALSE)
+ 
  
     createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,  
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet, message=message )
