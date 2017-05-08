@@ -33,7 +33,6 @@
 ##     differing number of elements in a row for the genotype file    x
 ##     genotype file not found                                        x
 ##     genotype text file has funny characters                        x
-##     csv = TRUE                                                     x
 
 ## Map file
 ##     map file not found                                             x
@@ -53,48 +52,51 @@
 
 
 
+
+
 #' Package documentation
 #'
 #' @name Eagle-package
-#' @title A package for genome-wide association mapping with multiple-locus models and for populations of 
-#' arbitrary structure. 
+#' @title Multiple-locus Genome-Wide Association Mapping
 #' @docType package
-#' @author Andrew W. George \email{andrew.george@@csiro.au}
-#' @details See below
-#' @description A fully documented R package for performing association mapping with 
-#' multiple-locus models on a genome-wide scale. 
-#' @section Motivation:  Data from genome-wide association studies are analysed, commonly, with single 
-#' locus models, that is,  on a locus-by-locus basis. Association mapping with multiple-locus 
-#' models is more powerful but most multiple-locus methods do not scale well with study size
-#' and can be difficult to implement in practice.  This package was designed to make 
-#' genome-wide association mapping with multiple-locus models simple and practical. 
-#' It is based on linear mixed models so is best suited for 
-#' traits which are continuous/ quantitative. However, 
-#' association mapping with binary traits is also possible.
+#' @author Andrew W. George \email{andrew.george@@csiro.au} with lots of help from Joshua Bowden (CSIRO). 
+#' @description A package for making genome-wide association mapping with multiple-locus linear mixed models routine.
+#' @details  
+#' @section Motivation:  Data from genome-wide association studies are analyzed, commonly, with single-locus 
+#' models. That is,  analyzes are performed on a locus-by-locus basis. Multiple-locus approaches 
+#' that model the association between a trait and multiple loci simultaneously are more powerful. However, 
+#' these methods do not scale well with study size and many of the packages that implement these methods are not easy 
+#' to use. 
+#' Eagle was specifically designed to make 
+#' genome-wide association mapping with multiple-locus models simple and practical.  Much effort has been 
+#' devoted to making the package as easy to use as possible. As part of this effort, we 
+#' developed a web-based user interface to Eagle, shielding users from having to write R code to run the functions.  
 #'
-#'@section Reading in  Marker Data: Our package can accept genotype data in 
-#' plain text files and allelic data in PLINK ped files. These files can be 
-#' larger than the memory capacity of the machine. Other formats 
-#' can also be handled by using plink (with the \code{recode} option) to 
-#' convert them into ped files.  See \code{\link{ReadMarker}} for more details.
-#'
-#' @section Quick start guide:
-#' \itemize{
-#' \item{}{Create a marker file (plain text or PLINK ped format) with no column 
-#' headings and where the rows are the individuals and the columns are the marker loci.}
-#' \item{}{Create a map file (optional) that has three columns, the name of the 
-#' marker locus, the chromosome number, and the map location of the marker locus. 
-#' Column headings are required.}
-#' \item{}{Create a phenotype file with the trait data 
-#'    and if appropriate, explanatory variable data. Column headings are required. }
-#' \item{}{Input marker data with \code{\link{ReadMarker}} }
-#' \item{}{Input the map file, if present, with \code{\link{ReadMap}}}
-#' \item{}{Input the phenotypic data with \code{\link{ReadPheno}}}
-#' \item{}{Perform genome wide association mapping with \code{\link{AM}}}    
+#' @section Assumptions:
+#' \enumerate{
+#' \item Individuals are diploid but they can be inbred or outbred.
+#' \item The marker and phenotype data are in separate files.
+#' \item The rows in the marker and phenotype file correspond to data collected on the same individuals.
+#' \item  Marker loci are snps. Dominant and multi-allelic loci will need to be converted into biallelic (snp-like) loci. 
+#' \item The trait is continuous and normally distributed. Eagle can handle non-normally distributed trait data but 
+#'  there may a loss of power
+#' to detect marker-trait associations. 
 #' }
+#' @section Reading in  Marker Data:
+#' Eagle can handle marker data in the form of genotypes or alleles. If genotypes have been collected, then 
+#' the input file must be a plain space separated text file. If allelic information have been collected on the
+#' marker loci, then the input file must be in the form of a PLINK ped file. 
+#' These files can be 
+#' larger than the memory capacity of the machine. Other formats 
+#' can also be handled via the  PLINK package and using  the \code{recode} option to 
+#' convert different format marker files into ped files.  See \code{\link{ReadMarker}} for more details.
 #'
-#' @section Output: The aim of a GWAS is to identify those marker loci 
-#' closest to the genes that are influencing the trait. So, when the GWAS data are 
+#' @section Quick Start Guide:
+#' At the R prompt, run \preformatted{OpenUI()} This opens a web browser to the
+#' user interface for Eagle. 
+#'
+#' @section Output: The aim of a genome-wide association study (GWAS) is to identify those marker loci 
+#' closest to the genes that are influencing a trait. So, when the GWAS data are 
 #' analysed, a set of marker loci labels are returned as the output. These marker 
 #'  loci are closest to the genes underlying the trait and are found while simultaneously 
 #' accounting for multiple marker-trait associations, familial relatedness, and 
@@ -102,25 +104,16 @@
 #' More detailed output such as the additive effect of the marker locus, its 
 #' significance in the multiple-locus model ( measured by a p-value), and 
 #' an estimate of the amount of variation explained by the locus can be 
-#' obtained by running the summary function (\code{\link{SummaryAM})}.
+#' obtained by running the summary function \code{\link{SummaryAM}}.
 #'
-#'@section Where to get help: To see an overview of the package and its functions type
-#' \preformatted{
-#' library(, Eagle)
-#' }
-#'
-#' For detailed help on a function, type
-#'
-#' \preformatted{
-#' help(functionname)
-#' }
-#'
-#' where \emph{functionname}  is the name of the function.
-#'
-#' A YouTube quick start presentation can be found here ... 
-#'
-#' Powerpoint slides found here Website
-#'
+#'@section Where to get help: 
+#' A variety of different help options are available. 
+#' \itemize{
+#'  \item At the R prompt, type  \preformatted{library(, "Eagle")} for an overview of the package and its functions. 
+#' \item For detailed help on a function called "foo" say, type  \preformatted{help("foo")} 
+#' \item A QuickStart vignette and WorkedExample vignette are available by typing, at the R prompt,  \preformatted{vignette("QuickStart", "Eagle")} and \preformatted{vignette("WorkedExample", "Eagle")}, respectively.  
+#' \item Email <Eagle@csiro.au>
+#'}
 #' @keywords Association mapping, multiple-locus models, linear mixed models.
 NULL
 
@@ -131,8 +124,7 @@ NULL
 
 
 
-
-## internal function to get absolute path name under unix and windows
+## internal function to get absolute path name under Unix and windows
 ## but only if absolute path has not already been specified. 
 fullpath <- function(fname){
  ## check if full path has been given
@@ -588,7 +580,7 @@ if(is.null(colname.trait)){
 if(is.null(pheno)){
    message("Error: the pheno parameter has not been set. ")
    message("       Set this parameter to the object that contains ")
-   message("       the phenotypic data. This object is the result of running  ")
+   message("       the phenotype data. This object is the result of running  ")
    message("       ReadPheno. \n")
    return(TRUE)
 }
@@ -596,7 +588,7 @@ if(is.null(pheno)){
 if(is.null(geno)){
    message("Error: the geno parameter has not been set. ")
    message("       Set this parameter to the object that contains ")
-   message("       the phenotypic data. This object is the result of running  ")
+   message("       the phenotype data. This object is the result of running  ")
    message("       ReadMarker. \n")
    return(TRUE)
 }
@@ -658,7 +650,7 @@ if(is.null(map)){
  if(is.null(colname.trait)){
     message("Error: the column name for the trait/response has not been specified.")
     message("       Please set trait to the column name of the trait data in ")
-    message(" .     the phenotypic file. The allowable column names are ", names(pheno) )
+    message("       the phenotype file. The allowable column names are ", names(pheno) )
     return(TRUE)
  }
 
@@ -670,9 +662,9 @@ if(is.null(map)){
 
  indx <- match(colname.trait, names(pheno))
  if(any(is.na(indx))){
-   message("Error: the trait column name does not match any of the column names in the phenotypic file. ")
-   message("       The name that has been supplied is ", pheno)
-   message("       The column names of the phenotypic file are ", names(pheno))
+   message("Error: the trait column name does not match any of the column names in the phenotype file. ")
+   message("       The name that has been supplied is ", colname.trait)
+   message("       The column names of the phenotype file are ", names(pheno))
    return(TRUE)
  }
 
@@ -685,8 +677,8 @@ if(is.null(map)){
  ## check that geno and pheno contain the same number of individuals
  if(nrow(pheno) !=  geno[["dim_of_ascii_M"]][1])
  {
-   message("Error: the number of individuals specified in the phenotypic file is ", nrow(pheno))
-   message("       the number of individuals specified in the genotypic file is ",  geno[["dim_of_ascii_M"]][1])
+   message("Error: the number of individuals specified in the phenotype file is ", nrow(pheno))
+   message("       the number of individuals specified in the genotype file is ",  geno[["dim_of_ascii_M"]][1])
    message("       The number of individuals should be the same in the two files.")
    return(TRUE)
  }
@@ -695,7 +687,7 @@ if(is.null(map)){
  if(nrow(map) != geno[["dim_of_ascii_M"]][2])
  {
    message("Error: the number of marker loci in the map file is ", nrow(map))
-   message("       The number of marker loci in the genotypic file is ", geno[["dim_of_ascii_M"]][2])
+   message("       The number of marker loci in the genotype file is ", geno[["dim_of_ascii_M"]][2])
    message("       The number of marker loci in the two files should be the same." )
    return(TRUE)
  }
@@ -712,7 +704,7 @@ if(is.null(map)){
 
 
 
-#### To run multple GPU's
+#### To run multiple GPU's
 ### > export OMP_NUM_THREADS=$PBS_NUM_PPN
 ## > module load cuda/6.0 R
 ## > module load R/3.0.0
@@ -736,7 +728,7 @@ if(is.null(map)){
 ##-------------------------------
 
 
-calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_ascii_M=NULL, quiet = 0, message=message)
+calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_ascii_M=NULL, quiet = TRUE, message=message)
 {
  ## R interface to Rcpp code to calculate M %*% t(M)
  ## Args
@@ -773,7 +765,7 @@ calculateMMt <- function(geno=NULL, availmemGb, ncpu, selected_loci=NA, dim_of_a
 
 
 calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE, 
-                                           quiet = 0 , ngpu=0, message=message)
+                                           quiet = TRUE , ngpu=0, message=message)
 {
   ## R function for calculating the square root of M * M^t
   ## and the inverse of the square root of MMt
@@ -783,12 +775,12 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
   ##  MMt   a matrix of M * M^t
   ##  checkres  when true, the accuracy of the inversion is checked. 
 
-  ## testing that MMt is postive definite
+  ## testing that MMt is positive definite
   if(!is.positive.definite(MMt)){
     message(" Error: the matrix multiplication M %*% t(M) is not positive definite. \n")
     message("        This can occur if there are individuals with identical marker \n")
-    message("        information. Please remove individuals with indentical marker \n")
-    message("        information, remembering also to remove their associated phenotypic \n")
+    message("        information. Please remove individuals with identical marker \n")
+    message("        information, remembering also to remove their associated phenotype \n")
     message("        information as well. \n")
     message(" Internal function: calculateMMt_sqrt_and_sqrtinv has terminated with errors")
     return(NULL)
@@ -903,7 +895,7 @@ calculateP  <- function(H=NULL, X=NULL, ngpu=0, message=message)
 }
 
 
-calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, quiet=FALSE, message=message)
+calculate_reduced_a <- function(varG=NULL, P=NULL, MMtsqrt=NULL, y=NULL, quiet=TRUE, message=message)
 {
 
   if( !(nrow(P) ==  length(y))){
@@ -941,7 +933,7 @@ return(a)
 
 
 mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8, dim_of_ascii_M=NULL, 
-                                 selected_loci=NA, quiet = 0, message=message)
+                                 selected_loci=NA, quiet = TRUE, message=message)
 {
  ## Rcpp function to calculate the BLUP (a) values under a dimension reduced model
  ## Args:
@@ -1001,7 +993,7 @@ return(ar)
 calculate_a_and_vara <- function(geno=NULL, maxmemGb=8, 
                          selectedloci = NA,
                          invMMtsqrt=NULL, transformed_a=NULL, transformed_vara=NULL,
-                         quiet = 0, message=message)
+                         quiet = TRUE, message=message)
 {
  ## an Rcpp function to take dimension reduced a (BLUP) values 
  ## and transform them into the original a (BLUP) values and their variances 
@@ -1038,10 +1030,10 @@ calculate_a_and_vara <- function(geno=NULL, maxmemGb=8,
 }
 
 
-calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MMtsqrt=NULL, quiet=FALSE, message=message)
+calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MMtsqrt=NULL, quiet=TRUE, message=message)
 {
-## Using var(\hat(a)) = simgaG - Cjj  where Cjj is the component from C^-1 (henerdsons 
-##   mixed model equations coefficent matrix.   See Verbyla et al. TAG 2007.
+## Using var(\hat(a)) = simgaG - Cjj  where Cjj is the component from C^-1 (Henderson's 
+##   mixed model equations coefficient matrix.   See Verbyla et al. TAG 2007.
 
 ##  Mixed model equations for the linear mixed model
 ##
@@ -1106,11 +1098,11 @@ if(!is.null(ncpu)){
 if(!is.null(availmemGb))
 {
  if(!is.numeric(availmemGb)){
-   message("Error: availmemGb is not a numeric value. It is of class ", class(availmemGb), "It should be the number of giggabytes of RAM available. \n")
+   message("Error: availmemGb is not a numeric value. It is of class ", class(availmemGb), "It should be the number of gigabytes of RAM available. \n")
    return(TRUE)
  }
  if(availmemGb <= 0){
-    message("Error: availmemGb cannot be zero or a a negative number.  It should be the number of giggabytes of RAM available. \n")
+    message("Error: availmemGb cannot be zero or a negative number.  It should be the number of gigabytes of RAM available. \n")
     return(TRUE)
   } 
 }
@@ -1149,41 +1141,43 @@ if(!is.null(file_phenotype))
 }
 
 #' @title Read phenotype file
-#' @description Read in the phenotypic data. The first row is assumed to contain the column headings. 
+#' @description Read in the phenotype data. 
 #' @param filename contains the name of the phenotype  file. The file name needs to be in quotes.
 #' @param header a logical value. When \code{TRUE}, the first row of the file contains the names of the columns.  Default is \code{TRUE}.
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. Default
 #'              is \code{FALSE}.
-#' @param ... any other \code{\link{read.table}} formatting commands
+#' @param missing the number or character for a missing phenotype value.
 #' @details  
 #' 
-#' \code{ReadPheno} reads in the phenotypic data. A space separated plain text file is assumed. Each row in this file 
-#' corresponds to an individual. The number of rows in the phenotypic file must be the same as the number of rows in 
+#' \code{ReadPheno} reads in the phenotype data 
+#' which are data measured on traits and any fixed effects (or predictors/features/explanatory variables). 
+#' A space separated plain text file is assumed. Each row in this file 
+#' corresponds to an individual. The number of rows in the phenotype file must be the same as the number of rows in 
 #' the marker data file. Also, the ordering of the individuals must be the same in the two files.  A space separated file with 
 #' column headings is the default but can be changed with the \code{header} and \code{csv} options. 
 #'
-#' The phenotypic file may contain multiple traits and explanatory variables. 
+#' The phenotype file may contain multiple traits and fixed effects variables. 
 #'
-#' Missing values are allowed and should be coded NA. 
-#
-#' As an example, suppose we have three individuals for which we have collected data on two quantitative traits (y1 and y2), and 
-#' four explanatory variables (var1, var2, var3, and var4). The data looks like  
+#' Missing values are allowed. Eagle is told which value should be treated as missing by setting the \code{missing} 
+#' parameter to the value. 
+#'
+#' For example, suppose we have three individuals for which we have collected data on two quantitative traits (y1 and y2), and 
+#' four explanatory variables (age, weight, height, and sex). The data looks like  
 #' \tabular{cccccc}{
-#'     y1      \tab y2      \tab  var1  \tab var2 \tab   var3  \tab var4 \cr
-#'     112.02  \tab -3.123  \tab  10    \tab H1   \tab   M     \tab blue \cr
-#'     156.44  \tab 1.2     \tab  12    \tab H1   \tab   NA     \tab red  \cr
-#'     10.3    \tab NA   \tab  9     \tab H2   \tab   F     \tab green 
+#'     y1      \tab y2      \tab  age  \tab weight \tab   height  \tab sex \cr
+#'     112.02  \tab -3.123  \tab  26    \tab 75   \tab   168.5     \tab M \cr
+#'     156.44  \tab 1.2     \tab  45    \tab 102   \tab   NA     \tab NA  \cr
+#'     10.3    \tab NA   \tab  28     \tab 98   \tab   189.4     \tab F 
 #'}
+#' where the first row has the column headings and the next three rows contain the observed data on three 
+#' individuals. 
 #'
-#' Then to load these data, we would use the command 
+#' To load these data, we would use the command 
 #'
-#' \preformatted{pheno_obj <- ReadPhenr(filename="pheno.dat")}
+#' \preformatted{pheno_obj <- ReadPheno(filename="pheno.dat", missing="NA")}
 #'
 #' where "pheno.dat" is the name of the phenotype file, and \code{pheno_obj} is the R object that contains the 
-#' results from reading in the phenotypic data.    
-#' The column headings of the dataframe are "y1", "y2", 
-#' "var1", "var2", "var3", and "var4" where "var2", "var3", and "var4" are read in as factors with the other columns treated as 
-#' numerics. 
+#' results from reading in the phenotype data.    The file is located in the working directory so there is no need to specify the full path, just the file name is suffice. 
 #'
 #'
 #' \subsection{Dealing with missing trait data}{
@@ -1192,31 +1186,31 @@ if(!is.null(file_phenotype))
 #' These individuals are removed  from the analysis and a warning message is generated.
 #' }
 #' 
-#' \subsection{Dealing with missing explanatory variable values}{
+#' \subsection{Dealing with missing fixed effects values}{
 #'
-#' \code{AM} deals automatically with individuals with missing explanatory variable values. 
+#' \code{AM} deals automatically with individuals with missing fixed effects values. 
 #' These individuals are removed from the analysis and a warning message is generated
 #' }
 #'
 #'
 #' @seealso \code{\link{ReadMarker}} for reading in marker data, \code{\link{AM}} for performing association mapping.
 #' @return 
-#' a data frame is returned of the phenotypic data. If \code{header} is true, the 
-#' names of the columns will be as specified by the first row of the phenotypic file. If \code{header} is \code{FALSE}, 
+#' a data frame is returned of the phenotype data. If \code{header} is true, the 
+#' names of the columns will be as specified by the first row of the phenotype file. If \code{header} is \code{FALSE}, 
 #' generic names are supplied by R in the form of V1, V2, etc.  If no column headings are given, these 
 #' generic names will need to be used in the \code{trait} and \code{fformula} parameters in 
-#' \code{\link{AM}}.  You can print out the column names of the dataframe by using
+#' \code{\link{AM}}.  You can print out the column names of the data frame by using
 #'
 #' \preformatted{names(pheno_obj)}
 #'
-#'
+#' The column names are also printed along with other summary information when \code{ReadPheno} is run. 
 #'
 #'
 #'
 #' @examples
-#' # Read in  phenotypic data from ./extdata/
+#' # Read in  phenotype data from ./extdata/
 #' 
-#' # find the full location of the phenotypic data 
+#' # find the full location of the phenotype data 
 #' complete.name <- system.file("extdata", "pheno.txt", package="Eagle")
 #'
 #' pheno_obj <- ReadPheno(filename=complete.name)
@@ -1224,7 +1218,7 @@ if(!is.null(file_phenotype))
 #'  ## print a couple of lines of the data file
 #'  head(pheno_obj)
 #'
-ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, ...){
+ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, missing = NULL ){
 
   phenofile <- fullpath(filename)
 
@@ -1238,7 +1232,13 @@ ReadPheno <- function(filename = NULL, header=TRUE, csv=FALSE, ...){
   sep <- ""
   if(csv) sep=","
   message("\n\n Loading Phenotype file ... \n\n")
-  phenos <- read.table(phenofile, header=header, sep=sep, ...)
+  if(is.null(missing)){
+     phenos <- read.table(phenofile, header=header, sep=sep )
+  } else {
+     phenos <- read.table(phenofile, header=header, sep=sep, na.strings = as.character(missing) )
+  }
+
+
   ## check for factors with only one level which will cause contrast code to crash
   for(ii in names(phenos)){
     if(is.factor(phenos[[ii]])){
@@ -1293,24 +1293,30 @@ message("\n WARNING: if the column classes are incorrect, these will need to be 
 
 
 #' @title Read map file
-#' @description Read in the marker map  data. The first row is assumed to contain the column headings. 
+#' @description Read in the marker map  data. 
 #' @param filename contains the name of the map file. The file name needs to be in quotes.
 #' @param csv   a logical value. When \code{TRUE}, a csv file format is assumed. When \code{FALSE}, a space separated format is assumed. 
+#' @param header   a logical value. When \code{TRUE}, the first row of the file contains the column headings. 
 #' @details
-#' Unlike classical linkage mapping, association mapping does not require a map in order to analyse the data. 
-#' So, reading in a map file is optional. If a map file is read into our package, then the marker names are used when 
-#' results are reported from \code{\link{AM}}. If a map file is not supplied, then generic names M1, M2, ..., are given to the 
-#' marker loci in columns 1, 2, ...
+#' Association mapping, unlike classical linkage mapping, 
+#' does not require a map to find marker-trait associations. 
+#' So, reading in a map file is optional. 
+#' If a map file is supplied, then the marker names from this file are used when reporting the findings from \code{\link{AM}}. 
+#' If a map file is not supplied, then generic names M1, M2, ..., are assigned to the 
+#' marker loci where the number refers to the  column number in the marker file. 
 #' 
 #' A space separated text file with column headings is assumed as the default input. The map file can have three or four 
-#' columns. If the map file has three columns, then it is assmed that the three columns are the marker locus names, 
+#' columns. If the map file has three columns, then it is assumed that the three columns are the marker locus names, 
 #' the chromosome number, and the map position (in any units). If the map file has four columns as with a PLINK map file, 
 #' then the columns are assumed to be the marker locus names, the chromosome number, the map position in centimorgans, 
 #' and the map position in base pairs. 
 #'
 #' Missing values are not allowed. 
 #' 
-#' The order of the marker loci in this file is assumed to be in the same order as the loci in the marker data file. 
+#' The order of the marker loci in this file is assumed to be  the same order as the loci in the marker data file.  
+#'
+#' The first column of the map file is assumed to contain the marker names. 
+#'
 #' @seealso \code{\link{ReadMarker}} and \code{\link{ReadPheno}}.
 #' @return 
 #' a data frame is returned of the map data. 
@@ -1328,7 +1334,7 @@ message("\n WARNING: if the column classes are incorrect, these will need to be 
 #' head(map_obj)
 #'
 #'
-ReadMap  <- function( filename = NULL, csv=FALSE)
+ReadMap  <- function( filename = NULL, csv=FALSE, header=TRUE)
 {
  mapfile <- fullpath(filename)
  error.code <-  check.inputs(file_genotype=filename)
@@ -1336,9 +1342,11 @@ ReadMap  <- function( filename = NULL, csv=FALSE)
     message(" ReadMap has terminated with errors.")
    return(NULL)
   }
-  sep=""
+  sep=" "
   if(csv) sep=","
-  map <- read.table(mapfile, header=TRUE, sep=sep)
+  #map <- read.table(mapfile, header=header, sep=sep)
+  map <- fread(mapfile, header=header, sep=sep)
+  map <- as.data.frame(map)
 message("\n\n Loading map file ... \n\n")
 message("                    Summary of Map File  \n")
 message("                   ~~~~~~~~~~~~~~~~~~~~~~ \n")
@@ -1357,13 +1365,13 @@ return(map)
 
 
 create.ascii  <- function(file_genotype=NULL,  type="text", AA=NULL, AB=NULL, BB=NULL, 
-                         availmemGb=8, dim_of_ascii_M=NULL, csv=FALSE, quiet=FALSE, missing=NULL){
+                         availmemGb=8, dim_of_ascii_M=NULL, quiet=TRUE, missing=NULL){
  ## an Rcpp function to create the no-space file of the genotype data M and Mt
  ## from marker data. The marker data may be from an ASCII file or PLINK ped file.
  ## Args
  ## file_genotype    absolute path and file name of genotype file
  ## AA, AB, BB       numeric codes for associated genotypes in marker genotype file
- ## availmemGb     available memory for converstion to packed binary
+ ## availmemGb     available memory for conversion to reformatted file
  ## dim_of_ascii_M             row, column dimensions of M.  
  ## type            where file type is text or PLINK
  #asciiMfile <- fullpath("M.ascii")
@@ -1386,7 +1394,7 @@ if (type=="text"){
       missing <- "NA"
     }
     it_worked <- createM_ASCII_rcpp(f_name = file_genotype, type=type ,  f_name_ascii = asciiMfile, AA = AA, AB = AB, BB = BB,
-               max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv = csv,
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , 
                quiet = quiet, message=message, missing=missing)
     if(!it_worked) #  creation of ASCII file has failed 
        return(FALSE)
@@ -1400,7 +1408,7 @@ if (type=="text"){
     ncol  <- dim_of_ascii_M[2] 
     dim_of_ascii_M[2] <- 2*dim_of_ascii_M[2] + 6  ## number of cols in a PLINK file
     createM_ASCII_rcpp(f_name = file_genotype, type=type,  f_name_ascii = asciiMfile, AA ="-9", AB = "-9", BB = "-9",
-               max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , csv=csv, quiet = quiet,   
+               max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , quiet = quiet,   
                message=message, missing="NA")
 
     dim_of_ascii_M[2] <- ncol ## setting back to number of cols in no-space ASCII file
@@ -1419,27 +1427,26 @@ if (type=="text"){
 #' @title Read  marker data.
 #' 
 #' @description
-#' A function for reading in marker data. Three different types of data can be read. 
+#' A function for reading in marker data. Three types of data can be read. 
 #' @param filename contains the name of the marker  file. The file name needs to be in quotes. 
-#' @param type  specify the type of file. Choices are "text" and "PLINK".
-#' @param missing the number or character for a missing genotype in the text file. 
-#' @param AA     the character(s) or number corresponding to the AA genotype in the marker genotype file. 
-#' This must be specified if the file type is "text".  The character(s) must be in quotes.
-#' @param AB     the  character(s) or number  corresponding to the AB genotype in the marker genotype file. This can be left unspecified 
-#'               if there are no heterozygote genotypes (i.e. the individuals are inbred). If specified, the character(s) must 
-#'               be in quotes. 
-#' @param BB        the character(s) or number corresponding to the BB genotype in the marker genotype file. This must be specified if the file type is "text".  The character(s) must be in quotes.
+#' @param type  specify the type of file. Choices are "text" (the default) and "PLINK".
+#' @param missing the number or character for a missing genotype in the text file. There is no need to specify this for a PLINK ped file. Missing 
+#' allele values in a PLINK file must be coded as "0" or "-".  
+#' @param AA     the character(s) or number corresponding to the AA snp genotype in the marker genotype file. 
+#' This must be specified if the file type is "text".  If a character then it must be in quotes.
+#' @param AB     the  character(s) or number  corresponding to the AB snp genotype in the marker genotype file. This can be left unspecified 
+#'               if there are no heterozygote genotypes (i.e. the individuals are inbred). 
+#' If specified and a character, then it must be in quotes. 
+#' @param BB        the character(s) or number corresponding to the BB snp genotype in the marker genotype file. 
+#' This must be specified if the file type is "text".  If a character, then it must be in quotes.
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). 
-#'         This should be set to be as large as possible.  
-#' @param csv   a logical value. When \code{TRUE}, a comma separated text file is assumed. When \code{FALSE}, a space separated text file 
-#'         is assumed. Only type="text" files are permitted to be space or comma separated.  
-#'         PLINK ped files are assumed to be space separated.
-#' @param  quiet      an integer value specifying the number of marker loci for which diagnostic information is 
-#' to be printed to the screen. This is useful for error checking. 
+#'         This should be set to be as large as possible for best performance.   
+#' @param  quiet      a logical value. If set to \code{TRUE}, additional runtime output is printed along with additional error checking. Specifically, 
+#'               \code{ReadMarker} will check that the marker file has the same number of entries per row. 
 #'
 #' @details
 #' 
-#' \code{ReadMarker} can handle three different types of marker data; namely
+#' \code{ReadMarker} can handle three different types of marker data; namely,
 #' previously read marker data, genotype data in a plain text file, and PLINK ped files. 
 #'  
 #' \subsection{\strong{Reading in previously read marker data}}{
@@ -1448,25 +1455,23 @@ if (type=="text"){
 #'
 #' \preformatted{geno_obj <- ReadMarker()}
 #'
-#' where \code{geno_obj} is the name of the user defined R object that is to contain the marker data. This can be 
-#' anything you want. 
+#' where \code{geno_obj} is the name of the user defined R object that is to contain the 
+#' results from running \code{ReadMarker}.
 #'
 #' For this command to work without error, the working directory needs to 
-#' be the same as the working directory form which the \code{\link{ReadMarker}} was first run. 
-#' You can check on what the 
+#' be the same as the working directory from  which the \code{\link{ReadMarker}} was first run. 
+#' That is, R needs to be started from the same directory for both sessions. 
+#' You can check what the 
 #' current working directory is with the command 
 #' \preformatted{getwd()}
-#' and you can change your working directory with the command 
-#' \preformatted{changewd("\\newworkingdir")}
-#' where "\\newworkingdir" is the new working directory for the R session.
 #'
 #' Loading the marker data in this way is much faster than reading the data again from file 
 #' because there is no need to pre-process the data, nor check the data for errors. }
 #'
-#' \subsection{\strong{Reading in plain text file containing marker genotypes}}{
+#' \subsection{\strong{Reading in a plain text file containing the marker genotypes}}{
 #' To load a text file that contains snp genotypes, run \code{ReadMarker} with \code{filename} set to the name of the file, 
-#' and \code{AA}, \code{AB}, \code{BB} set to corresponding genotype values. 
-#' The genotype values in the text file can be numeric, character, or even a mix of both.
+#' and \code{AA}, \code{AB}, \code{BB} set to the corresponding genotype values. 
+#' The genotype values in the text file can be numeric, character, or  a mix of both.
 #'
 #' We make the following assumptions
 #' \itemize{
@@ -1474,38 +1479,44 @@ if (type=="text"){
 #' \item{The file is allowed to contain missing genotypes that have been coded according to \code{missing}}
 #' \item{Individuals are diploid}
 #' \item{The rows of the text file are the individuals and the columns are the marker loci}
-#' \item{The file is either space or comma separated}
-#' \item{The mapping of the observed genotypes to \code{AA}, \code{AB}, and \code{BB}, remains the same for all loci}
+#' \item{The file is space separated}
+#' \item{The mapping of the observed genotypes in the marker file to \code{AA}, \code{AB}, and \code{BB}, remains the same for all loci}
 #' \item{Individuals are outbred when \code{AA}, \code{AB}, and \code{BB} are specified and 
 #'  inbred when only \code{AA}, and \code{BB} are specified}
+#' \item{For a text file, the same alphanumeric value is used for all missing marker genotypes. For a PLINK ped file, the missing allele is allowed to 
+#' be "0" or "-".} 
 #'}
 #'
-#' Suppose we have a space separated text file with marker genotype data collected from five snp loci on three individuals
-#' where the snp genotype AA has been coded 0, the snp genotype AB has been coded 1, and the snp genotype BB has been coded 2
+#' For example, suppose we have a space separated text file with marker genotype data collected from five snp loci on three individuals
+#' where the snp genotype AA has been coded 0, the snp genotype AB has been coded 1, the snp genotype BB has been coded 2, and missing genotypes are coded 
+#' as 99
 #' \tabular{ccccc}{
 #'  0 \tab  1  \tab  2 \tab  0\tab   2 \cr
 #'  1 \tab  1  \tab  0 \tab  2 \tab  0 \cr
-#'  2 \tab  2  \tab  1 \tab  1 \tab  1
+#'  2 \tab  2  \tab  1 \tab  1 \tab  99
 #'}
-#'  Then to load these data, we would use the command
+#' The file is called "geno.txt" and is located in the directory "/my/dir/". 
 #'
-#' \preformatted{geno_obj <- ReadMarker(filename="geno.txt", AA=0, AB=1, BB=2)}
+#'  
+#' To load these data, we would use the command
 #'
-#' where the results from running the function are placed in \code{geno_obj}, and the name of the file is "geno.txt" 
-#' which is located in the current working directory (which can be found 
-#' by using the command \code{getwd()}).
+#' \preformatted{geno_obj <- ReadMarker(filename="/my/dir/geno.txt", AA=0, AB=1, BB=2, type="text", missing=99)}
 #'
-#' Suppose we have a comma separated text file with marker genotype data collected from five snp loci on three individuals 
+#' where the results from running the function are placed in \code{geno_obj}.
+#'
+#' As another example, suppose we have a space separated text file with marker genotype data collected from five snp loci on three individuals 
 #' where the snp genotype AA has been coded a/a, the snp genotype AB has been coded a/b, and the snp genotype BB has been coded b/b
 #' \tabular{c}{
-#'  a/a,a/b,b/b,a/a,b/b \cr
-#'  a/b,a/b,a/a,b/b,a/a \cr
-#'  b/b,b/b,a/b,a/b,a/b
+#'  a/a a/b b/b a/a b/b \cr
+#'  a/b a/b a/a b/b a/a \cr
+#'  b/b b/b a/b a/b NA 
 #'}
+#' The file is called "geno.txt" and is located in the same directory from which R is being run (i.e. the working directory). 
 #'
-#' Then to load these data, we would use the command 
+#' To load these data, we would use the command 
 #'
-#' \preformatted{geno_obj <- ReadMarker(filename="geno.csv", AA="a/a", AB="a/b", BB="b/b", csv=TRUE)}
+#' \preformatted{geno_obj <- ReadMarker(filename="geno.txt", AA="a/a", AB="a/b", BB="b/b", 
+#'                                        type="text", missing = "NA")}
 #'
 #' where \code{geno_obj} is used by \code{\link{AM}}. 
 #'}
@@ -1532,7 +1543,7 @@ if (type=="text"){
 #'
 #' Genotypes (column 7 onwards) can be any character 
 #' (e.g. 1,2,3,4 or A,C,G,T or anything else) except 0 which is, by default, the missing genotype character. All markers should be biallelic. 
-#' All SNPs must have two alleles specified.  Missing alleles (i.e 0 or -) are not allowed and will generate an error. 
+#' All snps must have two alleles specified.  Missing alleles (i.e 0 or -) are allowed.
 #' No column headings should be given. 
 #' 
 #' As an example, suppose we have data on three individuals  genotyped for four snp loci 
@@ -1544,15 +1555,17 @@ if (type=="text"){
 #'
 #' Then to load these data, we would use the command 
 #'
-#' \preformatted{geno_obj <- ReadMarker(filename="PLINKfile.ped", type="PLINK")}
+#' \preformatted{geno_obj <- ReadMarker(filename="PLINK.ped", type="PLINK")}
 #'
-#' where \code{geno_obj} is used by \code{\link{AM}}. 
+#' where \code{geno_obj} is used by \code{\link{AM}}, and the file "PLINK.ped" is located in the working directory (i.e. the directory from which R 
+#' is being run). 
 #'}
 #'
 #'
 #' \subsection{Reading in other formats}{
-#' It is possible to convert other file formats into PLINK ped files. See \url{https://www.cog-genomics.org/plink/1.9/formats} for details. 
-#' For example, to convert  vcf file into a PLINK ped file, use the PLINK command
+#' Having first installed the stand-alone PLINK software, it is possible to convert other file formats into PLINK ped files. See \url{https://www.cog-genomics.org/plink/1.9/formats} for details. 
+#'
+#' For example, to convert  vcf file into a PLINK ped file, at the unix prompt, use the PLINK command
 #' 
 #' \preformatted{PLINK --vcf filename.vcf --recode --out newfilename}
 #'
@@ -1565,14 +1578,12 @@ if (type=="text"){
 #'
 #'
 #' @return  To allow \code{\link{AM}} to handle data larger than the memory capacity of a machine, \code{ReadMarker} doesn't load 
-#' the marker data into memory. Instead, it creates a packed binary file of the marker data and its transpose. The object returned by
+#' the marker data into memory. Instead, it creates a reformatted file of the marker data and its transpose. The object returned by
 #' \code{ReadMarker} is a list object with the elements \code{asciifileM} , \code{asciifileMt}, and \code{dim_of_ascii_M}  
-#' which is the full file name (name and path)  of the packed binary file for the marker  data,  the full file name of the packed binary file 
+#' which is the full file name (name and path)  of the reformatted file for the marker  data,  the full file name of the reformatted file 
 #' for the transpose of the marker  data,  and a 2 element vector with the first element the number of individuals and the second 
 #' element the number of marker loci. 
 #' 
-#' @references George AW and Cavanagh C. 2015. Genome-wide Association Mapping in Plants. 
-#' Theorectical and Applied Genetics 128: 1163-1174.
 #'
 #' @examples
 #'   #--------------------------------
@@ -1583,12 +1594,15 @@ if (type=="text"){
 #'   #
 #'   # The function system.file() gives the full file name (name + full path).
 #'   complete.name <- system.file("extdata", "geno.txt", package="Eagle")
-#'
+#'   # 
+#'   # The full path and name of the file is
+#'   print(complete.name)
 #'   
-#'   # Here,  0 values are being treated as genotype AA,
-#'   # 1 values are being treated as genoytpe AB, 
-#'   # and 2 values are being treated as genoytpe BB. 
-#'   # 4 Gbytes of memory has been specified. The file is space separated with the rows the individuals
+#'   # Here, 0 values are being treated as genotype AA,
+#'   # 1 values are being treated as genotype AB, 
+#'   # and 2 values are being treated as genotype BB. 
+#'   # 4 gigabytes of memory has been specified. 
+#'   # The file is space separated with the rows the individuals
 #'   # and the columns the snp loci.
 #'   geno_obj <- ReadMarker(filename=complete.name, type="text", AA=0, AB=1, BB=2, availmemGb=4) 
 #'    
@@ -1599,15 +1613,19 @@ if (type=="text"){
 #'   #  Example 2
 #'   #-------------------------------
 #'   #
-#'   # Read in the allelic  data contained in the PLINK ped file "geno.ped"
+#'   # Read in the allelic data contained in the PLINK ped file "geno.ped"
 #'   #
 #'   # The function system.file() gives the full file name (name + full path).
 #'   complete.name <- system.file("extdata", "geno.ped", package="Eagle")
 #'
+#'   # 
+#'   # The full path and name of the file is
+#'   print(complete.name)
 #'   
 #'   # Here,  the first 6 columns are being ignored and the allelic 
-#'   # information in columns 7 -  10002 is being converted into a packed binary file. 
-#'   # 4 Gbytes of memory has been specified. The file is space separated with the rows the individuals
+#'   # information in columns 7 -  10002 is being converted into a reformatted file. 
+#'   # 4 gigabytes of memory has been specified. 
+#'   # The file is space separated with the rows the individuals
 #'   # and the columns the snp loci.
 #'   geno_obj <- ReadMarker(filename=complete.name, type="PLINK", availmemGb=4) 
 #'    
@@ -1617,9 +1635,8 @@ if (type=="text"){
 #'
 ReadMarker <- function( filename=NULL, type="text", missing=NULL,
                            AA=NULL, AB=NULL, BB=NULL, 
-                           availmemGb=8, 
-                           csv = FALSE,
-                           quiet=FALSE){
+                           availmemGb=16, 
+                           quiet=TRUE){
 
 
  if (nargs() == 0){
@@ -1633,7 +1650,7 @@ ReadMarker <- function( filename=NULL, type="text", missing=NULL,
        if(!file.exists(fullpath("M.ascii"))){
          message(" The binary file M.ascii could not be found in current working directory ", getwd(), "\n")
          message(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
-         message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
+         message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more details \n")
          message(" ReadMarker has terminated with errors.")
          return(NULL)
        }
@@ -1641,7 +1658,7 @@ ReadMarker <- function( filename=NULL, type="text", missing=NULL,
        if(!file.exists(fullpath("Mt.ascii"))){
          message(" The binary file Mt.ascii could not be found in current working directory ", getwd(), "\n")
          message(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
-         message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
+         message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more details \n")
          message(" ReadMarker has terminated with errors.")
          return(NULL)
        }
@@ -1654,14 +1671,14 @@ ReadMarker <- function( filename=NULL, type="text", missing=NULL,
 
        message(" The R file M.RData could not be found in current working directory ", getwd(), "\n")
        message(" This file is created when ReadMarker is run with either a text file or PLINK ped file as input. \n")
-       message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more detals \n")
+       message(" Supply a file name to ReadMarker. Type  help(ReadMarker) for more details \n")
        message(" ReadMarker has terminated with errors.")
        return(NULL)
 
    }  ## end if(file.exists(fullpath("M.RData"))
 
  }  else {
-      ## read in either a text file or a PLINK file. The paramter type must be specified. Default it text file. 
+      ## read in either a text file or a PLINK file. The parameter type must be specified. Default it text file. 
 
    if(is.null(type)){
       message(" type must be set to \"text\" or \"PLINK\". \n")
@@ -1691,7 +1708,7 @@ ReadMarker <- function( filename=NULL, type="text", missing=NULL,
        }
 
        ## Rcpp function to get dimensions of PLINK ped  file
-       dim_of_ascii_M <- getRowColumn(fname=fullpath(filename), csv=FALSE )
+       dim_of_ascii_M <- getRowColumn(fname=fullpath(filename))
        dim_of_ascii_M[2] <- (dim_of_ascii_M[2] - 6)/2  ## adjusting for PLINK structure
        ## Rcpp function to create binary packed M and Mt file 
        it_worked <- create.ascii(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M,  quiet=quiet  )
@@ -1742,12 +1759,12 @@ ReadMarker <- function( filename=NULL, type="text", missing=NULL,
 
 
   ## Rcpp function to get dimensions of ASCII genotype file
-  dim_of_ascii_M <- getRowColumn(fname=genofile, csv=csv )
+  dim_of_ascii_M <- getRowColumn(fname=genofile)
 
   ## Rcpp function to create ascii  M and Mt file from 
 
   it_worked <- create.ascii(file_genotype=genofile, type=type, AA=as.character(AA), AB=as.character(AB), BB=as.character(BB), 
-              availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M, csv=csv, quiet=quiet, missing=missing  )
+              availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M, quiet=quiet, missing=missing  )
     if(!it_worked)   ## error has occurred. 
        return(NULL)
 
@@ -1836,13 +1853,10 @@ constructX <- function(fnameM=NULL, currentX=NULL, loci_indx=NULL,
 #' @title Browser-based User Interface
 #' @description Opens a web browser to act as a user-friendly user interface to Eagle
 #' @details
-#' We have created this app as a user-friendly alternative to running Eagle through function calls.  
-#' By point-and-click, data can be read and analysed. Upon running \code{OpenUI()}, the web-browser is 
-#' run, pointing to the Eagle home page. From there, users can use the navagation bar at the top to enter 
-#' the marker, phenotypic, and map data and perform an analysis. 
+#' \code{OpenUI} is an easy to use web-based user interface for Eagle. By clicking on the navigation 
+#' tabs at the top of a page, data can be read and analysed. By using this user interface, a user can avoid having to write R code. 
 #'
-#' Note that even though a web browser is being used as the user interface, everything remains local to the computer. We are just using 
-#' the web browser to interpret our html code, upon which our app is written. 
+#' Note that even though a web browser is being used as the user interface, everything remains local to the computer. 
 #' @examples
 #'\dontrun{
 #'# opens a web browser 

@@ -36,8 +36,8 @@ GenomicRel = function(M){
 #' \code{SummaryAM} produces two tables of results. First, a table of results is produced with 
 #' the additive effect size and p-value for each 
 #' fixed effect in the final model.  Second, a table of results is produced with the 
-#' proportion of phenotypic variance explained by  the different multiple-locus models. Each row 
-#' in this table is the proportion of phenotypic variance after the marker locus has been added to the 
+#' proportion of phenotypes variance explained by  the different multiple-locus models. Each row 
+#' in this table is the proportion of phenotype variance after the marker locus has been added to the 
 #' multiple locus model. Our calculations of variance explained are based on Sun et al. (2010).  
 #' @references  Sun G., Zhu C., Kramer  MH., Yang S-S., et al. 2010. Variation explained in mixed model association 
 #' mapping. Heredity 105, 330-340. 
@@ -59,17 +59,17 @@ GenomicRel = function(M){
 #'   # read marker data
 #'   #------------------
 #'   # Reading in a PLINK ped file 
-#'   # and setting the available memory on the machine for the reading of the data to 8Gbytes
+#'   # and setting the available memory on the machine for the reading of the data to 8 gigabytes
 #'   complete.name <- system.file("extdata", "geno.ped", 
 #'                                      package="Eagle")
 #'   geno_obj <- ReadMarker(filename=complete.name,  type="PLINK", availmemGb=8) 
 #'  
 #'   #----------------------
-#'   # read phenotypic data
+#'   # read phenotype data
 #'   #-----------------------
 #'
-#'   # Read in a plain text file with data on a single trait and two covariates
-#'   # The first row of the text file contains the column names "trait", "cov1", and "cov2". 
+#'   # Read in a plain text file with data on a single trait and two fixed effects
+#'   # The first row of the text file contains the column names "y", "cov1", and "cov2". 
 #'   complete.name <- system.file("extdata", "pheno.txt", package="Eagle")
 #'   
 #'   pheno_obj <- ReadPheno(filename=complete.name)
@@ -77,7 +77,7 @@ GenomicRel = function(M){
 #'   #-------------------------------------------------------
 #'   # Perform multiple-locus genome-wide association mapping 
 #'   #-------------------------------------------------------                   
-#'   res <- AM(trait = "trait",
+#'   res <- AM(trait = "y",
 #'                            fformula = c("cov1 + cov2"),
 #'                            map = map_obj,
 #'                            pheno = pheno_obj,
@@ -111,8 +111,8 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
     stop(" SummaryAM function requires geno object to be a list object.", call. = FALSE)
 
  if(is.null(map)){
-   if(AMobj$quiet > 0){
-     message(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
+   if(!AMobj$quiet ){
+     message(" Map file has not been supplied. An artificial map is being created but this map is not used in the analysis. \n")
      message(" It is only used for the reporting of results. \n")
    }
    ## map has not been supplied. Create own map
@@ -128,7 +128,7 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
    return()
  }
 
-  ## build enviornmental effects design matrix
+  ## build environmental effects design matrix
   baseX <- .build_design_matrix(pheno=pheno,  indxNA=AMobj$indxNA, 
                                     fformula=AMobj$fformula,
                                    quiet=AMobj$quiet)
@@ -149,7 +149,7 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
   ## calculate variance components of LMM
   eR <- emma.REMLE(y=AMobj$trait, X= fullX , K=MMt, llim=-100,ulim=100)
 
- ## calculating p values of fixed marker effecs via Wald statistic
+ ## calculating p values of fixed marker effect via Wald statistic
  mrks <- AMobj$Mrk[-1]  ## its -1 to remove the NA for the null model 
  pval <- vector("numeric", length(colnames(fullX)) )
 
@@ -202,7 +202,7 @@ df_size <- data.frame("effect_names"=colnames(fullX), "estimate" = beta, "p_valu
   df_R <- NULL
   fullX <- baseX
   message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
-  message(" Proportion of Phenotypic Variance Explained by Multiple-locus \n")
+  message(" Proportion of Phenotype Variance Explained by Multiple-locus \n")
   message("             Association Mapping Model \n")
   message("  Marker loci which were found by AM() are added one at a time    \n")
   message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")

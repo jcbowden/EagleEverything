@@ -1,6 +1,7 @@
 useDynLib(Eagle)
 #importFrom(Rcpp, evalCpp)
 importFrom(parallel, detectCores)
+importFrom(data.table, fread)
 importFrom(matrixcalc, is.positive.definite)
 importFrom(shinyjs, useShinyjs)
 #import(shiny, RcppEigen,  matrixcalc, Matrix, data.table )

@@ -4,24 +4,25 @@ echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUn to set up PaTHS!!!!!!!!!!!!!!
 
 module load pandoc
 export RSTUDIO_PANDOC=$PANDOC_HOME
+
+## Dont know why but cut and past this directly in to the terminal that is to run this 
 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/geo047/Software/usr/local/lib
-#
 #export PATH=$PATH:/home/geo047/Software/usr/local/bin
 
-DIR="/home/geo047/gitHUB_WMAM/MyPackage/"
+DIR=/home/geo047/gitHUB_WMAM/MyPackage/
 cd $DIR
 
 
 
 ## removing Eagle and Eagle.Rcheck
 echo " Removing Eagle and Eagle.Rcheck"
-rm -rf ./Eagle  ./Eagle.Rcheck
+rm -rf $DIR/Eagle  $DIR/Eagle.Rcheck
 
 ## create and run Rcpp.package.skeleton
 echo   "library(Rcpp)" > ./tmp.R
 echo   "    " >> tmp.R  
 echo  " Rcpp.package.skeleton(\"Eagle\", cpp_files=c(\"RcppFunctions.cpp\"  ),    " >> ./tmp.R
-echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"AM.R\", \"summary_am.R\"   ) ) " >> ./tmp.R
+echo  "    example_code=FALSE, code_files=c(\"onAttach.R\", \"wgEMMA.R\", \"AM.R\", \"summary_am.R\"   ) ) " >> ./tmp.R
 echo  "  ## running roxygen2  " >> ./tmp.R
 echo  " library(roxygen2) " >> ./tmp.R
 echo  " setwd(\"./Eagle\")  " >> ./tmp.R
@@ -36,6 +37,8 @@ R CMD BATCH ./tmp.R
 # copy Makevars to Eagle
 cp $DIR/Makevars $DIR/Eagle/src
 cp $DIR/Makevars.win $DIR/Eagle/src
+#cp $DIR/Makevars.gpu $DIR/Eagle/src/Makevars
+
 
 
 
@@ -139,6 +142,7 @@ mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www
 mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images
 
 
+
 cp /home/geo047/ShinyApp/shinyApp.R /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/app.R
 cp /home/geo047/ShinyApp/css.css /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
 cp /home/geo047/ShinyApp/www/images/HomeScreen.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
@@ -182,11 +186,14 @@ rm ./Eagle/.RData
 
 
 R CMD build Eagle 
+ 
 
-R CMD INSTALL Eagle -l ~/RLibs
-exit -1
+#R CMD INSTALL Eagle -l ~/RLibs
+#exit -1 
+
 
  R CMD check --as-cran Eagle_1.0.0.tar.gz 
+cp /home/geo047/gitHUB_WMAM/MyPackage/Eagle.Rcheck/Eagle-manual.pdf /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/manual.pdf
 
 
 R CMD INSTALL Eagle -l ~/RLibs

@@ -7,10 +7,10 @@
 
 
 ReshapeM  <- function(fnameM, fnameMt, indxNA, dims){
-   ## function to create a temp version of M.ascii and Mt.ascii where the rows and colums, 
+   ## function to create a temp version of M.ascii and Mt.ascii where the rows and columns, 
    ## respectively have been removed for the elements in indxNA
    
-   ## its indxNA-1 so that indexs start from 0 as in c++
+   ## its indxNA-1 so that indexes start from 0 as in c++
    res <- ReshapeM_rcpp(fnameM=fnameM, fnameMt=fnameMt, indxNA=(indxNA-1), dims=dims)
    return(res)  ## returns integer vector with new dims of reshaped matrix M
 }
@@ -27,34 +27,40 @@ doquiet <- function(dat, num_markers, lab){
           ### if dat is a matrix
 
          if(num_markers > 0){
-           message(" Dimension of ", lab, " is", dim(dat), "\n")
-           message(" First few rows and ", num_markers, "columns of ", lab, " are: \n")
-           if(nrow(dat) > 5 && ncol(dat) > num_markers)
-               print(dat[1:5, 1:num_markers])
+           message(" Dimension of ", lab, " is ", dim(dat)[1], " by ", dim(dat)[2], " \n")
+           message(" First few rows and ", num_markers, " columns of ", lab, " are: \n")
+           if(nrow(dat) > 5 && ncol(dat) > num_markers){
+             for(xx in 1:5)
+               message(sprintf(" %f ", dat[xx, 1:num_markers]))
+
+           }
            if(nrow(dat) <=5  &&  ncol(dat) > num_markers)
-               print(dat[1:nrow(dat), 1:num_markers])
+             for(xx in 1:nrow(dat))
+               message(sprintf(" %f ", dat[xx, 1:num_markers]))
            if(nrow(dat) > 5  &&  ncol(dat) <=  num_markers)
-               print(dat[1:5, 1:ncol(dat)])
+             for(xx in 1:5)
+               message(sprintf(" %f ", dat[xx, 1:ncol(dat)]))
            if(nrow(dat) <= 5  &&  ncol(dat) <=  num_markers)
-               print(dat[1:nrow(dat), 1:ncol(dat)])
+             for(xx in 1:nrow(dat))
+               message(sprintf(" %f ", dat[xx, 1:ncol(dat)]))
            message("\n\n")
          }
      } ## end if class(dat)
 
      if(class(dat)=="numeric" || class(dat)=="vector"){
        if(num_markers > 0){
-          message(" Length of ", lab, "is", length(dat), "\n")
-          message(" The first ", num_markers, "elements of the vector are ", lab, "\n")
+          message(" Length of ", lab, " is ", length(dat), "\n")
+          message(" The first ", num_markers, " elements of the vector are ", lab, "\n")
           if(length(dat) > num_markers)
-             print(dat[1:num_markers])
+             message(sprintf(" %f ", dat[1:num_markers]))
           if(length(dat) <= num_markers)
-             print(dat[1:length(dat)])
+             message(sprintf(" %f ", dat[1:length(dat)]))
        message("\n\n")
        }
     }
 
     if(!(class(dat)=="matrix" || class(dat)=="vector" || class(dat)=="numeric"))
-      message(" Internal error in doquiet. dat not matrix or vector or numeric. \n")
+      message(" Internal error in function doquiet. dat not matrix or vector or numeric. \n")
 
 }
 
@@ -90,7 +96,7 @@ return(sigres)
 }
 
 .print_title <- function(){
-    ## internal fuction: use only in AM function
+    ## internal function: use only in AM function
     ## title
     message("\n\n\n")
 message("                    Multiple-Locus Association Mapping")
@@ -104,9 +110,9 @@ message("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `
 }
 
 
-.build_design_matrix <- function(pheno=NULL,  indxNA=NULL, fformula=NULL, quiet=0  )
+.build_design_matrix <- function(pheno=NULL,  indxNA=NULL, fformula=NULL, quiet=TRUE  )
 {
-   ## internal fuction: use only in AM function and summaryam function
+   ## internal function: use only in AM function and SummaryAM  function
    ## build design matrix given character vector fformula of column names
 
    ## assign model matrix X
@@ -141,14 +147,14 @@ message("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `
      } ## if else (length(indxNA)==0)
    } 
 
- if (quiet > 0){
+ if (!quiet ){
    message("Dimension of design matrix, before addition of marker fixed effects is ", nrow(Xmat), "rows and ", ncol(Xmat), "columns.\n") 
  }
 
 if(!is.matrix(Xmat))
    Xmat <- matrix(data=Xmat, ncol=1)
 
-## remove colums that are 0 sum AWG
+## remove column that are 0 sum AWG
 indx <- which(colSums(Xmat)==0)
 if(length(indx) > 0)
    Xmat <- Xmat[, -indx]
@@ -162,7 +168,7 @@ if(length(indx) > 0)
 
 .calcMMt <- function(geno, availmemGb, ncpu, selected_loci, quiet)
   {
-    ## internal function: used only in multilocus_loci_am and summaryam
+    ## internal function: used only in multilocus_loci_am and SummaryAM
     ## values passed by environments
     MMt <- calculateMMt(geno=geno[["asciifileM"]], availmemGb=availmemGb, 
                            ncpu=ncpu, 
@@ -171,7 +177,7 @@ if(length(indx) > 0)
     gc()
 
 
-    ## Trick for dealing with singular MMt due to colinearity
+    ## Trick for dealing with singular MMt due to collinearity
     MMt <- MMt/max(MMt) + diag(0.95, nrow(MMt)) 
     #n <- nrow(MMt)
     #MMt<-(n-1)/sum((diag(n)-matrix(1,n,n)/n)*MMt)*MMt
@@ -187,10 +193,10 @@ if(length(indx) > 0)
 
   }
 
- .calc_extBIC <- function(trait=NULL, currentX=NULL, MMt=NULL,  geno=NULL, quiet=FALSE)
+ .calc_extBIC <- function(trait=NULL, currentX=NULL, MMt=NULL,  geno=NULL, quiet=TRUE)
  { 
    ## smallest extBIC and BIC is best
-   ## internal function: use in multiple_loucs_am only
+   ## internal function: use in AM only
    res_p <- emma.MLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
    BIC <- -2 * res_p$ML + (ncol(currentX)+1) * log(length(trait))  ## fixed effects + variance component
 
@@ -248,61 +254,56 @@ if(length(indx) > 0)
                        currentX,  ncpu, quiet, trait, ngpu )
   {
     ##  internal function: use only with AM
-    if(quiet > 0){
-       message(" quiet =", quiet, ": beginning calculation of H matrix. \n")
-    }
     H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg, message=message ) 
-    doquiet(dat=H, num_markers=quiet, lab="H")
+    if(!quiet)
+        doquiet(dat=H, num_markers=5, lab="H")
 
-    if(quiet>0){
-       message(" quiet =", quiet, ": beginning calculation of P matrix. \n")
-    }
     P <- calculateP(H=H, X=currentX , message=message) 
-    doquiet(dat=P, num_markers=quiet, lab="P")
+    if(!quiet)
+        doquiet(dat=P, num_markers=5 , lab="P")
     rm(H)
     gc()
  
     
-    if(quiet > 0){
-      message(" quiet = ", quiet, ": beginning calculation of the square root of MMt and its inverse. \n")
-    }
     ## artifact from old code but kept it anyway. Looks at the stability of the MMt calculation 
     ## especially if there are near identical rows of data in M
     error_checking <- FALSE
-    if (quiet > 0)
+    if (!quiet )
        error_checking <- TRUE
     MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
                               ngpu=ngpu , message=message) 
-
-    doquiet(dat=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], num_markers=quiet, lab="sqrt(M %*% M^t)")
-    doquiet(dat=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]], num_markers=quiet, lab="sqrt(M %*% M^t)^-1")
-
-    if(quiet > 0){
+    if(!quiet){
+       doquiet(dat=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], num_markers=5, lab="sqrt(M %*% M^t)")
+       doquiet(dat=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]], num_markers=5, lab="sqrt(M %*% M^t)^-1")
+    }
+    if(!quiet ){
       message(" quiet =", quiet, ": beginning calculation of the BLUP estimates for dimension reduced model. \n")
     }
     hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
                        MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
                        y=trait, quiet = quiet , message=message)   
-    doquiet(dat=hat_a, num_markers=quiet, lab="BLUPs")
+    if(!quiet)
+       doquiet(dat=hat_a, num_markers=5, lab="BLUPs")
 
 
      rm(P)
      gc()
 
-    if(quiet > 0){
+    if(!quiet ){
       message(" quiet = ", quiet, ": beginning calculation of the standard errors  of BLUP estimates for dimension reduced model. \n")
     }
 
     var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
                                                 MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
                                                 quiet = quiet, message=message ) 
-    doquiet(dat=var_hat_a, num_markers=quiet, lab="SE of BLUPs")
+    if(!quiet)
+             doquiet(dat=var_hat_a, num_markers=5, lab="SE of BLUPs")
 
 
    
      gc()
      ## load("everything.RData")   ## just for testing ... 
-    if(quiet > 0){
+    if(!quiet ){
       message(" quiet = ", quiet, ": beginning calculation of BLUPS and their standard errors for full model. \n")
     }
 
@@ -313,20 +314,20 @@ if(length(indx) > 0)
                                             transformed_a=hat_a, 
                                             transformed_vara=var_hat_a,
                                             quiet=quiet, message=message) 
-
-     doquiet(dat=a_and_vara[["a"]], num_markers=quiet, lab="BLUPs for full model")
-     doquiet(dat=a_and_vara[["vara"]], num_markers=quiet, lab="SE of BLUPs for full model")
-
+     if(!quiet){
+        doquiet(dat=a_and_vara[["a"]], num_markers=5, lab="BLUPs for full model")
+        doquiet(dat=a_and_vara[["vara"]], num_markers=5, lab="SE of BLUPs for full model")
+     }
 
   
     ## outlier test statistic
-    if (quiet > 0) 
-        message(" quiet = ", quiet, ": beginning calculation of  outlier test statistics. \n")
+    if (!quiet ) 
+        message(" quiet = ", quiet, ": beginning calculation of outlier test statistics. \n")
     tsq <- a_and_vara[["a"]]**2/a_and_vara[["vara"]]
  #   print(a_and_vara[["a"]][1:10])
  #   print(a_and_vara[["vara"]][1:10])
-
-    doquiet(dat=tsq, num_markers=quiet, lab="outlier test statistic")
+    if(!quiet)
+       doquiet(dat=tsq, num_markers=5, lab="outlier test statistic")
 
 
     indx <- which(tsq == max(tsq, na.rm=TRUE))   ## index of largest test statistic. However, need to account for other loci 
@@ -340,13 +341,10 @@ if(length(indx) > 0)
 }
 
 #' @title multiple-locus association mapping 
-#' @description \code{AM} is used for multiple locus association mapping. It can simultaneously 
-#' account for population stratification, familial relatedness, and nuisance fixed effects while 
-#' detecting and mapping multiple marker-trait associations. It doesn't require any parameters to be tuned,
-#' as with regularization technniques nor does it require a significance level or threshold to be set. 
-#' Those snp in strongest association with a trait are reported in a table of results. These 
-#' snp map to the genomic regions containing the genes that are influencing the trait. 
-#' @param trait  the name of the column in the phenotypic data file that contains the trait data. The name is case sensitive and must match exactly the column name in the phenotypic data file. 
+#' @description \code{AM} performs  association mapping within a multiple-locus linear mixed model framework. 
+#' \code{AM}  finds the best set of 
+#' marker loci in strongest association with a trait while simultaneously accounting for any fixed effects and the genetic background.     
+#' @param trait  the name of the column in the phenotype data file that contains the trait data. The name is case sensitive and must match exactly the column name in the phenotype data file. 
 #' @param fformula   the right hand side formula for the fixed effects.   See below for details. 
 #'                        If
 #'                        not specified, only an overall mean will be fitted.
@@ -354,36 +352,36 @@ if(length(indx) > 0)
 #' This should be set to the maximum practical value of available memory for the analysis. 
 #' @param geno   the R  object obtained from running \code{\link{ReadMarker}}. This must be specified. 
 #' @param pheno  the R  object  obtained  from running \code{\link{ReadPheno}}. This must be specified.
-#' @param map   the R object obtained from running \code{\link{ReadMap}}. If not specifed, a generic map will 
+#' @param map   the R object obtained from running \code{\link{ReadMap}}. If not specified, a generic map will 
 #'              be assumed. 
-#' @param ncpu a numeric value for the number of CPU that are available for distributed computing.  The default is to determine the number of CPU automatically. 
-#' @param ngpu   a integer value for the number of GPU available for computation.  The default
+#' @param ncpu a integer  value for the number of CPU that are available for distributed computing.  The default is to determine the number of CPU automatically. 
+#' @param ngpu   a integer value for the number of gpu available for computation.  The default
 #'               is to assume there are no gpu available.  This option has not yet been implemented.
-#' @param  quiet      an integer value specifying the number of marker loci for which diagnostic information is 
-#' to be printed to the screen. This is useful for error checking. 
-#' @param maxit     an integer value for the maximum number of forward steps to be performed. That is, it is the maximum number of 
-#' genomic locations of interest that are to be identified. 
+#' @param  quiet      a logical value. If set to \code{TRUE}, additional runtime output is printed. 
+#' This is useful for error checking and monitoring the progress of a large analysis. 
+#' @param maxit     an integer value for the maximum number of forward steps to be performed.  This will rarely need adjusting. 
 #' @details
 #'
 #' \subsection{How to perform a basic AM analysis}{
 #'
 #' Suppose, 
 #' \itemize{
-#' \item{}{the snp data is contained in the file "geno.txt" which is a plain space separated
+#' \item{}{the snp data are contained in the file "geno.txt" which is a plain space separated
 #' text file with no column headings. The file is located in the current working directory. 
-#' It contains numeric genotype values 0, 1, and 2 for 
-#' AA, AB, and BB, respectively}
-#' \item{}{the phenotypic data is contained in the file "pheno.txt" which is a plain space
-#' separated text file with a single trait and no explanatory variables. The file has the 
-#' column heading "y". The file is located in the current working directory.}
-#' \item{}{there is no map data}
+#' It contains numeric genotype values 0, 1, and 2 for snp genotypes
+#' AA, AB, and BB, respectively. It also contains the numeric value X for a missing genotype. }
+#' \item{}{the phenotype data is contained in the file "pheno.txt" which is a plain space
+#' separated text file containing a single column with the trait data. The first row of the file 
+#' has the column heading "y". 
+#' The file is located in the current working directory.}
+#' \item{}{there is no map data.}
 #' }
 #'
-#'  To analyse these data, we would use the following functions:
+#'  To analyse these data, we would use the following three functions:
 #' \preformatted{
-#'   geno_obj <-  ReadMarker(filename="geno.txt", AA=0, AB=1, BB=2, type="text")
+#'   geno_obj <-  ReadMarker(filename="geno.txt", AA=0, AB=1, BB=2, type="text", missing="X")
 #'   
-#'   pheno_obj <- ReadPheno(filename="pheno.txt")
+#'   pheno_obj <- ReadPheno(filename="pheno.txt", header=TRUE)
 #'
 #'   res <- AM(trait="y", geno=geno_obj, pheno=pheno_obj)
 #' }
@@ -394,28 +392,29 @@ if(length(indx) > 0)
 #'
 #' Suppose, 
 #' \itemize{
-#' \item{}{the snp data is contained in the file "geno.ped" which is a PLINK ped file. See
-#' \code{\link{ReadMarker}} for details. The file is located in /my/dir. Lets assume 
-#' the file is large but our machine has 32 Gbytes of RAM.}
-#' \item{}{the phenotypic data is contained in the file "pheno.txt" which is a plain space
-#' separated text file with  six columns. The first column is a trait and is labelled "y1".
-#' The second column is another trait and is laballed "y2". The third and fourth columns 
-#' are nuisance variables and are labelled "cov1" and "cov2". The fifth and sixth columns
+#' \item{}{the snp data are contained in the file "geno.ped" which is a PLINK ped file. See
+#' \code{\link{ReadMarker}} for details. The file is located in /my/dir. Let's assume 
+#' the file is large, say 50 gigabytes,   and our computer only has 32 gigabytes of RAM.}
+#' \item{}{the phenotype data is contained in the file "pheno.txt" which is a plain space
+#' separated text file with  six columns. The first row of the file contains the column headings. 
+#' The first column is a trait and is labeled "y1".
+#' The second column is another trait and is labeled "y2". The third and fourth columns 
+#' are nuisance variables and are labeled "cov1" and "cov2". The fifth and sixth columns
 #' are the first two principal components to account for population substructure and are 
-#' labelled "pc1" and "pc2".
+#' labeled "pc1" and "pc2". The file contains missing data that are coded as 99. 
 #' The file is located in /my/dir.}
 #' \item{}{the map data is contained in the file "map.txt", is also located in 
 #'  /my/dir, and the first row has the column headings.}
 #' \item{}{An AM analysis is performed where the trait of interest is "y2", 
-#' the fixed effects to be included in the analysis are "cov1", "cov2", "pc1", and "pc2", 
-#' and the available memory is to be set to 32 Gbytes.}
+#' the fixed effects part of the model is "cov1 + cov2 + pc1 + pc2", 
+#' and the available memory is set to 32 gigabytes.}
 #' } 
 #'
 #'  To analyse these data, we would run the following:
 #' \preformatted{
 #'   geno_obj <-  ReadMarker(filename="/my/dir/geno.ped", type="PLINK", availmemGb=32)
 #'   
-#'   pheno_obj <- ReadPheno(filename="/my/dir/pheno.txt")
+#'   pheno_obj <- ReadPheno(filename="/my/dir/pheno.txt", header=TRUE, missing=99)
 #'
 #'   map_obj   <- ReadMap(filename="/my/dir/map.txt")
 #'
@@ -427,18 +426,10 @@ if(length(indx) > 0)
 #'
 #' \subsection{Dealing with missing marker data}{
 #'
-#' In running \code{\link{AM}}, we assume there are no missing marker genotypes. 
-#' In fact, \code{ReadMarker} will generate errors if there are missing marker data.  
-#' However, most genome-wide data sets have missing genotypes (sometimes by design).  
-#' Ideally, a genotype imutation program such as  BEAGLE, MACH, fastPHASE, or PHASE2, should be 
-#' used to impute the missing marker data. 
+#' \code{AM} can tolerate some missing marker data. However, ideally, 
+#' a specialized genotype imputation program such as  BEAGLE, MACH, fastPHASE, or PHASE2, should be 
+#' used to impute the missing marker data before being read into Eagle.  
 #'
-#'
-#' Alternately, for quick results, remove those loci with a high proportion of missing data (> 10\%) 
-#' and  replace the remaining missing marker genotypes with  heterozygote genotypes. 
-#' Since we assume an additive model in \code{AM}, this will not cause false positives but it 
-#' can reduce power. We found though that the loss in  power is minimal if the 
-#' proportion of missing data is low.  See George and Cavanagh (2015) for details.  
 #' }
 #'
 #' \subsection{Dealing with missing trait data}{
@@ -455,20 +446,11 @@ if(length(indx) > 0)
 #'
 #' \subsection{Error Checking}{
 #'
-#' \code{quiet} specifies the number of marker loci for which diagnostic information 
-#' is to be printed to the screen.  When \code{quiet} is non-zero, the contents of important matrices and 
-#' vectors are printed. This can be useful for diagnosing problems with the 
-#' input data, especially when you compare the contents of the matrices/vectors for data that loads correctly 
-#' to data that is causing errors. 
-#'
-#' Setting \code{quiet} to an integer value can also be useful for monitoring progress when analysing large 
-#' data sets.   
+#' Most errors occur when reading in the data. However, as an extra precaution, if \code{quiet=TRUE}, then additional 
+#' output is printed during the running of \code{AM}. If \code{AM} is failing, then this output can be useful for diagnosing 
+#' the problem. 
 #'}
 #'
-#'
-#'
-#' @references George AW and Cavanagh C. 2015. Genome-wide Association Mapping in Plants. 
-#' Theorectical and Applied Genetics 128: 1163-1174.
 #'
 #'
 #'
@@ -477,18 +459,19 @@ if(length(indx) > 0)
 #' @return
 #' A list with the following components:
 #' \describe{
-#'\item{trait}{column name of the trait being used by AM}
+#'\item{trait}{column name of the trait being used by AM.}
 #'\item{fformula}{Right hand size formula of the fixed effects part of the linear mixed model.}
-#'\item{indxNA}{numeric vector containing the line numbers of those individuals with missing phenotypic data for the 
-#' trait and explanatory variables being used by AM}
-#' \item{Mrk}{character vector with the marker names of those loci found to be in significant association with the trait}
-#' \item{Chr}{character vector with the chromosome names for the loci found to be in significant association with the trait}
-#' \item{Pos}{numeric vector with the map positions of the loci found to be in  significant association with the trait}
-#' \item{Indx}{column number in the marker file of the loci found to be in  significant association with the trait}
-#' \item{ncpu}{number of cpu used for the calculations}
-#' \item{availmemGb}{amount of RAM in Gbytes that has been set by the user}
-#' \item{quiet}{the number of markers for which diagnostic information is to be printed.}
-#' \item{extBIC}{numeric vector with the extended BIC values for the loci  found to be in  significant association with the trait}
+#'\item{indxNA}{a vector containing the row indexes of those individuals, whose trait and fixed effects data contain
+#' missing values and have been removed from the analysis.}
+#' \item{Mrk}{a vector with the names of the snp in strongest and significant association with the trait.If no loci are found to be 
+#' significant, then this component is \code{NA}.}
+#' \item{Chr}{the chromosomes on which the identified snp lie.}
+#' \item{Pos}{the map positions for the identified snp.}
+#' \item{Indx}{the column indexes in the marker file of the identified snp.} 
+#' \item{ncpu}{number of cpu used for the calculations.}
+#' \item{availmemGb}{amount of RAM in gigabytes that has been set by the user.}
+#' \item{quiet}{ boolean value of the parameter.}
+#' \item{extBIC}{numeric vector with the extended BIC values for the loci  found to be in  significant association with the trait.}
 #'}
 #'
 #' @examples
@@ -511,12 +494,12 @@ if(length(indx) > 0)
 #'   # read marker data
 #'   #~~~~~~~~~~~~~~~~~~~~
 #'   # Reading in a PLINK ped file 
-#'   # and setting the available memory on the machine for the reading of the data to 8Gbytes
+#'   # and setting the available memory on the machine for the reading of the data to 8  gigabytes
 #'   complete.name <- system.file("extdata", "geno.ped", 
 #'                                      package="Eagle")
 #'   geno_obj <- ReadMarker(filename=complete.name,  type="PLINK", availmemGb=8) 
 #'  
-#'   # read phenotypic data
+#'   # read phenotype data
 #'   #~~~~~~~~~~~~~~~~~~~~~~~
 #'
 #'   # Read in a plain text file with data on a single trait and two covariates
@@ -551,7 +534,7 @@ AM <- function(trait=NULL,
                map = NULL,
                ncpu=detectCores(),
                ngpu=0,
-               quiet=0,
+               quiet=TRUE,
                maxit=20
                ){
 
@@ -565,28 +548,28 @@ AM <- function(trait=NULL,
  ## geno            if geno is a matrix or data frame, then the user has not ReadMarker and a bin packed file
  ##                 has not been created. If it is a character string, then it is the file location of the binary packed files. 
  ## maxit           maximum number of qtl to include in the model
- ## ngpu            number of GPU available for computation
+ ## ngpu            number of gpu available for computation
 
  ## check parameter inputs
 
  ## print tile
  .print_title()
 
- ngpu <- 0  ### NEED TO CHANGE THIS WHEN GPU implemented. 
+ ngpu <- 0  ### NEED TO CHANGE THIS WHEN gpu implemented. 
 
 
  error.code <- check.inputs.mlam(ncpu=ncpu , availmemGb=availmemGb, colname.trait=trait, 
                      map=map, pheno=pheno, geno=geno )
  if(error.code)
-    stop("AM has terminted with errors.", call. = FALSE)
+    stop("AM has terminated with errors.", call. = FALSE)
 
 
 
 
  ## checking if map is present. If not, generate a fake map. 
  if(is.null(map)){
-   if(quiet > 0){
-     message(" Map file has not been supplied. An artifical map is being created but this map is not used in the analysis. \n")
+   if(!quiet ){
+     message(" Map file has not been supplied. An artificial map is being created but this map is not used in the analysis. \n")
      message(" It is only used for the reporting of results. \n")
    }
    ## map has not been supplied. Create own map
@@ -600,7 +583,7 @@ AM <- function(trait=NULL,
    message(" Error: There is a differing number of loci read in by ReadMarker and ReadMap functions. \n")
    message("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][2], "\n")
    message("        The number of marker loci in  the marker map is  ", nrow(map), "\n") 
-   stop(" AM has terminatated with errors.", call. = FALSE)
+   stop(" AM has terminated with errors.", call. = FALSE)
  }
 
 
@@ -609,7 +592,7 @@ AM <- function(trait=NULL,
    message(" Error: There is a differing number  of rows read in by ReadMarker and ReadPheno functions. \n")
    message("         The number of rows read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][1], "\n")
    message("        The number of rows  read in by ReadPheno is  ", nrow(map), "\n") 
-   stop(" AM has terminatated with errors.", call. = FALSE)
+   stop(" AM has terminated with errors.", call. = FALSE)
  }
 
 
@@ -635,14 +618,14 @@ if(!is.null(fformula)){
           fformula <- as.formula(paste("~", fformula, sep="") )
       }  else {
           message(" fformula has ", length(fformula), " separate terms. It should be a single formula. \n") 
-          stop("AM has terminted with errors.", call. = FALSE)
+          stop("AM has terminated with errors.", call. = FALSE)
       }
    } else {
     ## problem: formula should not contain ~
     message(" It looks like fformula contains a formula. \n")
     message(" If so, only the terms on the right hand side of the formula should be specified. \n")
     message(" Please remove the ~ from the formula. \n")
-    stop("AM has terminted with errors.", call. = FALSE)
+    stop("AM has terminated with errors.", call. = FALSE)
   }  ## if length grep
  } ## end if(!is.null(fformula))
 
@@ -659,9 +642,9 @@ if(!is.null(fformula)){
   if(!is.data.frame(res))
   {
    if(res){
-      message(" fformula contains terms that are not column headings in the phenotypic file. \n")
+      message(" fformula contains terms that are not column headings in the phenotype file. \n")
       message(" Check spelling and case of terms in fformula. \n")
-      stop("AM has terminted with errors.", call. = FALSE)
+      stop("AM has terminated with errors.", call. = FALSE)
    }
   }
  }
@@ -686,7 +669,7 @@ if(!is.null(fformula)){
  indxNA <- check.for.NA.in.trait(trait=trait)
 
 
-  ## setting up gpu sevrver
+  ## setting up gpu server
 #  if(ngpu > 0 ){
 #     if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
 #        library(rcppMagmaSYEVD)
@@ -699,7 +682,7 @@ if(!is.null(fformula)){
  if(length(indxNA)>0){
     trait <- trait[-indxNA]
 
-    if(quiet > 0){
+    if(!quiet ){
      message(" The following rows are being removed from pheno due to missing data: \n")
      message(cat("             ", indxNA, "\n\n"))
     }
@@ -750,7 +733,7 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
         message(" These effects are causing computational instability. \n")
         message(" This can occur when there is a strong dependency between the effects.\n")
         message(" Try removing some of the effects in fformula. \n")
-        stop("AM has terminted with errors.", call. = FALSE)
+        stop("AM has terminated with errors.", call. = FALSE)
       }
   }
 
@@ -775,17 +758,17 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
                     quiet=quiet)
 
     if(itnum==1){
-        if(quiet>0)
+        if(!quiet)
            message(" quiet=FALSE: calculating M %*% M^t. \n")
          MMt <- do.call(.calcMMt, Args)  
 
 
-
-         doquiet(dat=MMt, num_markers=quiet, lab="M%*%M^t")
+         if(!quiet)
+             doquiet(dat=MMt, num_markers=5 , lab="M%*%M^t")
         invMMt <- chol2inv(chol(MMt))   ## doesn't use GPU
         gc()
     } 
-    if(quiet>0){
+    if(!quiet){
       message(" Calculating variance components for multiple-locus model. \n")
     }
     vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, ngpu=ngpu) 
@@ -793,10 +776,10 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
     best_ve <- vc[["ve"]]
     best_vg <- vc[["vg"]]
 
-   if(quiet>0){
-      message(" Residual variance estimate is ", best_ve, "\n")
-      message(" Polygenic variance estimate is ", best_vg, "\n")
-   }
+#   if(!quiet){
+#      message(" Residual variance estimate is ", best_ve, "\n")
+#      message(" Polygenic variance estimate is ", best_vg, "\n")
+#   }
 
 
     ## Calculate extBIC
@@ -832,7 +815,7 @@ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, 
     if(itnum > maxit){
          continue <- FALSE 
          .print_header()
-         ## need to remove the last selected locus since we don't go on and calucate its H and extBIC 
+         ## need to remove the last selected locus since we don't go on and calculate its H and extBIC 
          ## under this new model. 
          .print_final(selected_loci[-length(selected_loci)], map, extBIC)
          sigres <- .form_results(trait, selected_loci[-length(selected_loci)], map,  fformula, 
@@ -862,7 +845,7 @@ if( itnum > maxit){
         .print_final(selected_loci, map, extBIC)
         sigres <- .form_results(trait, selected_loci, map,  fformula, 
                          indxNA, ncpu, availmemGb, quiet, extBIC )   
-   }  ## end inner  if(lenth(selected_locus)>1)
+   }  ## end inner  if(length(selected_locus)>1)
 }  ## end if( itnum > maxit)
 
  
