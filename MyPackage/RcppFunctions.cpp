@@ -30,7 +30,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>
-#include <malloc.h>
+#include <stdlib.h>
 #include <sstream>
 #include <time.h>
 // end added by Ryan
@@ -43,7 +43,6 @@
 #include <bitset>
 #include <string>
 #include <fcntl.h>
-#include <malloc.h>
 #include <stdlib.h>
 // #include <sys/mman.h>
 #include <sys/stat.h>

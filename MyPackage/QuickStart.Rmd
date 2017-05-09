@@ -33,27 +33,35 @@ vignette: >
 <div class=main>
 <h1><b> Some Background </b> </h1>
 <p>
-Eagle is a software package for genome-wide association mapping in animal, plant, or human populations of arbitrary structure.  Our method differs from most other association mapping methods in that we fit all 
-marker-trait associations simultaneously, while still identifying the "best" set of marker loci in 
-strongest association with a trait.  Our method is threshold free.  
-
+Eagle is a software package for genome-wide association mapping in animal, plant, or human populations of arbitary size and structure.  Our method differs from most other association mapping methods in that we fit all marker-trait associations simultaneously, while still identifying the "best" set of marker loci in strongest association with a trait. Those marker loci in strongest and significant association with a trait are found iteratively.  Unlike most other association mapping methods, we avoid the difficultly of having to set genome-wide significance thresholds by  treating association mapping as a model selection problem. 
+</p>
 
 <h1><b> Getting Started </b> </h1>
+<p>
+Eagle is written in  [R](https://www.r-project.org/about.html) and  installed from [CRAN](https://cran.r-project.org) with the R command
+```{r eval=FALSE}
+install.packages("Eagle")
+```
 
-Eagle is written in  [R](https://www.r-project.org/about.html). There are various ways of installing Eagle, depending upon your operating system and preference. See our Installation Guide for details. Here, we will assume that you have [R](https://www.r-project.org/about.html) and that you have successfully installed Eagle. 
+Eagle makes extensive use of implicit and explicit parallelisation to speed computation.  See our Youtube Installation video for details. 
+
+Here, we will assume that you have the latest version of [R](https://www.r-project.org/about.html) and that you have successfully installed Eagle. 
 
 To begin, start an interactive session in [R](https://www.r-project.org/about.html) and type the following at the R prompt
-```{r eval=FALSE}
+```{r , echo=TRUE  }
 library("Eagle")
 ```
-Nothing appears to happen but this loads the Eagle package into R and makes its functions available to the user. 
-
-
-
 </p>
+
+<p>
+You will see a message saying that Eagle has been loaded. 
+</p>
+
 <h1> <b> Running Eagle the Easy Way </b> </h1>
 <p>
-There are two ways in which the functions in Eagle can be run. One is via the traditional approach of writing an R script with the Eagle functions that read in the data and perform the analysis. R users will be familiar with this approach. See our UserManual for details.  
+There are two ways in which the functions in Eagle can be run. One is via the traditional approach of writing an R script with 
+the Eagle functions that read in the data and perform the analysis. R users will be familar with this approach. See our "UserManual" vignette  for more details (just 
+type vignette("UserManual", "Eagle") at the R prompt). 
 </p>
 
 <p>
@@ -61,7 +69,7 @@ Our preferred way of interacting with Eagle, especially if your are not a regula
 To run our UI, at the R prompt type 
 </p>
 ```{r eval=FALSE}
-RunApp()
+OpenUI()
 ```
 <p>
 which will open your web browser automatically to our UI.   It is worth mentioning that although we are 
@@ -110,19 +118,19 @@ BB, and the missing genotype.
 <h1><b> Reading in the Phenotypic and Map Data </b></h1>
 
 <p>
-Reading in the phenotype data (i.e., data on one or more traits and any fixed effects) and a 
-marker map is very similar to the above described process. We assume both the phenotype file and map file 
+Reading in the phenotypic data (i.e., data on one or more traits and any fixed effects) and a 
+marker map is very similar to the above desribed process. We assume both the phenotypic file and map file 
 are either space or comma separated. There is the option for the first row to contain column names in 
-the phenotype file. Click on the 
+the phenotypic file. Click on the 
 <mark>Read Phenotype</mark> or <mark>Read Map</mark> tab in the navigation bar at the top of the page. Work 
-through the steps, with the final step being the "Upload file" step. A loading animation will appear while the file is being read, and output is displayed on the right of the page. It is safe to move to another page when the 
+through the steps, with the final step being the "Upload file" step. A loading animation will appear while the file is being read, and ouput is displayed on the right of the page. It is safe to move to another page when the 
 loading animation disappears. 
 </p>
 
 <h1><b> Analysing the Data </b></h1>
 To perform a genome-wide association mapping analysis of the data, click on the <mark>Analyse</mark> tab 
 in the navigation bar at the top of the page.  This will take you to the page for analysing your data. 
-How the page looks will be dependent, partially, on the data contained in your phenotype file. However, 
+How the page looks will be dependent, partially, on the data contained in your phenotypic file. However, 
 the five steps remain the same. First, choose the trait by selecting from the list of available  variables.  
 Second, select which variable are to act as fixed effects in the model, if any. 
 Third,  set the number of cpu available for distributed computing.  Fourth, 
@@ -154,7 +162,7 @@ knitr::include_graphics("images/FindingsScreen.jpg")
 <ul>
 <li><p>The UI has built-in help. By hovering over any of the input widgets, a popup help box appears</p>  </li>
 <li><p> Detailed help is available on every page. Just hover the cursor over the <mark>Details</mark> bar and 
-a pop-up box with a detailed description will appear.</p></li>
+a popup box with a detailed description will appear.</p></li>
 <li><p>At the top of any page is the <mark>Help</mark> tab. By clicking on this tab, a menu of items appears. 
 Frequently asked questions, and other documents such as a worked example can be accessed.</p>  </li>
 <li> <p>Youtube videos have been created on how to install Eagle, and how to perform a genome-wide analysis.
