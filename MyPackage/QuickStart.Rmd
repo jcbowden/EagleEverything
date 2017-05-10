@@ -31,59 +31,47 @@ vignette: >
 </div>
 <div class=content>
 <div class=main>
-<h1><b> Some Background </b> </h1>
-<p>
-Eagle is a software package for genome-wide association mapping in animal, plant, or human populations of arbitary size and structure.  Our method differs from most other association mapping methods in that we fit all marker-trait associations simultaneously, while still identifying the "best" set of marker loci in strongest association with a trait. Those marker loci in strongest and significant association with a trait are found iteratively.  Unlike most other association mapping methods, we avoid the difficultly of having to set genome-wide significance thresholds by  treating association mapping as a model selection problem. 
-</p>
 
 <h1><b> Getting Started </b> </h1>
 <p>
-Eagle is written in  [R](https://www.r-project.org/about.html) and  installed from [CRAN](https://cran.r-project.org) with the R command
+
+
+To install the Eagle package, from an interactive session in  [R](https://www.r-project.org/about.html),  type the command
 ```{r eval=FALSE}
 install.packages("Eagle")
 ```
 
-Eagle makes extensive use of implicit and explicit parallelisation to speed computation.  See our Youtube Installation video for details. 
-
-Here, we will assume that you have the latest version of [R](https://www.r-project.org/about.html) and that you have successfully installed Eagle. 
-
-To begin, start an interactive session in [R](https://www.r-project.org/about.html) and type the following at the R prompt
+Once installed, the package is loaded into R with  
 ```{r , echo=TRUE  }
 library("Eagle")
 ```
+
 </p>
 
 <p>
-You will see a message saying that Eagle has been loaded. 
+and you  will see a message saying that Eagle has been loaded. 
 </p>
 
-<h1> <b> Running Eagle the Easy Way </b> </h1>
+<h1> <b> Running Eagle via the UI </b> </h1>
 <p>
-There are two ways in which the functions in Eagle can be run. One is via the traditional approach of writing an R script with 
-the Eagle functions that read in the data and perform the analysis. R users will be familar with this approach. See our "UserManual" vignette  for more details (just 
-type vignette("UserManual", "Eagle") at the R prompt). 
-</p>
+The easiest way of interacting with Eagle and performing an analysis is through our web-based user interface (UI).  To run the UI, at the R prompt, type
 
-<p>
-Our preferred way of interacting with Eagle, especially if your are not a regular R user,  is through our browser-based user interface (UI). 
-To run our UI, at the R prompt type 
-</p>
 ```{r eval=FALSE}
 OpenUI()
 ```
+</p>
 <p>
-which will open your web browser automatically to our UI.   It is worth mentioning that although we are 
-using an internet browser, <b> we are not using the internet </b>. All your data and its analysis remains local to your computer. 
+which will open the default web browser to the Eagle UI. 
 </p>
 
+
 <h1><b> Reading in the Marker Data </b></h1>
-<p>
-To read in your marker data into Eagle, begin by clicking on the  <mark>Read Genotypes</mark> tab at the top of the page in the navigation bar.  This will take you to our page for reading in the marker data. 
-</p>
-<p>
-Eagle can handle two types of file; a plain text file containing the marker genotypes and a PLINK ped file. 
-Missing data is allowed in either file type.  
-</p>
+
+
+```{r, out.width = "800px", echo=FALSE}
+knitr::include_graphics("images/ReadMarker_slide1.jpg")
+```
+
 
 <h2>Reading in a PLINK ped file</h2>
 
