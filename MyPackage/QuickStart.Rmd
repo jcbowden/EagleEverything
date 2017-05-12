@@ -111,28 +111,21 @@ knitr::include_graphics("images/ReadMapScreen.jpg")
 
 
 <h1><b> Analysing the Data </b></h1>
-To perform a genome-wide association mapping analysis of the data, click on the <mark>Analyse</mark> tab 
-in the navigation bar at the top of the page.  This will take you to the page for analysing your data. 
-How the page looks will be dependent, partially, on the data contained in your phenotypic file. However, 
-the five steps remain the same. First, choose the trait by selecting from the list of available  variables.  
-Second, select which variable are to act as fixed effects in the model, if any. 
-Third,  set the number of cpu available for distributed computing.  Fourth, 
-click on "Additional Options" if you would like to set the maximum number of iterations, 
-and/or have Eagle generate verbose output.  For most analyses, there shouldn't be any need to click on 
-"Additional Options".  The last step is to click on "Perform genome-wide analysis". As before, a 
-processing animation will appear and output will start being printed to the right of the page. Once the 
-analysis is complete, click on <mark>Findings</mark>. 
 
- 
+<h2>Scenario 1: Phenotype data on single trait, no fixed effects</h2> 
 ```{r, out.width = "700px", echo=FALSE}
-knitr::include_graphics("images/AnalysisScreen.jpg")
+knitr::include_graphics("images/Analysis_scenario1.jpg")
 ```
 
 
+<h2>Scenario 2: Phenotype data on three traits and two fixed effects. Trait of interest "y2". Fixed effects to be included in model are "pc1" and "pc2" </h2>
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/Analysis_scenario2.jpg")
+```
+
+
+
 <h1><b> Findings </b></h1>
-To view the results, click on the <mark>Findings</mark> tab at the top of the page. On the right hand size 
-of the page, the "best" set of snp in strongest association with the trait are displayed in tabular form. 
-By clicking on the  button on the left hand side, additional summary results are displayed. 
 
 
 ```{r, out.width = "700px", echo=FALSE}
@@ -149,8 +142,8 @@ a popup box with a detailed description will appear.</p></li>
 <li><p>At the top of any page is the <mark>Help</mark> tab. By clicking on this tab, a menu of items appears. 
 Frequently asked questions, and other documents such as a worked example can be accessed.</p>  </li>
 <li> <p>Youtube videos have been created on how to install Eagle, and how to perform a genome-wide analysis.
-</p> </ul>
 <li><p> Email your question to <code>eaglehelp@csiro.au</code> </p></li>
+</p> </ul>
 </p>
 
 
