@@ -73,47 +73,42 @@ knitr::include_graphics("images/ReadMarker_slide1.jpg")
 ```
 
 
-<h2>Reading in a PLINK ped file</h2>
-
-<p> To read in a PLINK ped file, set the text type to "PLINK", set the available memory, click on "Select File" 
-to open a file browser and select the marker file, and click on "Upload file" to begin reading the file. 
-As the file is being read, output from running the R function will appear on the left hand side of the page, 
-along with a loading animation. Once the file has finished being read, the loading animation will disappear.
-</p>
-
+<h2>Reading in a PLINK Ped File</h2>
 
 ```{r, out.width = "700px", echo=FALSE}
 knitr::include_graphics("images/ReadMarkerScreen_PLINK.jpg")
 ```
 
 
-<h2>Reading in a text file</h2>
+<h2>Reading in a Text File</h2>
 
-Eagle can also handle marker data in a plain text file where the file contains marker genotypes. 
-Here, if it is a  population of outbred individuals, the file is assumed to contain three marker genotypes 
-AA, AB, and BB. These three genotypes can be coded as any alphanumeric value, as long as the coding is 
-consistent across all loci. For inbred populations, the marker file is assumed to contain two 
-marker genotypes AA and BB. See the UserManual for details. 
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/ReadMarkerScreen_text.jpg")
+```
 
 
-The reading in of a text file is similar to reading in a PLINK ped file as described above. 
-The difference is in the first step. In Step 1, the file type is set to "text". 
-In doing so, the input section changes slightly to 
-allow entry of the alphanumeric values in the marker file that correspond to marker genotypes AA, AB,   
-BB, and the missing genotype. 
+<h1><b> Reading in the Phenotypic Data </b></h1>
+
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/ReadPheno_slide1.jpg")
+```
+
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/ReadPhenoScreen.jpg")
+```
+
+<h1><b> Reading in the Marker Map </b></h1>
+
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/ReadMap_slide1.jpg")
+```
+
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("images/ReadMapScreen.jpg")
+```
 
 
-<h1><b> Reading in the Phenotypic and Map Data </b></h1>
 
-<p>
-Reading in the phenotypic data (i.e., data on one or more traits and any fixed effects) and a 
-marker map is very similar to the above desribed process. We assume both the phenotypic file and map file 
-are either space or comma separated. There is the option for the first row to contain column names in 
-the phenotypic file. Click on the 
-<mark>Read Phenotype</mark> or <mark>Read Map</mark> tab in the navigation bar at the top of the page. Work 
-through the steps, with the final step being the "Upload file" step. A loading animation will appear while the file is being read, and ouput is displayed on the right of the page. It is safe to move to another page when the 
-loading animation disappears. 
-</p>
 
 <h1><b> Analysing the Data </b></h1>
 To perform a genome-wide association mapping analysis of the data, click on the <mark>Analyse</mark> tab 

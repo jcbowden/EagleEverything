@@ -933,8 +933,8 @@ while(getline(fileIN, line ))
 {
 
 
-  Rcout << "\r" << 100.0*counter/dims[0] << "% read of text file.       " << flush;
-
+   Rcout << "\r" << 100.0*counter/dims[0] << "% read of text file.       " << flush;
+ // message(100.0*counter/dims[0] ,  "% read of text file.       ");
 
  // Here, BB is coded into 2 
  //       AB is coded into 1, 

@@ -1759,10 +1759,11 @@ ReadMarker <- function( filename=NULL, type="text", missing=NULL,
 
 
   ## Rcpp function to get dimensions of ASCII genotype file
+  message(" Getting number of individuals and snp from file ... ")
   dim_of_ascii_M <- getRowColumn(fname=genofile)
 
   ## Rcpp function to create ascii  M and Mt file from 
-
+  message(" Beginning creation of reformatted file ... ")
   it_worked <- create.ascii(file_genotype=genofile, type=type, AA=as.character(AA), AB=as.character(AB), BB=as.character(BB), 
               availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M, quiet=quiet, missing=missing  )
     if(!it_worked)   ## error has occurred. 
