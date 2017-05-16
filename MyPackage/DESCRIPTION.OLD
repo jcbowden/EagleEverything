@@ -22,7 +22,9 @@ Imports:
    stats,
    utils,
    parallel,
-   data.table
+   data.table,
+   tcltk,
+   markdown
 LinkingTo: 
    RcppEigen, Rcpp
 Roxygen: 

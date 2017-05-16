@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUn to set up PaTHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUN to set up PATHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
 module load pandoc
 export RSTUDIO_PANDOC=$PANDOC_HOME
@@ -19,6 +19,7 @@ echo " Removing Eagle and Eagle.Rcheck"
 rm -rf $DIR/Eagle  $DIR/Eagle.Rcheck
 
 ## create and run Rcpp.package.skeleton
+echo " Creating package skeleton "
 echo   "library(Rcpp)" > ./tmp.R
 echo   "    " >> tmp.R  
 echo  " Rcpp.package.skeleton(\"Eagle\", cpp_files=c(\"RcppFunctions.cpp\"  ),    " >> ./tmp.R
@@ -27,23 +28,24 @@ echo  "  ## running roxygen2  " >> ./tmp.R
 echo  " library(roxygen2) " >> ./tmp.R
 echo  " setwd(\"./Eagle\")  " >> ./tmp.R
 echo  "  roxygenise() " >> ./tmp.R
-
 echo "  " >> tmp.R
 
 # run tmp.R in batch mode of R
 echo "Running R CMD BATCH ./tmp.R"  
 R CMD BATCH ./tmp.R
 
+
+
 # copy Makevars to Eagle
+echo " Copy my own Makevars and Makevars.win to Eagle directory "
 cp $DIR/Makevars $DIR/Eagle/src
 cp $DIR/Makevars.win $DIR/Eagle/src
 #cp $DIR/Makevars.gpu $DIR/Eagle/src/Makevars
 
 
 
-
-
 ## Replace generated NAMESPACE and DESCRIPTION with correct versions
+echo " Replace NAMESPACE and DESCRIPTION with my own version "
 cp ./NAMESPACE.OLD ./Eagle/NAMESPACE
 cp ./DESCRIPTION.OLD ./Eagle/DESCRIPTION
 ## Modify ./Eagle/src/RcppExports.cpp
@@ -51,17 +53,7 @@ cp ./DESCRIPTION.OLD ./Eagle/DESCRIPTION
 
 
  cd $DIR/Eagle/src
-# awk 'NR>=1&&NR<=3' "RcppExports.cpp" > ./block1.tmp
 
-
-## modify RcppExports.cpp
-
-## this works on bragg
-#awk '{if (NR==3) print "#include \"../inst/include/Eagle.h\" "; else print $0 }' $DIR/Eagle/src/RcppExports.cpp >  $DIR/Eagle/src/tmp
-#awk '{if (NR==4) print "#include <RcppEigen.h>"; else print $0 }' $DIR/Eagle/src/tmp >  $DIR/Eagle/src/tmpnew
-#awk '{if (NR==5) print "#include <Rcpp.h>"; else print $0 }' $DIR/Eagle/src/tmpnew >  $DIR/Eagle/src/tmp
-#awk '{if (NR==6) print "using namespace Rcpp ; "; else print $0 }' $DIR/Eagle/src/tmp  >  $DIR/Eagle/src/tmpnew
-#mv $DIR/Eagle/src/tmpnew  $DIR/Eagle/src/RcppExports.cpp
 
 ## this abreviated form also works on bragg
 awk '{if (NR==4) print "#include <RcppEigen.h>"; else print $0 }' $DIR/Eagle/src/RcppExports.cpp  >  $DIR/Eagle/src/tmpnew
@@ -71,12 +63,13 @@ mv $DIR/Eagle/src/tmpnew  $DIR/Eagle/src/RcppExports.cpp
 
 rm  $DIR/Eagle/src/tmp
 
-
+echo " mkdir Eagle/inst and Eagle/inst/include "
 mkdir $DIR/Eagle/inst
 mkdir $DIR/Eagle/inst/include
 
 # cp Eagle.h to Eagle direcotry 
 ## added by AWG 14/04/17 to be consistent with windows pipeline
+echo " Forming Eagle.h to take care of include -- may not need this -- need to test ... "
 #echo "#include <RcppEigen.h> " > ./tmp1
 echo " #include <omp.h> "  >  ./tmp1
 echo " #include <iostream> " >> ./tmp1
@@ -119,24 +112,10 @@ cp ./map.txt $DIR/Eagle/inst/extdata/.
 cd $DIR
 
 
-## add own Makevars to src with openmp compiler options
-## echo "PKG_CPPFLAGS=-fopenmp "  > ./Eagle/src/Makevars
-## -----------------------------------------------
-## Note
-## ------------------------------------------------
-## User needs to set CUDA_HOME
-##                   R_HOME
-##                   MAGMA_HOME
-##echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./Eagle/src/Makevars
-##echo "PKG_LIBS=-fopenmp"  >> ./Eagle/src/Makevars
-##  echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./Eagle/src/Makevars
-#echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./Eagle/src/Makevars
-
-#echo "PKG_CPPFLAGS = -lnvblas " > ./Eagle/src/Makevars
-
-#### NOT MAKEVARS of my OWN ---- cp /home/geo047/gitHUB_WMAM/MyPackage/Makevars.gpu /home/geo047/gitHUB_WMAM/MyPackage/Eagle/src/Makevars
-
+##---------------------------
 ## building shiny structure
+##---------------------------
+echo " Building shiny structure from files in ~/ShinyApp/. "
 mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app
 mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www
 mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images
@@ -144,23 +123,28 @@ mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images
 
 
 cp /home/geo047/ShinyApp/shinyApp.R /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/app.R
+#cp /home/geo047/ShinyApp/www/FAQ.md  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
 cp /home/geo047/ShinyApp/css.css /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
 cp /home/geo047/ShinyApp/www/images/HomeScreen.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
 cp /home/geo047/ShinyApp/www/images/*banner* /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
 cp /home/geo047/ShinyApp/www/images/logo.jpg /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+cp /home/geo047/ShinyApp/faq.rmd /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
 
-#cp /home/geo047/ShinyApp/www/images/pipeline.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
-cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.jpg ./Eagle/vignettes/images
-cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.png ./Eagle/vignettes/images
+
+
+echo " Im not copying any images/*.jpg into vignettes/images due to size see if this works. "
+#cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.jpg ./Eagle/vignettes/images
+#cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.png ./Eagle/vignettes/images
 
 
 
 cp  /home/geo047/ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
 
 
-# create html and pdf of static vignette item
+# create html static vignette item
 R CMD BATCH   ./QuickStart.me
-cp ./QuickStart.html ./Eagle/vignettes/.
+#######cp ./QuickStart.html ./Eagle/vignettes/.
+cp ./QuickStart.html ./Eagle/inst/shiny_app/www/.
 
 
 #exit -1
