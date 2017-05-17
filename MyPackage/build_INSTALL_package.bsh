@@ -144,7 +144,7 @@ cp  /home/geo047/ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eag
 # create html static vignette item
 R CMD BATCH   ./QuickStart.me
 #######cp ./QuickStart.html ./Eagle/vignettes/.
-cp ./QuickStart.html ./Eagle/inst/shiny_app/www/.
+#### cp ./QuickStart.html ./Eagle/inst/shiny_app/www/.
 
 
 #exit -1
