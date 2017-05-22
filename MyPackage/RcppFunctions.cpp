@@ -19,7 +19,7 @@
 
 // This was causing issues when building on clean Linux system
 // creates reliance on mkl.h 
-//#define EIGEN_USE_MKL_ALL
+#define EIGEN_USE_BLAS
 
 // [[Rcpp::depends(RcppEigen)]]
 
@@ -1735,7 +1735,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
   // Added 26 April
   long i;
-//  #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
+  #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
   for(i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
@@ -1846,7 +1846,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
    //    var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
            // Added 26 April
-//            #pragma omp parallel for
+            #pragma omp parallel for
             for(long j=0; j < num_rows_in_block1; j++){
                       var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
             }
