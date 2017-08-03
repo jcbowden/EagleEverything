@@ -92,7 +92,7 @@
 #' convert different format marker files into ped files.  See \code{\link{ReadMarker}} for more details.
 #'
 #' @section Quick Start Guide:
-#' At the R prompt, run \preformatted{OpenUI()} This opens a web browser to the
+#' At the R prompt, run \preformatted{OpenGUI()} This opens a web browser to the
 #' user interface for Eagle. 
 #'
 #' @section Output: The aim of a genome-wide association study (GWAS) is to identify those marker loci 
@@ -1854,17 +1854,17 @@ constructX <- function(fnameM=NULL, currentX=NULL, loci_indx=NULL,
 #' @title Browser-based User Interface
 #' @description Opens a web browser to act as a user-friendly user interface to Eagle
 #' @details
-#' \code{OpenUI} is an easy to use web-based user interface for Eagle. By clicking on the navigation 
+#' \code{OpenGUI} is an easy to use web-based user interface for Eagle. By clicking on the navigation 
 #' tabs at the top of a page, data can be read and analysed. By using this user interface, a user can avoid having to write R code. 
 #'
 #' Note that even though a web browser is being used as the user interface, everything remains local to the computer. 
 #' @examples
 #'\dontrun{
 #'# opens a web browser 
-#' OpenUI()
+#' OpenGUI()
 #'}
 #'
-OpenUI <- function() {
+OpenGUI <- function() {
   appDir <- system.file("shiny_app", package = "Eagle")
   if (appDir == "") {
     message("Could not find shiny-app directory. Try re-installing `Eagle` package.")

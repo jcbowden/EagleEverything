@@ -19,7 +19,7 @@
 
 // This was causing issues when building on clean Linux system
 // creates reliance on mkl.h 
-#define EIGEN_USE_BLAS
+// #define EIGEN_USE_BLAS
 
 // [[Rcpp::depends(RcppEigen)]]
 

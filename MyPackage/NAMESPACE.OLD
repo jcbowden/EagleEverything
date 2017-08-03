@@ -15,5 +15,5 @@ export(
    ReadMarker,
    ReadMap,
    AM,
-   OpenUI,
+   OpenGUI,
    SummaryAM)

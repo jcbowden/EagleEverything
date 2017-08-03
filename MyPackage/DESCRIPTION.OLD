@@ -7,12 +7,12 @@ Authors@R: c(
            person("Joshua", "Bowden", role="ctb"),
            person("Ryan", "Stephenson", role="ctb"))
 Maintainer: Andrew George  <andrew.george@csiro.au>
-Description: An implementation  of multiple-locus association mapping on a genome-wide scale. Eagle can handle inbred or outbred study populations, populations  of arbitrary unknown complexity, and data larger than the memory capacity of the computer. Since Eagle is based on linear mixed models, it is best suited to the analysis of data on continuous traits. However, it can tolerate non-normal data.  Eagle reports, as its findings, the best set of snp in strongest association with a trait. To perform an analysis, run OpenUI().  This  opens a web browser to the menu-driven user interface for the input of data, and for performing genome-wide analysis.
+Description: An implementation  of multiple-locus association mapping on a genome-wide scale. Eagle can handle inbred or outbred study populations, populations  of arbitrary unknown complexity, and data larger than the memory capacity of the computer. Since Eagle is based on linear mixed models, it is best suited to the analysis of data on continuous traits. However, it can tolerate non-normal data.  Eagle reports, as its findings, the best set of snp in strongest association with a trait. To perform an analysis, run OpenGUI().  This  opens a web browser to the menu-driven user interface for the input of data, and for performing genome-wide analysis.
 License: GPL-3
 Depends:
    R (>= 3.3.2)
 Suggests:
-  knitr, rmarkdown
+  rmarkdown
 Imports: 
    matrixcalc,
    shiny,
@@ -24,7 +24,8 @@ Imports:
    parallel,
    data.table,
    tcltk,
-   markdown
+   markdown,
+   knitr
 LinkingTo: 
    RcppEigen, Rcpp
 Roxygen: 
@@ -34,3 +35,4 @@ ByteCompile: TRUE
 NeedsCompilation: yes
 VignetteBuilder: knitr
 NeedsCompilation: yes
+URL: http://eagle.r-forge.r-project.org

@@ -57,7 +57,7 @@ and you  will see a message saying that Eagle has been loaded.
 The easiest way of interacting with Eagle and performing an analysis is through our web-based user interface (UI).  To run the UI, at the R prompt, type
 
 ```{r eval=FALSE}
-OpenUI()
+OpenGUI()
 ```
 </p>
 <p>

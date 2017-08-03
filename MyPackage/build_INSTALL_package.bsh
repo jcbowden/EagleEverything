@@ -149,24 +149,14 @@ cp  /home/geo047/ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eag
 
 
 # create html static vignette item
-R CMD BATCH   ./QuickStart.me
-#######cp ./QuickStart.html ./Eagle/vignettes/.
-#### cp ./QuickStart.html ./Eagle/inst/shiny_app/www/.
+#### R CMD BATCH   ./QuickStart.me
 
 
 #exit -1
 
 
-#R CMD Sweave ./QuickStart.Rmd
-#R CMD Sweave ./UserManual.Rmd
-#R CMD Sweave ./Install.Rmd
-#cp Install.html ./Eagle/inst/doc/.
-#cp ./Install.Rmd ./Eagle/vignettes/.
-cp QuickStart.html ./Eagle/inst/doc/.
-#cp QuickStart.pdf ./Eagle/inst/doc/.
-#cp UserManual.html ./Eagle/inst/doc/.
-cp ./QuickStart.Rmd ./Eagle/vignettes/.
-#cp ./UserManual.Rmd ./Eagle/vignettes/.
+#### cp QuickStart.html ./Eagle/inst/doc/.
+#### cp ./QuickStart.Rmd ./Eagle/vignettes/.
 
 
 
@@ -180,7 +170,13 @@ rm ./Eagle/.RData
 ## 20/07/2017
 ## Decided to create an R-forge site for Eagle so that I can have my own web page and mailing list
 ## copying files onto mac from which to subversion onto R-forge
+echo "Starting scp .... "
 scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
+
+#exit -1
+
+
+
 
 R CMD build Eagle 
  
