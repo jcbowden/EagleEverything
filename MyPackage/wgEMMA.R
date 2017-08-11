@@ -1,22 +1,3 @@
-# To do
-#  * write code to handle data larger than memory (need to slot in Ryan's code)
-#  * slot in GPU code of Ryan's
-#  * add ReadBlock code of Ryan's
-#  * tidy up doc 
-#  * change name to Eagle of package
-
-
-
-
-
-
-# Warranty
-# This software is distributed under the GNU General Public License.
-#
-#This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-#
-#This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. 
-
 
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ##              Checks 
@@ -70,7 +51,7 @@
 #' Eagle was specifically designed to make 
 #' genome-wide association mapping with multiple-locus models simple and practical.  Much effort has been 
 #' devoted to making the package as easy to use as possible. As part of this effort, we 
-#' developed a web-based user interface to Eagle, shielding users from having to write R code to run the functions.  
+#' developed a web-based user interface to Eagle.
 #'
 #' @section Assumptions:
 #' \enumerate{
@@ -97,10 +78,10 @@
 #'
 #' @section Output: The aim of a genome-wide association study (GWAS) is to identify those marker loci 
 #' closest to the genes that are influencing a trait. So, when the GWAS data are 
-#' analysed, a set of marker loci labels are returned as the output. These marker 
+#' analysed, a set of marker loci labels are returned as the results These marker 
 #'  loci are closest to the genes underlying the trait and are found while simultaneously 
-#' accounting for multiple marker-trait associations, familial relatedness, and 
-#' fixed effects such as population structure (if included in the analysis).
+#' accounting for other marker-trait associations, familial relatedness, and 
+#' fixed effects such as population structure.
 #' More detailed output such as the additive effect of the marker locus, its 
 #' significance in the multiple-locus model ( measured by a p-value), and 
 #' an estimate of the amount of variation explained by the locus can be 
@@ -111,8 +92,9 @@
 #' \itemize{
 #'  \item At the R prompt, type  \preformatted{library(, "Eagle")} for an overview of the package and its functions. 
 #' \item For detailed help on a function called "foo" say, type  \preformatted{help("foo")} 
-#' \item A QuickStart vignette and WorkedExample vignette are available by typing, at the R prompt,  \preformatted{vignette("QuickStart", "Eagle")} and \preformatted{vignette("WorkedExample", "Eagle")}, respectively.  
-#' \item Email <Eagle@csiro.au>
+#' \item Visit the Eagle website at \url{http://eagle.r-forge.r-project.org/} where 
+#' you can find a quick start guide, instructions on getting the most out of Eagle, 
+#' tutorials, and other useful information. 
 #'}
 #' @keywords Association mapping, multiple-locus models, linear mixed models.
 NULL
@@ -1259,19 +1241,29 @@ message(" File name:                   ",  phenofile, "\n")
 message(" Number of individuals:       ", nrow(phenos), "\n")
 message(" Number of columns:           ", ncol(phenos), "\n\n")
 message(" First 5 rows of the phenotype file are \n")
-if(nrow(phenos)>5){
-    for(ii in 1:5){
-       lne <- paste(phenos[ii,], sep="   ")
-       message(lne)
-    }
+#if(nrow(phenos)>5){
+#    for(ii in 1:5){
+#       lne <- paste(phenos[ii,], sep="   ")
+#       message(lne)
+#    }
+#} else {
+#    for(ii in 1:nrow(phenos)){
+#       lne <- paste(phenos[ii,], sep="   ")
+#       message(lne)
+#    }
+if(nrow(phenos) > 5){
+  for(ii in 1:5){
+  message(cat(paste(phenos[ii,], sep=" ")))
+  }
 } else {
-    for(ii in 1:nrow(phenos)){
-       lne <- paste(phenos[ii,], sep="   ")
-       message(lne)
-    }
-
-
+  for(ii in 1:nrow(phenos) ){
+  message(cat(paste(phenos[ii,], sep=" ")))
+  }
 }
+
+
+
+
 message("\n Column classes are  \n")
 for(ii in 1:ncol(phenos))
   message(c( sprintf("%20s   %15s", names(phenos)[ii], class(phenos[[ii]]) ), "\n"))
@@ -1355,7 +1347,22 @@ message(" Number of marker loci:       ", nrow(map), "\n")
 message(" Number of columns:           ", ncol(map), "\n")
 message(" Number of chromosomes:       ", length(unique(map[[2]])), "\n\n")
 message(" First 5 markers of the map file are \n")
-message(head(map, n=5))
+
+if(nrow(map) > 5){
+  for(ii in 1:5){
+  message(cat(paste(map[ii,], sep=" ")))
+  }
+} else {
+  for(ii in 1:nrow(map) ){
+  message(cat(paste(map[ii,], sep=" ")))
+  }
+}
+
+
+
+
+
+
 message("\n\n")
 
 return(map)
@@ -1432,17 +1439,20 @@ if (type=="text"){
 #' @param type  specify the type of file. Choices are "text" (the default) and "PLINK".
 #' @param missing the number or character for a missing genotype in the text file. There is no need to specify this for a PLINK ped file. Missing 
 #' allele values in a PLINK file must be coded as "0" or "-".  
-#' @param AA     the character(s) or number corresponding to the AA snp genotype in the marker genotype file. 
-#' This must be specified if the file type is "text".  If a character then it must be in quotes.
-#' @param AB     the  character(s) or number  corresponding to the AB snp genotype in the marker genotype file. This can be left unspecified 
-#'               if there are no heterozygote genotypes (i.e. the individuals are inbred). 
-#' If specified and a character, then it must be in quotes. 
-#' @param BB        the character(s) or number corresponding to the BB snp genotype in the marker genotype file. 
-#' This must be specified if the file type is "text".  If a character, then it must be in quotes.
+#' @param AA     the character or number corresponding to the AA snp genotype in the marker genotype file. 
+#' This need only be specified if the file type is "text".  If a character then it must be in quotes.
+#' @param AB     the  character or number  corresponding to the AB snp genotype in the marker genotype file. 
+#' This need only be specified if the file type is "text".
+#'This can be left unspecified 
+#'               if there are no heterozygous genotypes (i.e. the individuals are inbred). Only a single 
+#'  heterozygous genotype is allowed (Eagle does not distinguish between AB and BA).  
+#' If specified and a character, it must be in quotes. 
+#' @param BB        the character or number corresponding to the BB snp genotype in the marker genotype file. 
+#' This need only be  specified if the file type is "text".  If a character, then it must be in quotes.
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). 
 #'         This should be set to be as large as possible for best performance.   
 #' @param  quiet      a logical value. If set to \code{TRUE}, additional runtime output is printed along with additional error checking. Specifically, 
-#'               \code{ReadMarker} will check that the marker file has the same number of entries per row. 
+#'               \code{ReadMarker} will check that the marker file has the same number of column entries per row. 
 #'
 #' @details
 #' 
@@ -1518,7 +1528,7 @@ if (type=="text"){
 #' \preformatted{geno_obj <- ReadMarker(filename="geno.txt", AA="a/a", AB="a/b", BB="b/b", 
 #'                                        type="text", missing = "NA")}
 #'
-#' where \code{geno_obj} is used by \code{\link{AM}}. 
+#' where the results from running the function are placed in \code{geno_obj}.
 #'}
 #'
 #' \subsection{\strong{Reading in a PLINK ped file}}{
@@ -1851,7 +1861,7 @@ constructX <- function(fnameM=NULL, currentX=NULL, loci_indx=NULL,
 
 
 
-#' @title Browser-based User Interface
+#' @title Browser-based Graphical User Interface
 #' @description Opens a web browser to act as a user-friendly user interface to Eagle
 #' @details
 #' \code{OpenGUI} is an easy to use web-based user interface for Eagle. By clicking on the navigation 

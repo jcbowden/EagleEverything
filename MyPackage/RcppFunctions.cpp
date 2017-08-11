@@ -19,7 +19,8 @@
 
 // This was causing issues when building on clean Linux system
 // creates reliance on mkl.h 
-// #define EIGEN_USE_BLAS
+//#define EIGEN_USE_BLAS
+// #define EIGEN_USE_MKL_ALL
 
 // [[Rcpp::depends(RcppEigen)]]
 
@@ -35,7 +36,6 @@
 #include <time.h>
 // end added by Ryan
 
-#include <omp.h>
 #include <iostream>
 #include <fstream>
 #include <istream>
@@ -69,7 +69,7 @@ using Eigen::Map;   // maps rather than copies
 
 
 // const size_t bits_in_double = std::numeric_limits<long double>::digits;
-const size_t bits_in_ulong = std::numeric_limits<unsigned long int>::digits;
+//const size_t bits_in_ulong = std::numeric_limits<unsigned long int>::digits;
 const size_t bits_in_int = std::numeric_limits<int>::digits;
 
 
@@ -692,6 +692,13 @@ while(getline(fileIN, line ))
  if (!quiet ){
     while(streamLine >> tmp)
         number_of_columns ++;
+
+        message(" Number of columns in line " , counter+1 , " is " , number_of_columns);
+
+
+
+
+
 
      if (number_of_columns != dims[1] ){
          message("\n");
@@ -1735,7 +1742,9 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
   // Added 26 April
   long i;
-  #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
+  #if defined(_OPENMP)
+     #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
+  #endif
   for(i=0; i< dims[0]; i++){
            var_ans(i,0) =   var_ans_tmp.row(i)   * (Mt.row(i)).transpose() ;
   }
@@ -1846,7 +1855,10 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
    //    var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
            // Added 26 April
-            #pragma omp parallel for
+#if defined(_OPENMP)
+           #pragma omp parallel for
+#endif
+
             for(long j=0; j < num_rows_in_block1; j++){
                       var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
             }
@@ -2090,7 +2102,15 @@ Eigen::MatrixXd  calculateMMt_rcpp(CharacterVector f_name_ascii,
 {
 // set multiple cores
 Eigen::initParallel();
-omp_set_num_threads(num_cores);
+
+#ifdef _OPENMP
+#include <omp.h>
+   omp_set_num_threads(num_cores);
+#endif
+
+
+
+
 Eigen::setNbThreads(num_cores);
 message(" Number of cores being used for calculation is .. ", num_cores);
 

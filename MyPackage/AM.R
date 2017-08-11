@@ -381,7 +381,7 @@ if(length(indx) > 0)
 #' \preformatted{
 #'   geno_obj <-  ReadMarker(filename="geno.txt", AA=0, AB=1, BB=2, type="text", missing="X")
 #'   
-#'   pheno_obj <- ReadPheno(filename="pheno.txt", header=TRUE)
+#'   pheno_obj <- ReadPheno(filename="pheno.txt")
 #'
 #'   res <- AM(trait="y", geno=geno_obj, pheno=pheno_obj)
 #' }
@@ -414,7 +414,7 @@ if(length(indx) > 0)
 #' \preformatted{
 #'   geno_obj <-  ReadMarker(filename="/my/dir/geno.ped", type="PLINK", availmemGb=32)
 #'   
-#'   pheno_obj <- ReadPheno(filename="/my/dir/pheno.txt", header=TRUE, missing=99)
+#'   pheno_obj <- ReadPheno(filename="/my/dir/pheno.txt", missing=99)
 #'
 #'   map_obj   <- ReadMap(filename="/my/dir/map.txt")
 #'
@@ -488,9 +488,6 @@ if(length(indx) > 0)
 #'                                    package="Eagle")
 #'   map_obj <- ReadMap(filename=complete.name) 
 #'
-#'  # to look at the first few rows of the map file
-#'  head(map_obj)
-#'
 #'   # read marker data
 #'   #~~~~~~~~~~~~~~~~~~~~
 #'   # Reading in a PLINK ped file 
@@ -503,15 +500,15 @@ if(length(indx) > 0)
 #'   #~~~~~~~~~~~~~~~~~~~~~~~
 #'
 #'   # Read in a plain text file with data on a single trait and two covariates
-#'   # The first row of the text file contains the column names "trait", "cov1", and "cov2". 
+#'   # The first row of the text file contains the column names "y", "cov1", and "cov2". 
 #'   complete.name <- system.file("extdata", "pheno.txt", package="Eagle")
 #'   
 #'   pheno_obj <- ReadPheno(filename=complete.name)
 #'            
 #'   # Perform multiple-locus genome-wide association mapping 
 #'   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#'   res <- AM(trait = "trait",
-#'                            fformula = c("cov1 + "cov2"),
+#'   res <- AM(trait = "y",
+#'                            fformula = "cov1 + cov2",
 #'                            map = map_obj,
 #'                            pheno = pheno_obj,
 #'                            geno = geno_obj, availmemGb=8)
@@ -520,7 +517,7 @@ if(length(indx) > 0)
 #'  #    with no fixed effects except for an intercept. 
 #'  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #'  
-#'   res <- AM(trait = "trait",
+#'   res <- AM(trait = "y",
 #'                            map = map_obj,
 #'                            pheno = pheno_obj,
 #'                            geno = geno_obj, availmemGb=8)
