@@ -35,5 +35,12 @@ Here, I have set the machine up to be a windows R development machine
              click to open project mode
              use build tools to check code and build binaries. 
 
+11 August, 2017
+Greatly simplied process 
+
+1. Create Clean Eagle directory (this is crated as part of ./build.. sequence)
+2. Get into R and load library(devtools)
+3. Run  build_win("Eagle") where Eagle is the package directory. This will build a windows version of the package and test. 
+
  
                  
