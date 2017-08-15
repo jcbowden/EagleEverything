@@ -42,6 +42,7 @@ GenomicRel = function(M){
 #' @references  Sun G., Zhu C., Kramer  MH., Yang S-S., et al. 2010. Variation explained in mixed model association 
 #' mapping. Heredity 105, 330-340. 
 #' @examples
+#' \dontrun{
 #'   #---------------
 #'   # read the map 
 #'   #---------------
@@ -89,7 +90,7 @@ GenomicRel = function(M){
 #'
 #'   SummaryAM(AMobj=res, pheno=pheno_obj, geno=geno_obj, map=map_obj)
 #'
-#'
+#'}
 #' 
 #' @seealso \code{\link{AM}}
 #'

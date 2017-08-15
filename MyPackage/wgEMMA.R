@@ -122,8 +122,11 @@ fullpath <- function(fname){
 }
 
 
-##-------------------------------------
-##  EMMA code 
+##--------------------------------------------
+##  Effecient Mixed Model Association (EMMA) code
+##  Author: Hyun Min Kang (h3kang@cs.ucsd.edu), Noah A. Zaitlen, Claire M. Wade, Andrew Kirby, David Heckerman, and Eleazar Eskin (eeskin@cs.ucla.edu)
+## License: LGPL
+## URL: http://mouse.cs.ucla.edu/emma
 ##------------------------------------
 emma.delta.ML.dLL.w.Z <-  function (logdelta, lambda, etas.1, xi.1, n, etas.2.sq) 
 {
@@ -411,8 +414,6 @@ emma.delta.ML.dLL.wo.Z <- function (logdelta, lambda, etas, xi)
         logdelta <- (0:ngrids)/ngrids * (ulim - llim) + llim
         m <- length(logdelta)
         delta <- exp(logdelta)
-#print("eig.R$values")
-#print(eig.R$values)
         Lambdas <- matrix(eig.R$values, n - q, m) + matrix(delta, 
             n - q, m, byrow = TRUE)
         Etasq <- matrix(etas * etas, n - q, m)
@@ -433,7 +434,6 @@ emma.delta.ML.dLL.wo.Z <- function (logdelta, lambda, etas, xi)
                 eig.R$values, etas))
         }
         for (i in 1:(m - 1)) {
- #print(c(i, dLL[i], dLL[i+1], esp, m-1))
             if ((dLL[i] * dLL[i + 1] < 0 - esp * esp) && (dLL[i] > 
                 0) && (dLL[i + 1] < 0)) {
                 r <- uniroot(emma.delta.REML.dLL.wo.Z, lower = logdelta[i], 
@@ -540,7 +540,6 @@ message(cat("             been removed from the analysis.  \n"))
             message("Error:  (internal).  indxNA contains NA values. ")
             message(" AM has terminated with errors. ")
             return(NULL)
-            #stop(" AM has terminated with errors. ", call. = FALSE)
           }
         }
 
@@ -686,23 +685,6 @@ if(is.null(map)){
 
 
 
-#### To run multiple GPU's
-### > export OMP_NUM_THREADS=$PBS_NUM_PPN
-## > module load cuda/6.0 R
-## > module load R/3.0.0
-## > LD_PRELOAD=libnvblas.so R  
-## monitoring gpu usage
-##    nvidia-smi -l 3
-
-
-##  library('Rcpp')
-##  library('RcppEigen')
-##  library('matrixcalc')
-##  library('Matrix')
-## This builds a dll for the function
-## sourceCpp("/home/geo047/gitHUB_WMAM/MyPackage/RcppFunctions.cpp", rebuild=TRUE, quiet=TRUE)
-## source("/home/geo047/gitHUB_WMAM/MyPackage/wgEMMA.R")
-## source("/home/geo047/gitHUB_WMAM/MyPackage/multiple_am.R")
 
 
 ##-------------------------------
@@ -769,19 +751,12 @@ calculateMMt_sqrt_and_sqrtinv <- function(MMt=NULL, checkres=TRUE,
   } 
    res <- list()
 
-#   if(ngpu == 0){
       MMt.eigen <- eigen(MMt, symmetric=TRUE )
       sqrt_evals <- diag(sqrt(MMt.eigen$values))
       res[["sqrt"]] <- MMt.eigen$vectors %*% sqrt_evals %*% t(MMt.eigen$vectors)
       rm(MMt.eigen, sqrt_evals)
       gc()
       res[["invsqrt"]] <- chol2inv(chol(res[["sqrt"]]))
-#   }  else {
-#      #res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
-#      if(requireNamespace("rcppMagmaSYEVD", quietly = TRUE)) {
-#        res <- rcppMagmaSYEVD::sqrt_invsqrt(MMt, symmetric=TRUE)
-#      }
-#   } 
 
 
 
@@ -914,61 +889,6 @@ return(a)
 
 
 
-mistake_calculate_reduced_a <- function(varG=NULL, P=NULL, y=NULL, availmemGb=8, dim_of_ascii_M=NULL, 
-                                 selected_loci=NA, quiet = TRUE, message=message)
-{
- ## Rcpp function to calculate the BLUP (a) values under a dimension reduced model
- ## Args:
- ##    varG is a scalar value
- ##    P   is a n x n matrix
- ##    y   is a n x 1 vector
- ##
- ## a* = sigma^2_a * t(M) * P * y
- ## Returns:
- ##   a numeric vector of dimension reduced a values 
-
- if(is.null(varG))
-   stop(" VarG must be specified.", call. = FALSE)
-
-  if(is.null(P))
-   stop(" P must be specified", call. = FALSE)
-
- 
-  if(is.null(y))
-   stop(" y must be specified", call. = FALSE)
-
- 
-  if( !(nrow(P) ==  length(y))){
-    message(" Error:  there is a problem with the  dimensions of  P, and/or the vector y.")
-    message("         They should  be of the dimension (n x n), and a vector of length n.")
-    message(" The dimensions are: \n")
-    message(" dim(P)      = ", dim(P), "\n")
-    message(" length(y)   = ", length(y), "\n")
-    stop(call. = FALSE)  
-
-  }
-
-
-
-  ycolmat <- matrix(data=y, ncol=1)  ## makes it easier when dealing with this in Rcpp
-  fnameascii <- fullpath("Mt.ascii")
-  if(!any(is.na(selected_loci))) selected_loci <- selected_loci-1
-  ar <- calculate_reduced_a_rcpp(f_name_ascii = fnameascii, varG=varG, P=P, 
-                                 y=ycolmat, max_memory_in_Gbytes=availmemGb, 
-                                 dims=dim_of_ascii_M , selected_loci = selected_loci , 
-                                 quiet = quiet , message=message)
-
-
-
-
-
-## t(t(y)) is a trick to get y as a row matrix 
-##return( varG * invMMt %*% P %*% t(t(y)))
-return(ar)
-
-}
-
-
 
 
 
@@ -990,11 +910,6 @@ calculate_a_and_vara <- function(geno=NULL, maxmemGb=8,
 
 
 
-#  file_ascii <- fullpath("Mt.ascii")
-#  if(!file.exists(file_ascii)){
-#      message("\n\n  Error: ", file_ascii, " does not exist and it should have been created. \n\n")
-#      stop(call. = FALSE)
-#  }
   fnameMt <- geno[["asciifileMt"]]
   dimsMt <- c(geno[["dim_of_ascii_M"]][2], geno[["dim_of_ascii_M"]][1])
 
@@ -1043,10 +958,6 @@ calculate_reduced_vara <- function(X=NULL, varE=NULL, varG=NULL, invMMt=NULL, MM
 
   D1 <- solve(D)
 
-#  C1 <- cbind(A,B)
-#  C2 <- cbind(C,D)
-#  CC <- rbind(C1, C2)
-#  invCC <- solve(CC)
 
   vars <- varG * diag(nrow(D1))  - ( D1 + D1 %*% C %*% solve(A - B %*% D1 %*% C) %*% B %*% D1 )
 
@@ -1241,16 +1152,6 @@ message(" File name:                   ",  phenofile, "\n")
 message(" Number of individuals:       ", nrow(phenos), "\n")
 message(" Number of columns:           ", ncol(phenos), "\n\n")
 message(" First 5 rows of the phenotype file are \n")
-#if(nrow(phenos)>5){
-#    for(ii in 1:5){
-#       lne <- paste(phenos[ii,], sep="   ")
-#       message(lne)
-#    }
-#} else {
-#    for(ii in 1:nrow(phenos)){
-#       lne <- paste(phenos[ii,], sep="   ")
-#       message(lne)
-#    }
 if(nrow(phenos) > 5){
   for(ii in 1:5){
   message(cat(paste(phenos[ii,], sep=" ")))
@@ -1336,7 +1237,6 @@ ReadMap  <- function( filename = NULL, csv=FALSE, header=TRUE)
   }
   sep=" "
   if(csv) sep=","
-  #map <- read.table(mapfile, header=header, sep=sep)
   map <- fread(mapfile, header=header, sep=sep)
   map <- as.data.frame(map)
 message("\n\n Loading map file ... \n\n")
@@ -1724,9 +1624,9 @@ ReadMarker <- function( filename=NULL, type="text", missing=NULL,
        it_worked <- create.ascii(file_genotype=fullpath(filename), type=type, availmemGb=availmemGb, dim_of_ascii_M=dim_of_ascii_M,  quiet=quiet  )
        if(!it_worked)
            return(NULL) 
-# prompted by issues with ubuntu and file permissions with shiny and shiny being run from install library
-#       asciifileM <- fullpath("M.ascii")
-#       asciifileMt <- fullpath("Mt.ascii")
+          # prompted by issues with ubuntu and file permissions with shiny and shiny being run from install library
+          #       asciifileM <- fullpath("M.ascii")
+          #       asciifileMt <- fullpath("Mt.ascii")
 
     if(.Platform$OS.type == "unix") {
        asciifileM <- paste(dirname(filename), "/", "M.ascii", sep="")
@@ -1779,9 +1679,9 @@ ReadMarker <- function( filename=NULL, type="text", missing=NULL,
     if(!it_worked)   ## error has occurred. 
        return(NULL)
 
-  #  causing issues with shiny on VB on ubuntu
-  #  asciifileM <- fullpath("M.ascii")
-  #  asciifileMt <- fullpath("Mt.ascii")
+       #  causing issues with shiny on VB on ubuntu
+       #  asciifileM <- fullpath("M.ascii")
+       #  asciifileMt <- fullpath("Mt.ascii")
 
 
      if(.Platform$OS.type == "unix") {
@@ -1884,14 +1784,6 @@ OpenGUI <- function() {
   #shiny::runApp(appDir, display.mode = "normal")
   shinyAppDir(appDir)
 }
-
-
-
-
-
-
-
-
 
 
 

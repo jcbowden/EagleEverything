@@ -106,7 +106,7 @@ cd $DIR
 
 #mkdir $DIR/Eagle/inst
 mkdir $DIR/Eagle/inst/extdata
-mkdir $DIR/Eagle/inst/doc
+#mkdir $DIR/Eagle/inst/doc
 #mkdir $DIR/Eagle/vignettes
 #mkdir $DIR/Eagle/vignettes/images
 cd $DIR
