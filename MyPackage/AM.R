@@ -681,15 +681,19 @@ if(length(indxNA)>0){
     message(cat("new dimensions of reshaped M", res, "\n"))
 
      if(.Platform$OS.type == "unix") {
-       geno$asciifileM <- paste(dirname(geno$asciifileM), "/", "M.asciitmp", sep="")
+       ## geno$asciifileM <- paste(dirname(geno$asciifileM), "/", "M.asciitmp", sep="")
+       geno$asciifileM <- paste(tempdir() , "/", "M.asciitmp", sep="")
      } else {
-       geno$asciifileM <- paste(dirname(geno$asciifileM), "\\", "M.asciitmp", sep="")
+       ## geno$asciifileM <- paste(dirname(geno$asciifileM), "\\", "M.asciitmp", sep="")
+       geno$asciifileM <- paste( tempdir() , "\\", "M.asciitmp", sep="")
      }
 
      if(.Platform$OS.type == "unix") {
-       geno$asciifileMt <- paste(dirname(geno$asciifileMt), "/", "Mt.asciitmp", sep="")
+       ## geno$asciifileMt <- paste(dirname(geno$asciifileMt), "/", "Mt.asciitmp", sep="")
+       geno$asciifileMt <- paste( tempdir() , "/", "Mt.asciitmp", sep="")
      } else {
-       geno$asciifileMt <- paste(dirname(geno$asciifileMt), "\\", "Mt.asciitmp", sep="")
+       ##geno$asciifileMt <- paste(dirname(geno$asciifileMt), "\\", "Mt.asciitmp", sep="")
+       geno$asciifileMt <- paste( tempdir() , "\\", "Mt.asciitmp", sep="")
      }
 
     #geno$asciifileM  <-  fullpath("M.asciitmp")
