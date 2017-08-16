@@ -1,14 +1,9 @@
 useDynLib(Eagle)
-#importFrom(Rcpp, evalCpp)
 importFrom(parallel, detectCores)
 importFrom(data.table, fread)
 importFrom(matrixcalc, is.positive.definite)
 importFrom(shinyjs, useShinyjs)
-#import(shiny, RcppEigen,  matrixcalc, Matrix, data.table )
-#import(shiny, RcppEigen, shinythemes, shinyBS, shinyjs  )
-#import(shiny,  shinythemes, shinyBS, shinyjs  )
 import(shiny,  shinythemes, shinyBS, stats, utils )
-
 
 export(
    ReadPheno,

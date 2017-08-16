@@ -4,7 +4,8 @@ echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUN to set up PATHS!!!!!!!!!!!!!!
 module purge
 
 
-module load R/3.3.2
+module load R/3.4.0
+#module load R/3.3.2
 module load pandoc
 module load intel-cc/15.0.6.233 
 module load intel-fc/15.0.6.233
