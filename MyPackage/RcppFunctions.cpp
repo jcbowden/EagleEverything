@@ -7,34 +7,38 @@
 // [[Rcpp::depends(RcppEigen)]]
 
 #include <RcppEigen.h>
-#include <R.h>
+// #include <R.h>
 
-#include <cstring>
-#include <iostream>
-#include <sstream>
-#include <time.h>
+// #include <cstring>
+// #include <iostream>
+// #include <sstream>
+// #include <time.h>
 
-#include <iostream>
-#include <fstream>
-#include <istream>
-#include <vector>
-#include <bitset>
-#include <string>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <ctime>
+// #include <iostream>
+// #include <fstream>
+//#include <istream>
+// #include <vector>
+// #include <bitset>
+// #include <string>
+// #include <fcntl.h>
+// #include <stdlib.h>
+// #include <sys/stat.h>
+// #include <unistd.h>
+// #include <ctime>
 
 
-using namespace std;
-using namespace Rcpp;
-using namespace RcppEigen;
+// using namespace std;
+// using namespace Rcpp;
+// using namespace RcppEigen;
+// using namespace Eigen;
 
-using Eigen::MatrixXi;
-using Eigen::MatrixXd;  
-using Eigen::Lower;
-using Eigen::Map;   // maps rather than copies
+// using Eigen::MatrixXi;
+// using Eigen::MatrixXd;  
+// using Eigen::Lower;
+// using Eigen::Map;   // maps rather than copies
+
+
+
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -47,8 +51,8 @@ const size_t bits_in_int = std::numeric_limits<int>::digits;
 
 
 // [[Rcpp::export]]
-std::vector <long>    ReshapeM_rcpp( CharacterVector  fnameM, 
-               CharacterVector  fnameMt, 
+std::vector <long>    ReshapeM_rcpp( Rcpp::CharacterVector  fnameM, 
+               Rcpp::CharacterVector  fnameMt, 
                std::vector <long> indxNA, 
                std::vector <long> dims){
 
@@ -97,7 +101,7 @@ std::vector <long>    ReshapeM_rcpp( CharacterVector  fnameM,
                 writeline = false;
           }
           if(writeline){
-              fileOUT << line << endl;
+              fileOUT << line << std::endl;
               newdims[0]++;
           }
           rownum++;
@@ -137,7 +141,7 @@ std::vector <long>    ReshapeM_rcpp( CharacterVector  fnameM,
           for(unsigned long ii=0; ii<indxNA.size(); ii++){
             line.erase ( indxNA[ii], 1 );
           }  // end for a
-          fileOUTt << line << endl;
+          fileOUTt << line << std::endl;
       }  // end inner while
  }  // end outer while(fileIN
 
@@ -526,7 +530,7 @@ while(getline(fileIN, line ))
 {
 
 
-   Rcout << "\r" << 100.0*counter/dims[0] << "% read of text file.       " << flush;
+   Rcpp::Rcout << "\r" << 100.0*counter/dims[0] << "% read of text file.       " << std::flush;
 
  // Here, BB is coded into 2 
  //       AB is coded into 1, 
@@ -690,7 +694,7 @@ Eigen::MatrixXd
 
 
 // [[Rcpp::export]]
-void  createMt_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii, 
+void  createMt_ASCII_rcpp(Rcpp::CharacterVector f_name, Rcpp::CharacterVector f_name_ascii, 
                               double  max_memory_in_Gbytes,  std::vector <long> dims,
                               bool  quiet, Rcpp::Function message )
 {
@@ -770,7 +774,7 @@ if(mem_bytes < max_mem_in_bytes){
    }  // end while getline
 
   // take transpose of matrix M
-  MatrixXi Mt = M.transpose();
+  Eigen::MatrixXi Mt = M.transpose();
   
   // write out contents fo Mt to file (no spaces)a
  std::vector<char> rowinfile( Mt.cols() );
@@ -830,7 +834,7 @@ if(mem_bytes < max_mem_in_bytes){
               end_val = dims[1];
 
          long ncols = end_val - start_val ;
-         MatrixXi
+         Eigen::MatrixXi
               M(dims[0], ncols );
 
 
@@ -857,7 +861,7 @@ if(mem_bytes < max_mem_in_bytes){
        // transpose M
 
 
-       MatrixXi Mt = M.transpose();
+       Eigen::MatrixXi Mt = M.transpose();
 
 
       // write out contents fo Mt to file (no spaces)a
@@ -909,7 +913,7 @@ message(" The marker file has been Uploaded");
 // Calculation of transformed blup a values
 //--------------------------------------------
 // [[Rcpp::export]]
-Eigen::MatrixXd calculate_reduced_a_rcpp ( CharacterVector f_name_ascii, double varG, 
+Eigen::MatrixXd calculate_reduced_a_rcpp ( Rcpp::CharacterVector f_name_ascii, double varG, 
                                            Eigen::Map<Eigen::MatrixXd> P,
                                            Eigen::Map<Eigen::MatrixXd>  y,
                                            double max_memory_in_Gbytes,  
@@ -1099,7 +1103,7 @@ void removeColumn(Eigen::MatrixXd& matrix, unsigned long colToRemove)
 // ------------------------------------------------------
 
 // [[Rcpp::export]]
-Rcpp::List   calculate_a_and_vara_rcpp(  CharacterVector f_name_ascii,  
+Rcpp::List   calculate_a_and_vara_rcpp(  Rcpp::CharacterVector f_name_ascii,  
                                     Rcpp::NumericVector  selected_loci,
                                     Eigen::Map<Eigen::MatrixXd> inv_MMt_sqrt,
                                     Eigen::Map<Eigen::MatrixXd> dim_reduced_vara,
@@ -1288,7 +1292,7 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 //        for(long j=0; j < num_rows_in_block1; j++){
 //           var_ans_tmp(j,0) =  Mt.row(j) * vt1 * ((Mt.row(j)).transpose()) ;
 //        }
-//        Rcout << "end of computing variances ... " << endl;
+//        Rcpp::Rcout << "end of computing variances ... " << std::endl;
             // vt.noalias() =  Mt *  vt1;
            Eigen::MatrixXd vt;
               vt.noalias()  =  Mt *  vt1;
@@ -1339,8 +1343,8 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 
 // [[Rcpp::export]]
-bool  createM_ASCII_rcpp(CharacterVector f_name, CharacterVector f_name_ascii, 
-                  CharacterVector  type,
+bool  createM_ASCII_rcpp(Rcpp::CharacterVector f_name, Rcpp::CharacterVector f_name_ascii, 
+                  Rcpp::CharacterVector  type,
                   std::string AA,
                   std::string AB, 
                   std::string BB,
@@ -1454,7 +1458,7 @@ message("\n\n" );
 
 
 // [[Rcpp::export]]
-Eigen::VectorXi  extract_geno_rcpp(CharacterVector f_name_ascii, 
+Eigen::VectorXi  extract_geno_rcpp(Rcpp::CharacterVector f_name_ascii, 
                                    double  max_memory_in_Gbytes, 
                                     long  selected_locus, 
                                     std::vector<long> dims)
@@ -1540,7 +1544,7 @@ return(column_of_genos);
 
 
 // [[Rcpp::export]]
-Eigen::MatrixXd  calculateMMt_rcpp(CharacterVector f_name_ascii, 
+Eigen::MatrixXd  calculateMMt_rcpp(Rcpp::CharacterVector f_name_ascii, 
                                    double  max_memory_in_Gbytes, int num_cores,
                                    Rcpp::NumericVector  selected_loci , std::vector<long> dims, 
                                    bool  quiet, Rcpp::Function message) 

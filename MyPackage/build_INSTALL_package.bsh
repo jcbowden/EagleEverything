@@ -31,7 +31,16 @@ echo " Creating package skeleton "
 echo   "library(Rcpp)" > ./tmp.R
 echo   "    " >> tmp.R  
 echo  " Rcpp.package.skeleton(\"Eagle\", cpp_files=c(\"RcppFunctions.cpp\"  ),    " >> ./tmp.R
-echo  "    example_code=FALSE, code_files=c(\"onAttach.R\", \"wgEMMA.R\", \"AM.R\", \"summary_am.R\"   ) ) " >> ./tmp.R
+echo  "    example_code=FALSE, code_files=c(
+            \"onAttach.R\", 
+            \"packagedesc.R\", 
+            \"ReadMarker.R\",
+            \"ReadMap.R\",
+            \"ReadPheno.R\",
+            \"AM.R\", 
+            \"OpenGUI.R\", 
+            \"misc.R\", 
+            \"summary_am.R\"   ) ) " >> ./tmp.R
 echo  "  ## running roxygen2  " >> ./tmp.R
 echo  " library(roxygen2) " >> ./tmp.R
 echo  " setwd(\"./Eagle\")  " >> ./tmp.R
@@ -90,7 +99,7 @@ echo " using namespace std;"  >> ./tmp1
 echo "    " >> tmp1
 mv tmp1 Eagle.h
 
-mv  ./Eagle.h  $DIR/Eagle/inst/include/Eagle.h
+###  mv  ./Eagle.h  $DIR/Eagle/inst/include/Eagle.h
 
 
 cd $DIR
@@ -105,11 +114,7 @@ cd $DIR
 echo  " Adding raw data to package ... "
 cd $DIR
 
-#mkdir $DIR/Eagle/inst
 mkdir $DIR/Eagle/inst/extdata
-#mkdir $DIR/Eagle/inst/doc
-#mkdir $DIR/Eagle/vignettes
-#mkdir $DIR/Eagle/vignettes/images
 cd $DIR
 
 cp ./pheno.txt $DIR/Eagle/inst/extdata/.
@@ -141,24 +146,7 @@ cp /home/geo047/ShinyApp/faq.rmd /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/s
 
 
 
-echo " Im not copying any images/*.jpg into vignettes/images due to size see if this works. "
-#cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.jpg ./Eagle/vignettes/images
-#cp /home/geo047/gitHUB_WMAM/MyPackage/images/*.png ./Eagle/vignettes/images
-
-
-
 cp  /home/geo047/ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
-
-
-# create html static #vignette item
-#### R CMD BATCH   ./QuickStart.me
-
-
-#exit -1
-
-
-#### cp QuickStart.html ./Eagle/inst/doc/.
-#### cp ./QuickStart.Rmd ./Eagle/vignettes/.
 
 
 
@@ -167,13 +155,20 @@ rm ./Eagle/src/*.o ./Eagle/src/tmp1 ./Eagle/src/block?.tmp ./Eagle/src/*.so
 rm ./Eagle/.RData
 
 
+ cd $DIR/Eagle/R
+ sed s/\`/\'/g RcppExports.R  > tmp
+ mv tmp RcppExports.R
+
+
+
 ##exit -1 
 
 ## 20/07/2017
 ## Decided to create an R-forge site for Eagle so that I can have my own web page and mailing list
 ## copying files onto mac from which to subversion onto R-forge
 echo "Starting scp .... "
-##scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
+cd $DIR
+### scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
 ### scp -rp ./Eagle/*  geo047@140.253.151.16:~/R-forge/Eagle/eagle/pkg/.
 
 #exit -1

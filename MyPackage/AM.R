@@ -1,338 +1,3 @@
-# This software is distributed under the GNU General Public License.
-#
-
-
-ReshapeM  <- function(fnameM, fnameMt, indxNA, dims){
-   ## function to create a temp version of M.ascii and Mt.ascii where the rows and columns, 
-   ## respectively have been removed for the elements in indxNA
-   
-   ## its indxNA-1 so that indexes start from 0 as in c++
-   res <- ReshapeM_rcpp(fnameM=fnameM, fnameMt=fnameMt, indxNA=(indxNA-1), dims=dims)
-   return(res)  ## returns integer vector with new dims of reshaped matrix M
-}
-
-
-doquiet <- function(dat, num_markers, lab){
-     ## a diagnostic function for printing the contents of matrix or vector
-     ## used for error checking
-
-     if(dim(dat)[1] == 1 || dim(dat)[2] ==1 )
-         dat <- as.numeric(dat)
-
-     if(class(dat)=="matrix"){
-          ### if dat is a matrix
-
-         if(num_markers > 0){
-           message(" Dimension of ", lab, " is ", dim(dat)[1], " by ", dim(dat)[2], " \n")
-           message(" First few rows and ", num_markers, " columns of ", lab, " are: \n")
-           if(nrow(dat) > 5 && ncol(dat) > num_markers){
-             for(xx in 1:5)
-               message(sprintf(" %f ", dat[xx, 1:num_markers]))
-
-           }
-           if(nrow(dat) <=5  &&  ncol(dat) > num_markers)
-             for(xx in 1:nrow(dat))
-               message(sprintf(" %f ", dat[xx, 1:num_markers]))
-           if(nrow(dat) > 5  &&  ncol(dat) <=  num_markers)
-             for(xx in 1:5)
-               message(sprintf(" %f ", dat[xx, 1:ncol(dat)]))
-           if(nrow(dat) <= 5  &&  ncol(dat) <=  num_markers)
-             for(xx in 1:nrow(dat))
-               message(sprintf(" %f ", dat[xx, 1:ncol(dat)]))
-           message("\n\n")
-         }
-     } ## end if class(dat)
-
-     if(class(dat)=="numeric" || class(dat)=="vector"){
-       if(num_markers > 0){
-          message(" Length of ", lab, " is ", length(dat), "\n")
-          message(" The first ", num_markers, " elements of the vector are ", lab, "\n")
-          if(length(dat) > num_markers)
-             message(sprintf(" %f ", dat[1:num_markers]))
-          if(length(dat) <= num_markers)
-             message(sprintf(" %f ", dat[1:length(dat)]))
-       message("\n\n")
-       }
-    }
-
-    if(!(class(dat)=="matrix" || class(dat)=="vector" || class(dat)=="numeric"))
-      message(" Internal error in function doquiet. dat not matrix or vector or numeric. \n")
-
-}
-
-.form_results <- function(trait, selected_loci, map,  fformula, indxNA,
-                           ncpu, availmemGb, quiet,  extBIC )
-{
-  if (length(selected_loci) > 1){
-   sigres <- list(trait=trait,
-                    fformula = fformula,
-                    indxNA = indxNA,
-                    Mrk=map[[1]][selected_loci], 
-                    Chr=map[[2]][selected_loci], 
-                    Pos=map[[3]][selected_loci], 
-                    Indx=selected_loci,
-                    ncpu=ncpu,
-                    availmemGb=availmemGb,
-                    quiet=quiet,
-                    extBIC=extBIC)
-  } else {
-   sigres <- list(trait=trait,
-                    fformula = fformula,
-                    indxNA = indxNA,
-                    Mrk=NA,
-                    Chr=NA,
-                    Pos=NA,
-                    Indx=selected_loci,
-                    ncpu=ncpu,
-                    availmemGb=availmemGb,
-                    quiet=quiet,
-                    extBIC=extBIC)
-  }
-return(sigres)
-}
-
-.print_title <- function(){
-    ## internal function: use only in AM function
-    ## title
-    message("\n\n\n")
-message("                    Multiple-Locus Association Mapping")
-message("                            Version 1.0 \n")
-message(" ")
-message("   . ,-\"-.   ,-\"-. ,-\"-.   ,-\"-. ,-\"-. ,-\"-. ,-\"-.   ,-\"-. ,-\"-.    ")  
-message("    X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ / | | X | | \\ /   ")
-message("   / \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X| | |/ \\| | |X|   ")
-message("      `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-!-\"   `-!-' `-!-'   `-!-' `-     \n\n")
-
-}
-
-
-.build_design_matrix <- function(pheno=NULL,  indxNA=NULL, fformula=NULL, quiet=TRUE  )
-{
-   ## internal function: use only in AM function and SummaryAM  function
-   ## build design matrix given character vector fformula of column names
-
-   ## assign model matrix X
-   if(is.null(fformula))
-   {  ## trait + intercept being fitted only
-      if(length(indxNA) > 0){
-         Xmat <- matrix(data=1, nrow=nrow(pheno[-indxNA,]), ncol=1)
-
-      } else {
-        Xmat <- matrix(data=1, nrow=nrow(pheno), ncol=1)
-      }
-      colnames(Xmat) <- "intercept"
-   } else {
-      ## trait + fixed effects being fitted. 
-     if(length(indxNA)==0)
-     {
-      #  mf <- paste(fformula, collapse=" + ")
-      #  mf <- paste(" ~ ", mf, sep="")
-      #  mf <- as.formula(mf)
-        Xmat <- model.matrix(fformula, data=pheno)
-     }  else {
-        # there is an issue with creating Xmat when it includes
-        # factors that have some of their levels removed. 
-        ph <- pheno[-indxNA,]
-        mat <- get_all_vars(formula=fformula, data=ph)
-        for(ii in names(mat)){
-           if(is.factor(ph[,ii])){
-              ph[,ii] <- as.factor(as.character(ph[,ii]))
-           }
-        }  ## for    
-        Xmat <- model.matrix(fformula, data=ph)
-     } ## if else (length(indxNA)==0)
-   } 
-
- if (!quiet ){
-   message("Dimension of design matrix, before addition of marker fixed effects is ", nrow(Xmat), "rows and ", ncol(Xmat), "columns.\n") 
- }
-
-if(!is.matrix(Xmat))
-   Xmat <- matrix(data=Xmat, ncol=1)
-
-## remove column that are 0 sum AWG
-indx <- which(colSums(Xmat)==0)
-if(length(indx) > 0)
-   Xmat <- Xmat[, -indx]
-
-
-
-
-  return(Xmat)
-}
-
-
-.calcMMt <- function(geno, availmemGb, ncpu, selected_loci, quiet)
-  {
-    ## internal function: used only in multilocus_loci_am and SummaryAM
-    ## values passed by environments
-    MMt <- calculateMMt(geno=geno[["asciifileM"]], availmemGb=availmemGb, 
-                           ncpu=ncpu, 
-                           dim_of_ascii_M = geno[["dim_of_ascii_M"]], 
-                           selected_loci=selected_loci, quiet = quiet, message=message) 
-    gc()
-
-
-    ## Trick for dealing with singular MMt due to collinearity
-    MMt <- MMt/max(MMt) + diag(0.95, nrow(MMt)) 
-    return(MMt)
-  }
-
-  .calcVC <- function(trait, currentX, MMt, ngpu)
-  {
-    ## perform likelihood ratio test for variance component Var_g
-    #res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100,ngpu=ngpu)
-    res_full <- emma.REMLE(y=trait, X= currentX , K=MMt, ngpu=ngpu)
-    return(list("vg"=res_full$vg, "ve"=res_full$ve))
-
-  }
-
- .calc_extBIC <- function(trait=NULL, currentX=NULL, MMt=NULL,  geno=NULL, quiet=TRUE)
- { 
-   ## smallest extBIC and BIC is best
-   ## internal function: use in AM only
-   res_p <- emma.MLE(y=trait, X= currentX , K=MMt, llim=-100,ulim=100)
-   BIC <- -2 * res_p$ML + (ncol(currentX)+1) * log(length(trait))  ## fixed effects + variance component
-
-   extBIC <- BIC + 2 * lchoose(geno$dim_of_ascii_M[2], ncol(currentX) - 1)  
-
-    return(extBIC)
- }
-
-
-
- .print_header <- function(){
-   message("\n\n\n                           Final  Results  \n")
-   message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
- }
-
-.print_final  <- function(selected_loci, map,  extBIC )
-{
-  if (length(selected_loci) == 1 & any(is.na(selected_loci)))
-  {
-      message("No significant marker-trait associations have been found. \n\n")
-  }  else {
-     .print_results(selected_loci=selected_loci, map=map,  extBIC=extBIC)
-          message("\n\n")
-  }   ## end if else
-
-
-}  ## end function print.finals
-
- .print_results <- function(itnum=NULL, selected_loci, map, extBIC)
- {  if(!is.null(itnum)){ 
-       message(" Significant marker-trait association found. \n")
-       message(" New results after iteration ", itnum, "are \n")
-    }
-    message(sprintf("%15s  %10s        %10s     %10s        %10s ", 
-                 "SNP", "Chrm", "Map Pos",  "Col Number",       "extBIC"))
-    message(sprintf("%15s  %10s        %10s     %10s        %10s ", 
-                 "-----", "------", "---------",  "-----------",       "---------"))
-
-    for(ii in 1:length(selected_loci)){
-       if(is.na(selected_loci[ii])){
-       message(sprintf("%15s  %10s        %10s        %8s           %-8.2f ", 
-        "Null Model", " ", " ", " ", extBIC[ii] ))
-       }  else {
-       message(sprintf("%15s  %10s        %10s       %8s            %-8.2f ", 
-        map[[1]][selected_loci[ii]], map[[2]][selected_loci[ii]], as.character(map[[3]][selected_loci[ii]]), 
-             selected_loci[ii], extBIC[ii] ))
-     }  ## end if else 
-   }
-    message("\n\n\n")
- }
-
-
-
-  .find_qtl <- function(geno, availmemGb,  selected_loci, MMt, invMMt, best_ve, best_vg, 
-                       currentX,  ncpu, quiet, trait, ngpu )
-  {
-    ##  internal function: use only with AM
-    H <- calculateH(MMt=MMt, varE=best_ve, varG=best_vg, message=message ) 
-    if(!quiet)
-        doquiet(dat=H, num_markers=5, lab="H")
-
-    P <- calculateP(H=H, X=currentX , message=message) 
-    if(!quiet)
-        doquiet(dat=P, num_markers=5 , lab="P")
-    rm(H)
-    gc()
- 
-    
-    ## artifact from old code but kept it anyway. Looks at the stability of the MMt calculation 
-    ## especially if there are near identical rows of data in M
-    error_checking <- FALSE
-    if (!quiet )
-       error_checking <- TRUE
-    MMt_sqrt_and_sqrtinv  <- calculateMMt_sqrt_and_sqrtinv(MMt=MMt, checkres=error_checking, 
-                              ngpu=ngpu , message=message) 
-    if(!quiet){
-       doquiet(dat=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], num_markers=5, lab="sqrt(M %*% M^t)")
-       doquiet(dat=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]], num_markers=5, lab="sqrt(M %*% M^t)^-1")
-    }
-    if(!quiet ){
-      message(" quiet =", quiet, ": beginning calculation of the BLUP estimates for dimension reduced model. \n")
-    }
-    hat_a <- calculate_reduced_a(varG=best_vg, P=P, 
-                       MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                       y=trait, quiet = quiet , message=message)   
-    if(!quiet)
-       doquiet(dat=hat_a, num_markers=5, lab="BLUPs")
-
-
-     rm(P)
-     gc()
-
-    if(!quiet ){
-      message(" quiet = ", quiet, ": beginning calculation of the standard errors  of BLUP estimates for dimension reduced model. \n")
-    }
-
-    var_hat_a    <- calculate_reduced_vara(X=currentX, varE=best_ve, varG=best_vg, invMMt=invMMt, 
-                                                MMtsqrt=MMt_sqrt_and_sqrtinv[["sqrt_MMt"]], 
-                                                quiet = quiet, message=message ) 
-    if(!quiet)
-             doquiet(dat=var_hat_a, num_markers=5, lab="SE of BLUPs")
-
-
-   
-     gc()
-     ## load("everything.RData")   ## just for testing ... 
-    if(!quiet ){
-      message(" quiet = ", quiet, ": beginning calculation of BLUPS and their standard errors for full model. \n")
-    }
-
-     a_and_vara  <- calculate_a_and_vara(geno = geno,
-                                         maxmemGb=availmemGb, 
-                                            selectedloci = selected_loci,
-                                            invMMtsqrt=MMt_sqrt_and_sqrtinv[["inverse_sqrt_MMt"]],
-                                            transformed_a=hat_a, 
-                                            transformed_vara=var_hat_a,
-                                            quiet=quiet, message=message) 
-     if(!quiet){
-        doquiet(dat=a_and_vara[["a"]], num_markers=5, lab="BLUPs for full model")
-        doquiet(dat=a_and_vara[["vara"]], num_markers=5, lab="SE of BLUPs for full model")
-     }
-
-  
-    ## outlier test statistic
-    if (!quiet ) 
-        message(" quiet = ", quiet, ": beginning calculation of outlier test statistics. \n")
-    tsq <- a_and_vara[["a"]]**2/a_and_vara[["vara"]]
- #   print(a_and_vara[["a"]][1:10])
- #   print(a_and_vara[["vara"]][1:10])
-    if(!quiet)
-       doquiet(dat=tsq, num_markers=5, lab="outlier test statistic")
-
-
-    indx <- which(tsq == max(tsq, na.rm=TRUE))   ## index of largest test statistic. However, need to account for other loci 
-                                         ## already having been removed from M which affects the indexing
-
-    ## taking first found qtl
-    indx <- indx[1]
-
-    orig_indx <- seq(1, geno[["dim_of_ascii_M"]][2])  ## 1:ncols
-    return(orig_indx[indx])
-}
 
 #' @title multiple-locus association mapping 
 #' @description \code{AM} performs  association mapping within a multiple-locus linear mixed model framework. 
@@ -542,7 +207,6 @@ AM <- function(trait=NULL,
  ## maxit           maximum number of qtl to include in the model
  ## ngpu            number of gpu available for computation
 
- ## check parameter inputs
 
  ## print tile
  .print_title()
@@ -681,36 +345,27 @@ if(length(indxNA)>0){
     message(cat("new dimensions of reshaped M", res, "\n"))
 
      if(.Platform$OS.type == "unix") {
-       ## geno$asciifileM <- paste(dirname(geno$asciifileM), "/", "M.asciitmp", sep="")
        geno$asciifileM <- paste(tempdir() , "/", "M.asciitmp", sep="")
      } else {
-       ## geno$asciifileM <- paste(dirname(geno$asciifileM), "\\", "M.asciitmp", sep="")
        geno$asciifileM <- paste( tempdir() , "\\", "M.asciitmp", sep="")
      }
 
      if(.Platform$OS.type == "unix") {
-       ## geno$asciifileMt <- paste(dirname(geno$asciifileMt), "/", "Mt.asciitmp", sep="")
        geno$asciifileMt <- paste( tempdir() , "/", "Mt.asciitmp", sep="")
      } else {
-       ##geno$asciifileMt <- paste(dirname(geno$asciifileMt), "\\", "Mt.asciitmp", sep="")
        geno$asciifileMt <- paste( tempdir() , "\\", "Mt.asciitmp", sep="")
      }
 
-    #geno$asciifileM  <-  fullpath("M.asciitmp")
-    #geno$asciifileMt <-  fullpath("Mt.asciitmp")
-    print(" in indxNA ================== ")
-    print(getwd())
-    print(geno)
     geno$dim_of_ascii_M <- res
 }
 
 
 
  ## build design matrix currentX
-currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, quiet=quiet )
+ currentX <- .build_design_matrix(pheno=pheno, indxNA=indxNA, fformula=fformula, quiet=quiet )
 
-  ## check currentX for solve(crossprod(X, X)) singularity
-  chck <- tryCatch({ans <- solve(crossprod(currentX, currentX))},
+ ## check currentX for solve(crossprod(X, X)) singularity
+ chck <- tryCatch({ans <- solve(crossprod(currentX, currentX))},
            error = function(err){
             return(TRUE)
            })
