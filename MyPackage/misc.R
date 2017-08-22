@@ -1305,19 +1305,22 @@ if (type=="text"){
        return(FALSE)
  
  
-    createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,  
+    createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,   type=type, 
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet, message=message )
 } else {
     ## PLINK ped file
     ## using -9 to indicate missing/null genotypes
     ncol  <- dim_of_ascii_M[2] 
     dim_of_ascii_M[2] <- 2*dim_of_ascii_M[2] + 6  ## number of cols in a PLINK file
-    createM_ASCII_rcpp(f_name = file_genotype, type=type,  f_name_ascii = asciiMfile, AA ="-9", AB = "-9", BB = "-9",
+    it_worked <- createM_ASCII_rcpp(f_name = file_genotype, type=type,  f_name_ascii = asciiMfile, AA ="-9", AB = "-9", BB = "-9",
                max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M , quiet = quiet,   
                message=message, missing="NA")
+     if(!it_worked) #  creation of ASCII file has failed 
+       return(FALSE)
+
 
     dim_of_ascii_M[2] <- ncol ## setting back to number of cols in no-space ASCII file
-    createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,   
+    createMt_ASCII_rcpp(f_name = asciiMfile, f_name_ascii = asciiMtfile,    type=type, 
                   max_memory_in_Gbytes=availmemGb,  dims = dim_of_ascii_M, quiet = quiet, message=message )
 
 }  ## end if else type

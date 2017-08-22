@@ -221,7 +221,7 @@ return dimen;
 
 // recode PLINK as ASCII with no spaces
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-void  CreateASCIInospace_PLINK(std::string fname, std::string asciifname, std::vector<long> dims,
+bool  CreateASCIInospace_PLINK(std::string fname, std::string asciifname, std::vector<long> dims,
                          bool quiet, Rcpp::Function message)
 {
 
@@ -263,9 +263,9 @@ std::string
 // open PLINK ped  file
 std::ifstream fileIN(fname.c_str());
 if(!fileIN.good()) {
-  message("\nERROR: PLINK ped file could not be opened with filename  ",   fname );
-  os << "\n\nERROR: ReadMarkerData has terminated with errors.  " << fname << "\n\n" << std::endl;
-  Rcpp::stop(os.str() );
+  message("ERROR: PLINK ped file could not be opened with filename  ",   fname );
+  message("ERROR: ReadMarkerData has terminated with errors.  ");
+  return false;
 }
 
 // open ascii file that is to hold no-spaces genotype data
@@ -288,29 +288,29 @@ while(getline(fileIN, line ))
  long number_of_columns = 0;
  std::string rowinfile(n_of_cols_in_geno, '0'); // s == "000000"
  
- if (!quiet ){
-    while(streamLine >> tmp)
-        number_of_columns ++;
-
-        message(" Number of columns in line " , counter+1 , " is " , number_of_columns);
-
-
-
-
-
-
-     if (number_of_columns != dims[1] ){
-         message("\n");
-         message( "Error:  PLINK file contains an unequal number of columns per row.  " );
-         message( "        The error has occurred at row " ,  counter+1 , " which contains " ,  number_of_columns ,  " but " );
-         message( "        it should contain " , dims[1] , " columns of data. " );
-         message("\n");
-          os << " ReadMarkerData has terminated with errors\n" << std::endl;
-         Rcpp::stop(os.str() );
-       }  // end  if (number_of_columns != dims[1] )
-   } // end  if (quiet )
 
    std::istringstream streamA(line);
+
+   long numcols = std::distance(std::istream_iterator<std::string>(streamA), 
+              std::istream_iterator<std::string>()) ;
+
+   if (numcols  != dims[1] ){
+         message("\n");
+         message( "Error:  PLINK file contains an unequal number of columns per row.  " );
+         message( "        The error has occurred at row " ,  counter+1 , " which contains " ,  numcols  ,  " but " );
+         message( "        it should contain " , dims[1] , " columns of data. " );
+         message("\n");
+         message(" ReadMarkerData has terminated with errors");
+         return false;
+   }  // end  if (number_of_columns != dims[1] )
+
+
+
+
+   
+
+
+
    // tokenized row and placed it in std::vector rowvec
    for(int i=0; i <= 5; i++)
      streamA >> tmp;
@@ -378,8 +378,8 @@ while(getline(fileIN, line ))
                             message("Error:  PLINK file cannot contain more than two alleles at a locus.");
                             message("        The error has occurred at snp locus " , i  + 1 , " for individual " , counter+1 );
                             message("\n");
-                            os << " ReadMarkerData has terminated with errors\n" << std::endl;
-                             Rcpp::stop(os.str() );
+                            message(" ReadMarkerData has terminated with errors");
+                            return false;
                           } // end inner if else
 
                        } // end if (alleles1[i] == 'I')
@@ -461,6 +461,7 @@ while(getline(fileIN_backtobeginning, line ) && counter < nrowsp)
 fileIN.close();
 fileOUT.close();
 
+return true;
 
 }
 
@@ -540,7 +541,6 @@ while(getline(fileIN, line ))
   number_of_columns = 0;
   while(streamA >> token)
   {
- //    if(quiet )
         number_of_columns++;
 
 
@@ -569,19 +569,16 @@ while(getline(fileIN, line ))
        i++;
   } // end whle streamA
 
-  if (!quiet){
-        message(" Number of columns in line " , counter+1 , " is " , number_of_columns);
 
-        if (number_of_columns != dims[1] ){
-             message("\n");
-             message("Error:  Marker text file contains an unequal number of columns per row.  ");
-             message("        The error has occurred at row " , counter+1 , " which contains " , number_of_columns , " but ");
-             message("        it should contain " , dims[1] , " columns of data. ");
-             message("\n");
-             message(" ReadMarkerData has terminated with errors");
-             return false;
-       }  // end if number_of_columns
-  } // end if quiet
+  if (number_of_columns != dims[1] ){
+      message("\n");
+      message("Error:  Marker text file contains an unequal number of columns per row.  ");
+      message("        The error has occurred at row " , counter+1 , " which contains " , number_of_columns , " but ");
+      message("        it should contain " , dims[1] , " columns of data. ");
+      message("\n");
+      message(" ReadMarkerData has terminated with errors");
+      return false;
+  } 
   for(long ii=0; ii< number_of_columns; ii++){
      fileOUT << rowinfile[ii];
   }
@@ -624,7 +621,6 @@ while(getline(fileIN, line ))
         message(rowline);
         counter++;
       }  // end  while(getline(fileIN, line ))
-//  } // end if(quiet)
 
 // close files
 fileIN.close();
@@ -694,7 +690,9 @@ Eigen::MatrixXd
 
 
 // [[Rcpp::export]]
-void  createMt_ASCII_rcpp(Rcpp::CharacterVector f_name, Rcpp::CharacterVector f_name_ascii, 
+void  createMt_ASCII_rcpp(Rcpp::CharacterVector f_name, 
+                          Rcpp::CharacterVector f_name_ascii, 
+                          Rcpp::CharacterVector  type,
                               double  max_memory_in_Gbytes,  std::vector <long> dims,
                               bool  quiet, Rcpp::Function message )
 {
@@ -713,6 +711,7 @@ long
 
 
 std::string
+     ftype = Rcpp::as<std::string>(type),
      fname = Rcpp::as<std::string>(f_name),
      fnameascii = Rcpp::as<std::string>(f_name_ascii);
 
@@ -898,7 +897,33 @@ fileOUT.close();
 }  // end if else situation 
 
 
+
+
+//--------------------------------------
+// Summary of Genotype File
+//--------------------------------------
+
+message( "\n\n                    Summary of Marker File  " );
+message( "                   ~~~~~~~~~~~~~~~~~~~~~~~~   " );
+message( " File type:                " , type  );
+message(" File name:                " , fname );
+message(" New ASCII file name:  " , fnameascii  );
+message(" Number of individuals:    "     , dims[0] );
+if (ftype == "PLINK"  ){
+// message(" Number of loci:           "  , (dims[1] -6)/2.0   );
+message(" Number of loci:           "  , dims[1]   );
+} else {
+message(" Number of loci:           "  , dims[1] );
+}
+message( " File size (gigabytes):       "  , mem_bytes/1000000000 );
+message(" Available memory (gigabytes):" , max_memory_in_Gbytes  );
+message("\n\n" );
 message(" The marker file has been Uploaded");
+
+
+
+
+
 
 
 }  // end function 
@@ -1395,7 +1420,9 @@ double
      //------------------------------------
      // convert PLINK ped file into ASCII file with no spaces
      //----------------------------------------------
-       CreateASCIInospace_PLINK(fname, fnameascii, dims, quiet, message);
+       bool it_worked = CreateASCIInospace_PLINK(fname, fnameascii, dims, quiet, message);
+       if (!it_worked) // an error has occurred in forming ascii file
+                 return false;
 
    }  else {
       //-------------------------------------------
@@ -1421,25 +1448,6 @@ double
 
 
    }  // end if type == "PLINK" 
-
-//--------------------------------------
-// Summary of Genotype File
-//--------------------------------------
-
-message( "\n\n                    Summary of Marker File  " );
-message( "                   ~~~~~~~~~~~~~~~~~~~~~~~~   " );
-message( " File type:                " , type  );
-message(" File name:                " , fname );
-message(" New ASCII file name:  " , fnameascii  );
-message(" Number of individuals:    "     , dims[0] );
-if (ftype == "PLINK"  ){
-message(" Number of loci:           "  , (dims[1] -6)/2.0   );
-} else {
-message(" Number of loci:           "  , dims[1] );
-}
-message( " File size (gigabytes):       "  , memory_needed_in_Gb );
-message(" Available memory (gigabytes):" , max_memory_in_Gbytes  );
-message("\n\n" );
 
 
   return true; 

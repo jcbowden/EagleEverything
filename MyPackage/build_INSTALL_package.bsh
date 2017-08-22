@@ -82,7 +82,7 @@ rm  $DIR/Eagle/src/tmp
 
 echo " mkdir Eagle/inst and Eagle/inst/include "
 mkdir $DIR/Eagle/inst
-mkdir $DIR/Eagle/inst/include
+#mkdir $DIR/Eagle/inst/include
 
 # cp Eagle.h to Eagle direcotry 
 ## added by AWG 14/04/17 to be consistent with windows pipeline
@@ -168,10 +168,10 @@ rm ./Eagle/.RData
 ## copying files onto mac from which to subversion onto R-forge
 echo "Starting scp .... "
 cd $DIR
-### scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
+#### scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
 ### scp -rp ./Eagle/*  geo047@140.253.151.16:~/R-forge/Eagle/eagle/pkg/.
 
-#exit -1
+##exit -1
 
 
 
