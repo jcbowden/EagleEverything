@@ -4,23 +4,22 @@
 #' @description
 #' A function for reading in marker data. Two types of data can be read. 
 #' @param filename contains the name of the marker  file. The file name needs to be in quotes. 
-#' @param type  specify the type of file. Choices are "text" (the default) and "PLINK".
+#' @param type  specify the type of file. Choices are 'text' (the default) and PLINK.
 #' @param missing the number or character for a missing genotype in the text file. There is no need to specify this for a PLINK ped file. Missing 
-#' allele values in a PLINK file must be coded as "0" or "-".  
-#' @param AA     the character or number corresponding to the AA snp genotype in the marker genotype file. 
-#' This need only be specified if the file type is "text".  If a character then it must be in quotes.
-#' @param AB     the  character or number  corresponding to the AB snp genotype in the marker genotype file. 
-#' This need only be specified if the file type is "text".
+#' allele values in a PLINK file must be coded as '0' or '-'.  
+#' @param AA     the character or number corresponding to the 'AA' snp genotype in the marker genotype file. 
+#' This need only be specified if the file type is 'text'.  If a character then it must be in quotes.
+#' @param AB     the  character or number  corresponding to the 'AB' snp genotype in the marker genotype file. 
+#' This need only be specified if the file type is 'text'.
 #'This can be left unspecified 
 #'               if there are no heterozygous genotypes (i.e. the individuals are inbred). Only a single 
-#'  heterozygous genotype is allowed (Eagle does not distinguish between AB and BA).  
+#'  heterozygous genotype is allowed ('Eagle' does not distinguish between 'AB' and 'BA').  
 #' If specified and a character, it must be in quotes. 
-#' @param BB        the character or number corresponding to the BB snp genotype in the marker genotype file. 
-#' This need only be  specified if the file type is "text".  If a character, then it must be in quotes.
+#' @param BB        the character or number corresponding to the 'BB' snp genotype in the marker genotype file. 
+#' This need only be  specified if the file type is 'text'.  If a character, then it must be in quotes.
 #' @param availmemGb a numeric value. It specifies the amount of available memory (in Gigabytes). 
 #'         This should be set to be as large as possible for best performance.   
-#' @param  quiet      a logical value. If set to \code{TRUE}, additional runtime output is printed along with additional error checking. Specifically, 
-#'               \code{ReadMarker} will check that the marker file has the same number of column entries per row. 
+#' @param  quiet      a logical value. If set to \code{TRUE}, additional runtime output is printed. 
 #'
 #' @details
 #' 
@@ -43,7 +42,7 @@
 #' \item{Individuals are outbred when \code{AA}, \code{AB}, and \code{BB} are specified and 
 #'  inbred when only \code{AA}, and \code{BB} are specified}
 #' \item{For a text file, the same alphanumeric value is used for all missing marker genotypes. For a PLINK ped file, the missing allele is allowed to 
-#' be "0" or "-".} 
+#' be '0' or '-'.} 
 #'}
 #'
 #' For example, suppose we have a space separated text file with marker genotype data collected from five snp loci on three individuals
@@ -54,12 +53,12 @@
 #'  1 \tab  1  \tab  0 \tab  2 \tab  0 \cr
 #'  2 \tab  2  \tab  1 \tab  1 \tab  99
 #'}
-#' The file is called "geno.txt" and is located in the directory "/my/dir/". 
+#' The file is called geno.txt and is located in the directory /my/dir/. 
 #'
 #'  
 #' To load these data, we would use the command
 #'
-#' \preformatted{geno_obj <- ReadMarker(filename="/my/dir/geno.txt", AA=0, AB=1, BB=2, type="text", missing=99)}
+#' \preformatted{geno_obj <- ReadMarker(filename='/my/dir/geno.txt', AA=0, AB=1, BB=2, type='text', missing=99)}
 #'
 #' where the results from running the function are placed in \code{geno_obj}.
 #'
@@ -70,12 +69,12 @@
 #'  a/b a/b a/a b/b a/a \cr
 #'  b/b b/b a/b a/b NA 
 #'}
-#' The file is called "geno.txt" and is located in the same directory from which R is being run (i.e. the working directory). 
+#' The file is called geno.txt and is located in the same directory from which R is being run (i.e. the working directory). 
 #'
 #' To load these data, we would use the command 
 #'
-#' \preformatted{geno_obj <- ReadMarker(filename="geno.txt", AA="a/a", AB="a/b", BB="b/b", 
-#'                                        type="text", missing = "NA")}
+#' \preformatted{geno_obj <- ReadMarker(filename='geno.txt', AA='a/a', AB='a/b', BB='b/b', 
+#'                                        type='text', missing = 'NA')}
 #'
 #' where the results from running the function are placed in \code{geno_obj}.
 #'}
@@ -114,9 +113,9 @@
 #'
 #' Then to load these data, we would use the command 
 #'
-#' \preformatted{geno_obj <- ReadMarker(filename="PLINK.ped", type="PLINK")}
+#' \preformatted{geno_obj <- ReadMarker(filename='PLINK.ped', type='PLINK')}
 #'
-#' where \code{geno_obj} is used by \code{\link{AM}}, and the file "PLINK.ped" is located in the working directory (i.e. the directory from which R 
+#' where \code{geno_obj} is used by \code{\link{AM}}, and the file PLINK.ped is located in the working directory (i.e. the directory from which R 
 #' is being run). 
 #'}
 #'
@@ -149,10 +148,10 @@
 #'   #  Example 1
 #'   #-------------------------------
 #'   #
-#'   # Read in the genotype data contained in the text file "geno.txt"
+#'   # Read in the genotype data contained in the text file geno.txt
 #'   #
 #'   # The function system.file() gives the full file name (name + full path).
-#'   complete.name <- system.file("extdata", "geno.txt", package="Eagle")
+#'   complete.name <- system.file('extdata', 'geno.txt', package='Eagle')
 #'   # 
 #'   # The full path and name of the file is
 #'   print(complete.name)
@@ -163,7 +162,7 @@
 #'   # 4 gigabytes of memory has been specified. 
 #'   # The file is space separated with the rows the individuals
 #'   # and the columns the snp loci.
-#'   geno_obj <- ReadMarker(filename=complete.name, type="text", AA=0, AB=1, BB=2, availmemGb=4) 
+#'   geno_obj <- ReadMarker(filename=complete.name, type='text', AA=0, AB=1, BB=2, availmemGb=4) 
 #'    
 #'   # view list contents of geno_obj
 #'   print(geno_obj)
@@ -172,10 +171,10 @@
 #'   #  Example 2
 #'   #-------------------------------
 #'   #
-#'   # Read in the allelic data contained in the PLINK ped file "geno.ped"
+#'   # Read in the allelic data contained in the PLINK ped file geno.ped
 #'   #
 #'   # The function system.file() gives the full file name (name + full path).
-#'   complete.name <- system.file("extdata", "geno.ped", package="Eagle")
+#'   complete.name <- system.file('extdata', 'geno.ped', package='Eagle')
 #'
 #'   # 
 #'   # The full path and name of the file is
@@ -186,13 +185,13 @@
 #'   # 4 gigabytes of memory has been specified. 
 #'   # The file is space separated with the rows the individuals
 #'   # and the columns the snp loci.
-#'   geno_obj <- ReadMarker(filename=complete.name, type="PLINK", availmemGb=4) 
+#'   geno_obj <- ReadMarker(filename=complete.name, type='PLINK', availmemGb=4) 
 #'    
 #'   # view list contents of geno_obj
 #'   print(geno_obj)
 #'
 #'
-ReadMarker <- function( filename=NULL, type="text", missing=NULL,
+ReadMarker <- function( filename=NULL, type='text', missing=NULL,
                            AA=NULL, AB=NULL, BB=NULL, 
                            availmemGb=16, 
                            quiet=TRUE){

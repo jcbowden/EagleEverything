@@ -42,15 +42,19 @@ GenomicRel = function(M){
 #' @references  Sun G., Zhu C., Kramer  MH., Yang S-S., et al. 2010. Variation explained in mixed model association 
 #' mapping. Heredity 105, 330-340. 
 #' @examples
-#' \dontrun{
+#'  \dontrun{
+#'   # Since the following code takes longer than 5 seconds to run, it has been tagged as dontrun. 
+#'   # However, the code can be run by the user. 
+#'   #
+#'
 #'   #---------------
 #'   # read the map 
 #'   #---------------
 #'   #
 #'   # File is a plain space separated text file with the first row 
 #'   # the column headings
-#'   complete.name <- system.file("extdata", "map.txt", 
-#'                                    package="Eagle")
+#'   complete.name <- system.file('extdata', 'map.txt', 
+#'                                    package='Eagle')
 #'   map_obj <- ReadMap(filename=complete.name) 
 #'
 #'  # to look at the first few rows of the map file
@@ -61,25 +65,25 @@ GenomicRel = function(M){
 #'   #------------------
 #'   # Reading in a PLINK ped file 
 #'   # and setting the available memory on the machine for the reading of the data to 8 gigabytes
-#'   complete.name <- system.file("extdata", "geno.ped", 
-#'                                      package="Eagle")
-#'   geno_obj <- ReadMarker(filename=complete.name,  type="PLINK", availmemGb=8) 
+#'   complete.name <- system.file('extdata', 'geno.ped', 
+#'                                      package='Eagle')
+#'   geno_obj <- ReadMarker(filename=complete.name,  type='PLINK', availmemGb=8) 
 #'  
 #'   #----------------------
 #'   # read phenotype data
 #'   #-----------------------
 #'
 #'   # Read in a plain text file with data on a single trait and two fixed effects
-#'   # The first row of the text file contains the column names "y", "cov1", and "cov2". 
-#'   complete.name <- system.file("extdata", "pheno.txt", package="Eagle")
+#'   # The first row of the text file contains the column names y, cov1, and cov2. 
+#'   complete.name <- system.file('extdata', 'pheno.txt', package='Eagle')
 #'   
 #'   pheno_obj <- ReadPheno(filename=complete.name)
 #'            
 #'   #-------------------------------------------------------
 #'   # Perform multiple-locus genome-wide association mapping 
 #'   #-------------------------------------------------------                   
-#'   res <- AM(trait = "y",
-#'                            fformula = c("cov1 + cov2"),
+#'   res <- AM(trait = 'y',
+#'                            fformula=c("cov1 + cov2"),
 #'                            map = map_obj,
 #'                            pheno = pheno_obj,
 #'                            geno = geno_obj, availmemGb=8)
@@ -89,27 +93,39 @@ GenomicRel = function(M){
 #'   #------------------------------------------
 #'
 #'   SummaryAM(AMobj=res, pheno=pheno_obj, geno=geno_obj, map=map_obj)
+#'  }
 #'
-#'}
+#' 
 #' 
 #' @seealso \code{\link{AM}}
 #'
 SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
 {
 
- if(is.null(AMobj))
-    stop(" SummaryAM function requires AMobj object to be specified.", call. = FALSE)
- if(is.null(pheno))
-    stop(" SummaryAM function requires pheno parameter to be specified.", call. = FALSE)
- if(is.null(geno))
-    stop(" SummaryAM function requires geno parameter to be specified.", call. = FALSE)
-
- if(!is.list(AMobj))
-    stop(" SummaryAM function requires AMobj object to be a list object.", call. = FALSE)
- if(!is.data.frame(pheno))
-    stop(" SummaryAM function requires pheno object to be a data.frame object.", call. = FALSE)
- if(!is.list(geno))
-    stop(" SummaryAM function requires geno object to be a list object.", call. = FALSE)
+ if(is.null(AMobj)){
+    message(" SummaryAM function requires AMobj object to be specified.")
+    return(NULL)
+    }
+ if(is.null(pheno)){
+    message(" SummaryAM function requires pheno parameter to be specified.")
+    return(NULL)
+    }
+ if(is.null(geno)){
+    message(" SummaryAM function requires geno parameter to be specified.")
+    return(NULL)
+    }
+ if(!is.list(AMobj)){
+    message(" SummaryAM function requires AMobj object to be a list object.")
+    return(NULL)
+   }
+ if(!is.data.frame(pheno)){
+    message(" SummaryAM function requires pheno object to be a data.frame object.")
+    return(NULL)
+    }
+ if(!is.list(geno)){
+   message(" SummaryAM function requires geno object to be a list object.")
+    return(NULL)
+   }
 
  if(is.null(map)){
    if(!AMobj$quiet ){
@@ -169,9 +185,6 @@ SummaryAM <- function(AMobj=NULL, pheno=NULL, geno=NULL, map=NULL)
  }  ## end for ii in AMobj$Mrk
 df_pvalue <- data.frame("effects"=colnames(fullX), "p-value"=pval)
  ## print Annova table of results
-print("========================")
-print(df_pvalue)
-print("========================")
 
 
   message(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")

@@ -353,12 +353,9 @@ fullpath <- function(fname){
 }
 
 
-##--------------------------------------------
-##  Effecient Mixed Model Association (EMMA) code
-##  Author: Hyun Min Kang (h3kang@cs.ucsd.edu), Noah A. Zaitlen, Claire M. Wade, Andrew Kirby, David Heckerman, and Eleazar Eskin (eeskin@cs.ucla.edu)
-## License: LGPL
-## URL: http://mouse.cs.ucla.edu/emma
-##------------------------------------
+##---------------------------------------------------------
+##  The following emma functions are part of the EMMA package
+##-----------------------------------------------------------
 emma.delta.ML.dLL.w.Z <-  function (logdelta, lambda, etas.1, xi.1, n, etas.2.sq) 
 {
     t <- length(xi.1)
@@ -798,10 +795,10 @@ if(is.null(pheno)){
 }
 
 if(is.null(geno)){
-   message("Error: the geno parameter has not been set. ")
-   message("       Set this parameter to the object that contains ")
-   message("       the phenotype data. This object is the result of running  ")
-   message("       ReadMarker. \n")
+   message("Error: the marker data has not been specified.")
+   message("       If you are using the GUI, then go back and read in your marker data. ")
+   message("       If you are using 'Eagle' functions, then set the geno parameter to the ")
+   message("       output from running ReadMarker(). ")
    return(TRUE)
 }
 

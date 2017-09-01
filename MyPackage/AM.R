@@ -25,24 +25,24 @@
 #'
 #' Suppose, 
 #' \itemize{
-#' \item{}{the snp data are contained in the file "geno.txt" which is a plain space separated
+#' \item{}{the snp data are contained in the file geno.txt which is a plain space separated
 #' text file with no column headings. The file is located in the current working directory. 
 #' It contains numeric genotype values 0, 1, and 2 for snp genotypes
 #' AA, AB, and BB, respectively. It also contains the numeric value X for a missing genotype. }
-#' \item{}{the phenotype data is contained in the file "pheno.txt" which is a plain space
+#' \item{}{the phenotype data is contained in the file pheno.txt which is a plain space
 #' separated text file containing a single column with the trait data. The first row of the file 
-#' has the column heading "y". 
+#' has the column heading 'y'. 
 #' The file is located in the current working directory.}
 #' \item{}{there is no map data.}
 #' }
 #'
 #'  To analyse these data, we would use the following three functions:
 #' \preformatted{
-#'   geno_obj <-  ReadMarker(filename="geno.txt", AA=0, AB=1, BB=2, type="text", missing="X")
+#'   geno_obj <-  ReadMarker(filename='geno.txt', AA=0, AB=1, BB=2, type="text", missing='X')
 #'   
-#'   pheno_obj <- ReadPheno(filename="pheno.txt")
+#'   pheno_obj <- ReadPheno(filename='pheno.txt')
 #'
-#'   res <- AM(trait="y", geno=geno_obj, pheno=pheno_obj)
+#'   res <- AM(trait='y', geno=geno_obj, pheno=pheno_obj)
 #' }
 #' A table of results is printed to the screen and saved in the R object \code{res}. 
 #'}
@@ -51,33 +51,33 @@
 #'
 #' Suppose, 
 #' \itemize{
-#' \item{}{the snp data are contained in the file "geno.ped" which is a PLINK ped file. See
+#' \item{}{the snp data are contained in the file geno.ped which is a 'PLINK' ped file. See
 #' \code{\link{ReadMarker}} for details. The file is located in /my/dir. Let's assume 
 #' the file is large, say 50 gigabytes,   and our computer only has 32 gigabytes of RAM.}
-#' \item{}{the phenotype data is contained in the file "pheno.txt" which is a plain space
+#' \item{}{the phenotype data is contained in the file pheno.txt which is a plain space
 #' separated text file with  six columns. The first row of the file contains the column headings. 
-#' The first column is a trait and is labeled "y1".
-#' The second column is another trait and is labeled "y2". The third and fourth columns 
-#' are nuisance variables and are labeled "cov1" and "cov2". The fifth and sixth columns
+#' The first column is a trait and is labeled y1.
+#' The second column is another trait and is labeled y2. The third and fourth columns 
+#' are nuisance variables and are labeled cov1 and cov2. The fifth and sixth columns
 #' are the first two principal components to account for population substructure and are 
-#' labeled "pc1" and "pc2". The file contains missing data that are coded as 99. 
+#' labeled pc1 and pc2. The file contains missing data that are coded as 99. 
 #' The file is located in /my/dir.}
-#' \item{}{the map data is contained in the file "map.txt", is also located in 
+#' \item{}{the map data is contained in the file map.txt, is also located in 
 #'  /my/dir, and the first row has the column headings.}
-#' \item{}{An AM analysis is performed where the trait of interest is "y2", 
-#' the fixed effects part of the model is "cov1 + cov2 + pc1 + pc2", 
+#' \item{}{An 'AM' analysis is performed where the trait of interest is y2, 
+#' the fixed effects part of the model is cov1 + cov2 + pc1 + pc2, 
 #' and the available memory is set to 32 gigabytes.}
 #' } 
 #'
 #'  To analyse these data, we would run the following:
 #' \preformatted{
-#'   geno_obj <-  ReadMarker(filename="/my/dir/geno.ped", type="PLINK", availmemGb=32)
+#'   geno_obj <-  ReadMarker(filename='/my/dir/geno.ped', type='PLINK', availmemGb=32)
 #'   
-#'   pheno_obj <- ReadPheno(filename="/my/dir/pheno.txt", missing=99)
+#'   pheno_obj <- ReadPheno(filename='/my/dir/pheno.txt', missing=99)
 #'
-#'   map_obj   <- ReadMap(filename="/my/dir/map.txt")
+#'   map_obj   <- ReadMap(filename='/my/dir/map.txt')
 #'
-#'   res <- AM(trait="y2", fformula=c("cov1 + cov2 + pc1 + pc2"), 
+#'   res <- AM(trait='y2', fformula=c('cov1 + cov2 + pc1 + pc2'), 
 #'             geno=geno_obj, pheno=pheno_obj, map=map_obj, availmemGb=32)
 #' }
 #' A table of results is printed to the screen and saved in the R object \code{res}. 
@@ -86,8 +86,8 @@
 #' \subsection{Dealing with missing marker data}{
 #'
 #' \code{AM} can tolerate some missing marker data. However, ideally, 
-#' a specialized genotype imputation program such as  BEAGLE, MACH, fastPHASE, or PHASE2, should be 
-#' used to impute the missing marker data before being read into Eagle.  
+#' a specialized genotype imputation program such as  'BEAGLE', 'MACH', 'fastPHASE', or 'PHASE2', should be 
+#' used to impute the missing marker data before being read into 'Eagle'.  
 #'
 #' }
 #'
@@ -118,7 +118,7 @@
 #' @return
 #' A list with the following components:
 #' \describe{
-#'\item{trait}{column name of the trait being used by AM.}
+#'\item{trait}{column name of the trait being used by 'AM'.}
 #'\item{fformula}{Right hand size formula of the fixed effects part of the linear mixed model.}
 #'\item{indxNA}{a vector containing the row indexes of those individuals, whose trait and fixed effects data contain
 #' missing values and have been removed from the analysis.}
@@ -134,7 +134,11 @@
 #'}
 #'
 #' @examples
-#' \dontrun{
+#'   \dontrun{ 
+#'   # Since the following code takes longer than 5 seconds to run, it has been tagged as dontrun. 
+#'   # However, the code can be run by the user. 
+#'   #
+#'
 #'   #-------------------------
 #'   #  Example  
 #'   #------------------------
@@ -144,44 +148,38 @@
 #'   
 #'   # File is a plain space separated text file with the first row 
 #'   # the column headings
-#'   complete.name <- system.file("extdata", "map.txt", 
-#'                                    package="Eagle")
+#'   complete.name <- system.file('extdata', 'map.txt', 
+#'                                    package='Eagle')
 #'   map_obj <- ReadMap(filename=complete.name) 
 #'
 #'   # read marker data
 #'   #~~~~~~~~~~~~~~~~~~~~
 #'   # Reading in a PLINK ped file 
 #'   # and setting the available memory on the machine for the reading of the data to 8  gigabytes
-#'   complete.name <- system.file("extdata", "geno.ped", 
-#'                                      package="Eagle")
-#'   geno_obj <- ReadMarker(filename=complete.name,  type="PLINK", availmemGb=8) 
+#'   complete.name <- system.file('extdata', 'geno.ped', 
+#'                                      package='Eagle')
+#'   geno_obj <- ReadMarker(filename=complete.name,  type='PLINK', availmemGb=8) 
 #'  
 #'   # read phenotype data
 #'   #~~~~~~~~~~~~~~~~~~~~~~~
 #'
 #'   # Read in a plain text file with data on a single trait and two covariates
-#'   # The first row of the text file contains the column names "y", "cov1", and "cov2". 
-#'   complete.name <- system.file("extdata", "pheno.txt", package="Eagle")
+#'   # The first row of the text file contains the column names y, cov1, and cov2. 
+#'   complete.name <- system.file('extdata', 'pheno.txt', package='Eagle')
 #'   
 #'   pheno_obj <- ReadPheno(filename=complete.name)
 #'            
-#'   # Perform multiple-locus genome-wide association mapping 
-#'   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#'   res <- AM(trait = "y",
-#'                            fformula = "cov1 + cov2",
-#'                            map = map_obj,
-#'                            pheno = pheno_obj,
-#'                            geno = geno_obj, availmemGb=8)
 #'
 #'  # Performing multiple-locus genome-wide association mapping with a model 
 #'  #    with no fixed effects except for an intercept. 
 #'  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #'  
-#'   res <- AM(trait = "y",
+#'   res <- AM(trait = 'y',
+#'                            fformula=c('cov1+cov2'),
 #'                            map = map_obj,
 #'                            pheno = pheno_obj,
 #'                            geno = geno_obj, availmemGb=8)
-#'}
+#' }
 #'
 AM <- function(trait=NULL, 
                fformula  = NULL,
@@ -216,9 +214,10 @@ AM <- function(trait=NULL,
 
  error.code <- check.inputs.mlam(ncpu=ncpu , availmemGb=availmemGb, colname.trait=trait, 
                      map=map, pheno=pheno, geno=geno )
- if(error.code)
-    stop("AM has terminated with errors.", call. = FALSE)
-
+ if(error.code){
+   message("\n The Eagle function AM has terminated with errors.\n")
+   return(NULL)
+ }
 
 
 
@@ -239,7 +238,8 @@ AM <- function(trait=NULL,
    message(" Error: There is a differing number of loci read in by ReadMarker and ReadMap functions. \n")
    message("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][2], "\n")
    message("        The number of marker loci in  the marker map is  ", nrow(map), "\n") 
-   stop(" AM has terminated with errors.", call. = FALSE)
+   message("\n AM has terminated with errors.\n")
+   return(NULL)
  }
 
 
@@ -248,7 +248,8 @@ AM <- function(trait=NULL,
    message(" Error: There is a differing number  of rows read in by ReadMarker and ReadPheno functions. \n")
    message("         The number of rows read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][1], "\n")
    message("        The number of rows  read in by ReadPheno is  ", nrow(map), "\n") 
-   stop(" AM has terminated with errors.", call. = FALSE)
+   message("\n AM has terminated with errors.\n")
+   return(NULL)
  }
 
 
@@ -274,14 +275,16 @@ if(!is.null(fformula)){
           fformula <- as.formula(paste("~", fformula, sep="") )
       }  else {
           message(" fformula has ", length(fformula), " separate terms. It should be a single formula. \n") 
-          stop("AM has terminated with errors.", call. = FALSE)
+          message("\n AM has terminated with errors.\n")
+          return(NULL)
       }
    } else {
     ## problem: formula should not contain ~
     message(" It looks like fformula contains a formula. \n")
     message(" If so, only the terms on the right hand side of the formula should be specified. \n")
     message(" Please remove the ~ from the formula. \n")
-    stop("AM has terminated with errors.", call. = FALSE)
+    message("\n AM has terminated with errors.\n")
+    return(NULL)
   }  ## if length grep
  } ## end if(!is.null(fformula))
 
@@ -300,7 +303,8 @@ if(!is.null(fformula)){
    if(res){
       message(" fformula contains terms that are not column headings in the phenotype file. \n")
       message(" Check spelling and case of terms in fformula. \n")
-      stop("AM has terminated with errors.", call. = FALSE)
+      message("\n  AM has terminated with errors.\n ")
+      return(NULL)
    }
   }
  }
@@ -376,7 +380,8 @@ if(length(indxNA)>0){
         message(" These effects are causing computational instability. \n")
         message(" This can occur when there is a strong dependency between the effects.\n")
         message(" Try removing some of the effects in fformula. \n")
-        stop("AM has terminated with errors.", call. = FALSE)
+        message("\n  AM has terminated with errors.\n")
+        return(NULL)
       }
   }
 

@@ -7,36 +7,6 @@
 // [[Rcpp::depends(RcppEigen)]]
 
 #include <RcppEigen.h>
-// #include <R.h>
-
-// #include <cstring>
-// #include <iostream>
-// #include <sstream>
-// #include <time.h>
-
-// #include <iostream>
-// #include <fstream>
-//#include <istream>
-// #include <vector>
-// #include <bitset>
-// #include <string>
-// #include <fcntl.h>
-// #include <stdlib.h>
-// #include <sys/stat.h>
-// #include <unistd.h>
-// #include <ctime>
-
-
-// using namespace std;
-// using namespace Rcpp;
-// using namespace RcppEigen;
-// using namespace Eigen;
-
-// using Eigen::MatrixXi;
-// using Eigen::MatrixXd;  
-// using Eigen::Lower;
-// using Eigen::Map;   // maps rather than copies
-
 
 
 
@@ -230,14 +200,6 @@ int
 
 
 
-
-
-
-// char alleles [ 2 ][ n_of_cols_in_geno ];  // holds alleles  
-//char* alleles0 = NULL;
-//      alleles0 = new char[ n_of_cols_in_geno ];
-//char* alleles1 = NULL;
-//      alleles1 = new char[ n_of_cols_in_geno ];
 std::vector<char> alleles0( n_of_cols_in_geno );
 std::vector<char> alleles1( n_of_cols_in_geno );
 
@@ -285,13 +247,12 @@ while(getline(fileIN, line ))
   std::istringstream streamLine(line);
 
  // check number of columns for each line
- long number_of_columns = 0;
  std::string rowinfile(n_of_cols_in_geno, '0'); // s == "000000"
  
 
-   std::istringstream streamA(line);
+   std::istringstream check_number_row_elements(line);
 
-   long numcols = std::distance(std::istream_iterator<std::string>(streamA), 
+   long numcols = std::distance(std::istream_iterator<std::string>(check_number_row_elements), 
               std::istream_iterator<std::string>()) ;
 
    if (numcols  != dims[1] ){
@@ -308,15 +269,18 @@ while(getline(fileIN, line ))
 
 
    
+   std::istringstream streamA(line);
 
 
 
    // tokenized row and placed it in std::vector rowvec
-   for(int i=0; i <= 5; i++)
+   for(int i=0; i <= 5; i++){
      streamA >> tmp;
+   }
    for(long i=6; i < dims[1] ; i++){
             streamA >> rowvec[i-6];
    }  // end  for(long i=0; i < dims[1] ; i++)
+
 
 
    // initialize alleles structure to first row of PLINK info
@@ -335,8 +299,9 @@ while(getline(fileIN, line ))
 
    // turn allelic info from PLINK into genotype 0,1,2 data
      // also do some checks for more than 2 alleles, and 0 and - for missing data
-     for(long i=0; i < n_of_cols_in_geno; i++){
+     for(long i=0; i <  n_of_cols_in_geno; i++){
         // Checking for missing allelic information in PLINK file
+    
         if( rowvec[ (2*i ) ] == '0' ||  rowvec[ (2*i + 1) ] == '0' || rowvec[ (2*i ) ] == '-' ||  rowvec[ (2*i + 1) ] == '-'){
            if (printOnlyOnce == 0){
                  message("\n");
@@ -352,12 +317,16 @@ while(getline(fileIN, line ))
             rowvec[ (2*i + 1) ] = 'I';  // impute
         }
 
-
         // Check if allele has been seen before in allele file. 
         // If so, make sure alleles doesn't already  contain two alleles - otherwise generate error message
         for(int j = 1; j >= 0; --j){ // looping over the two alleles with indexes 0 and 1
+
+
            if (rowvec[ (2*i + j) ] != alleles0[ i ] && rowvec[ (2*i + j) ] != alleles1[ i ]){
               // situation 1: rowvec contains missing values ie 'I' then do nothing
+
+
+
               if (rowvec[ (2*i + j) ] == 'I' ){
                  // do nothing here
 
@@ -555,14 +524,14 @@ while(getline(fileIN, line ))
              rowinfile[i] = '1'; 
         } else {
           if (AB=="NA"){
-              message( "Marker file contains marker genotypes that are different to AA=" , AA , " BB=" , BB);
-              message(" For example , " , token );
-              message(" ReadMarker has terminated with errors");
+              message( "\n Marker file contains marker genotypes that are different to AA=" , AA , " BB=" , BB);
+              message(" For example , " , token, " in row ", counter+1 );
+              message("\n ReadMarker has terminated with errors\n");
               return false;
           } else {
-              message( "Marker file contains marker genotypes that are different to AA=" , AA , " AB=" , AB , " BB=" , BB);
-              message( "For example , " , token );
-              message( "ReadMarker has terminated with errors");
+              message( "\n Marker file contains marker genotypes that are different to AA=" , AA , " AB=" , AB , " BB=" , BB);
+              message( " For example , " , token , " in row ", counter+1);
+              message( "\n ReadMarker has terminated with errors\n");
               return false;
          }
        }  //end if else 
@@ -905,18 +874,17 @@ fileOUT.close();
 
 message( "\n\n                    Summary of Marker File  " );
 message( "                   ~~~~~~~~~~~~~~~~~~~~~~~~   " );
-message( " File type:                " , type  );
-message(" File name:                " , fname );
-message(" New ASCII file name:  " , fnameascii  );
-message(" Number of individuals:    "     , dims[0] );
+message( " File type:                   " , type  );
+message(" Reformatted ASCII file name:  " , fname  );
+message(" Number of individuals:        "     , dims[0] );
 if (ftype == "PLINK"  ){
 // message(" Number of loci:           "  , (dims[1] -6)/2.0   );
-message(" Number of loci:           "  , dims[1]   );
+message(" Number of loci:               "  , dims[1]   );
 } else {
-message(" Number of loci:           "  , dims[1] );
+message(" Number of loci:               "  , dims[1] );
 }
 message( " File size (gigabytes):       "  , mem_bytes/1000000000 );
-message(" Available memory (gigabytes):" , max_memory_in_Gbytes  );
+message(" Available memory (gigabytes): " , max_memory_in_Gbytes  );
 message("\n\n" );
 message(" The marker file has been Uploaded");
 
@@ -1170,7 +1138,6 @@ Eigen::MatrixXd
 
 
    // Calculate memory footprint for Mt %*% inv(sqrt(MMt)) %*% var(a) %*% inv(sqrt(MMt)%*%M)
-//AWG  double mem_bytes_needed =   ( dims[0]   +  2*dims[1]   + 1 ) *  (dims[1] * sizeof(double) /( 1000000000));
  double mem_bytes_needed =   ( 4   *dims[1]  *  dims[0] * sizeof(double))/1000000000;
 
 if (!quiet){
@@ -1205,8 +1172,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 
   // calculate untransformed variances of BLUP values
-//  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;
-
     Eigen::MatrixXd var_ans_tmp_part1 =   dim_reduced_vara * inv_MMt_sqrt;
     var_ans_tmp_part1 = inv_MMt_sqrt * var_ans_tmp_part1;
 
@@ -1215,9 +1180,8 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 //  Eigen::MatrixXd var_ans_tmp_part1 =  inv_MMt_sqrt * dim_reduced_vara * inv_MMt_sqrt;a
     var_ans_tmp  =  Mt  *  var_ans_tmp_part1;
     var_ans_tmp_part1.resize(0,0);  // erase matrix 
-
-  // Added 26 April
   long i;
+
   #if defined(_OPENMP)
      #pragma omp parallel for shared(var_ans, var_ans_tmp, Mt)  private(i) schedule(static)
   #endif
@@ -1232,7 +1196,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
     //       BLOCK WISE UPDATE
     //  -----------------------------------------
 
-      // ans.resize(dims[0],1);   //added AWG 12/03/16 in a bid to improve GPU performance
 
       // calculation being processed in block form
       message(" Increasing maxmemGb would improve performance... \n");
@@ -1314,11 +1277,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 
         // performing quadratic form, remembering only diag elements are needed for variances. 
-//        for(long j=0; j < num_rows_in_block1; j++){
-//           var_ans_tmp(j,0) =  Mt.row(j) * vt1 * ((Mt.row(j)).transpose()) ;
-//        }
-//        Rcpp::Rcout << "end of computing variances ... " << std::endl;
-            // vt.noalias() =  Mt *  vt1;
            Eigen::MatrixXd vt;
               vt.noalias()  =  Mt *  vt1;
 
@@ -1327,8 +1285,6 @@ if(mem_bytes_needed < max_memory_in_Gbytes){
 
 
 
-   //    var_ans_tmp(j,0)  =   vt.row(j)  * ((Mt.row(j)).transpose()) ;
-           // Added 26 April
 #if defined(_OPENMP)
            #pragma omp parallel for
 #endif
@@ -1440,8 +1396,7 @@ double
            if (!it_worked) // an error has occurred in forming ascii file
                  return false;
        } else {
-        //    bool it_worked =  CreateASCIInospaceFast(fname, fnameascii, dims, AA, AB, BB, quiet, message, missing);
-            bool it_worked =  CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, quiet, message, missing);
+           bool it_worked =  CreateASCIInospace(fname, fnameascii, dims, AA, AB, BB, quiet, message, missing);
           if (!it_worked) // an error has occurred in forming ascii file
                  return false;
        } 
@@ -1497,7 +1452,6 @@ Eigen::VectorXi
 if(max_memory_in_Gbytes > memory_needed_in_Gb ){
    // reading entire data file into memory
      Eigen::MatrixXd genoMat =  ReadBlock(fnamebin,  0, dims[1], dims[0]);
-  //  Eigen::MatrixXd genoMat =  ReadBlockFast(fnamebin,  0, dims[1], dims[0]);
 
    column_of_genos = genoMat.col(selected_locus).cast<int>() ;
    
@@ -1519,13 +1473,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
 
               Eigen::MatrixXd    
                 genoMat_block1 ( ReadBlock(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
-              // Eigen::MatrixXd    
-             //    genoMat_block1 ( ReadBlockFast(fnamebin,  start_row1, dims[1], num_rows_in_block1)) ;
-
-              // removing rows that correspond to individuals with no 
-              // trait data
-           //   long start = start_row1;
-           //   long  finish = start_row1 + num_rows_in_block1;
 
 
               // dealing with assigning column_of_genos when some values 
@@ -1671,9 +1618,6 @@ if(max_memory_in_Gbytes > memory_needed_in_Gb ){
              for(long ii=0; ii < selected_loci.size() ; ii++)
                 genoMat_block1.col(selected_loci(ii)).setZero();
              }
-             // Rcpp::Rcout << "  Block 1  "  << std::endl;
-             // Rcpp::Rcout << genoMat_block1.rows() << std::endl;
-             // Rcpp::Rcout << genoMat_block1.cols() << std::endl;
               MMtsub.noalias() = genoMat_block1 * genoMat_block1.transpose(); 
               //          i            j            num rows               num   cols
               MMt.block(start_row1, start_row1, num_rows_in_block1, num_rows_in_block1) = MMtsub;

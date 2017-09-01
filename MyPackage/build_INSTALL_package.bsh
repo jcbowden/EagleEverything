@@ -168,7 +168,7 @@ rm ./Eagle/.RData
 ## copying files onto mac from which to subversion onto R-forge
 echo "Starting scp .... "
 cd $DIR
-#### scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
+####  scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
 ### scp -rp ./Eagle/*  geo047@140.253.151.16:~/R-forge/Eagle/eagle/pkg/.
 
 ##exit -1
@@ -183,8 +183,7 @@ R CMD build Eagle
 #exit -1 
 
 
- R CMD check --as-cran Eagle_1.0.0.tar.gz 
-# cp /home/geo047/gitHUB_WMAM/MyPackage/Eagle.Rcheck/Eagle-manual.pdf /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/manual.pdf
+R CMD check --as-cran Eagle_1.0.3.tar.gz 
 
 
 R CMD INSTALL Eagle -l ~/RLibs

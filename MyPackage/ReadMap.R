@@ -13,11 +13,11 @@
 #' 
 #' A space separated text file with column headings is assumed as the default input. The map file can have three or four 
 #' columns. If the map file has three columns, then it is assumed that the three columns are the marker locus names, 
-#' the chromosome number, and the map position (in any units). If the map file has four columns as with a PLINK map file, 
+#' the chromosome number, and the map position (in any units). If the map file has four columns as with a 'PLINK map file, 
 #' then the columns are assumed to be the marker locus names, the chromosome number, the map position in centimorgans, 
 #' and the map position in base pairs. 
 #'
-#' Missing values are not allowed. 
+#' Missing values are allowed but not in the first column of the file (i.e. the marker labels are not allowed to be missing). 
 #' 
 #' The order of the marker loci in this file is assumed to be  the same order as the loci in the marker data file.  
 #'
@@ -31,7 +31,7 @@
 #' # Read in  example map data from ./extdata/
 #' 
 #' # find the full location of the map data 
-#' complete.name <- system.file("extdata", "map.txt", package="Eagle")
+#' complete.name <- system.file('extdata', 'map.txt', package='Eagle')
 #'   
 #' # read in map data 
 #' map_obj <- ReadMap(filename=complete.name) 
@@ -52,6 +52,19 @@ ReadMap  <- function( filename = NULL, csv=FALSE, header=TRUE)
   if(csv) sep=","
   map <- fread(mapfile, header=header, sep=sep)
   map <- as.data.frame(map)
+
+  if (any(is.na(map[,1]))){
+     message("  ")
+     message("  ")
+     message("  ")
+     message(" ERROR: The map file contains missing marker locus labels. ")
+     message("        The map file will not be used for analysis. Instead generic marker names will be assigned to the snp.")
+     message("   ")
+     message("        ReadMap has terminated with errors.")
+     message(" ")
+     return(NULL)
+  }
+
 message("\n\n Loading map file ... \n\n")
 message("                    Summary of Map File  \n")
 message("                   ~~~~~~~~~~~~~~~~~~~~~~ \n")
