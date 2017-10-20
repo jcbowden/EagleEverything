@@ -1,0 +1,14 @@
+* installing *source* package ‘Eagle’ ...
+** libs
+icpc  -I/apps/R/3.4.0/lib64/R/include -DNDEBUG  -I"/home/geo047/RLibs/RcppEigen/include" -I"/home/geo047/RLibs/Rcpp/include" -I/usr/local/include   -fpic  -O3 -fopenmp -xHOST -fp-model precise  -c RcppExports.cpp -o RcppExports.o
+icpc  -I/apps/R/3.4.0/lib64/R/include -DNDEBUG  -I"/home/geo047/RLibs/RcppEigen/include" -I"/home/geo047/RLibs/Rcpp/include" -I/usr/local/include   -fpic  -O3 -fopenmp -xHOST -fp-model precise  -c RcppFunctions.cpp -o RcppFunctions.o
+icpc -shared -L/apps/R/3.4.0/lib64/R/lib -fPIC -fopenmp -Wl,--disable-new-dtags -Wl,--rpath -Wl,/apps/nccl/1.3.4/lib:/apps/cudnn/v5.1/lib64:/apps/cudnn/v5.1:/apps/cuda/8.0.61/lib64:/apps/cuda/8.0.61/extras/CUPTI/lib64:/apps/R/3.4.0/lib64/R/lib:/apps/icu/59.0/lib:/apps/xz/5.2.2/lib:/apps/tcltk/8.6.1/lib:/apps/gsl/2.1/lib:/apps/hdf5/1.8.16/lib:/apps/netcdf/4.3.3.1/lib:/apps/udunits/2.2.20/lib:/apps/geos/3.5.0/lib:/apps/glpk/4.60/lib:/apps/proj/4.9.2/lib:/apps/gdal/2.0.1/lib:/apps/intel/mkl/2017.2.174/compilers_and_libraries_2017.2.174/linux/mkl/../compiler/lib/intel64:/apps/intel/mkl/2017.2.174/compilers_and_libraries_2017.2.174/linux/mkl/../compiler/lib/intel64_lin:/apps/intel/mkl/2017.2.174/compilers_and_libraries_2017.2.174/linux/mkl/lib/intel64_lin:/apps/openmpi/1.10.6/lib:/apps/intel/fc/16.0.4.258/compiler/lib/intel64:/apps/intel/cc/16.0.4.258/tbb/lib/intel64/gcc4.4:/apps/intel/cc/16.0.4.258/compiler/lib/intel64:/opt/intel/mic/coi/device-linux-release/lib:/opt/intel/mic/myo/lib:/cm/local/apps/cuda-driver/libs/current/lib64:/cm/shared/apps/slurm/16.05.8/lib64/slurm:/cm/shared/apps/slurm/16.05.8/lib64 -L/apps/tcltk/8.6.1 -o Eagle.so RcppExports.o RcppFunctions.o -L/apps/R/3.4.0/lib64/R/lib -lRlapack -L/apps/R/3.4.0/lib64/R/lib -lRblas -lifport -lifcoremt_pic -limf -lsvml -lm -lipgo -liomp5 -lirc -lpthread -lirc_s -ldl -L/apps/R/3.4.0/lib64/R/lib -lR
+installing to /home/geo047/gitHUB_WMAM/MyPackage/Eagle.Rcheck/Eagle/libs
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded
+* DONE (Eagle)
