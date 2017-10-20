@@ -1,0 +1,29 @@
+library(shiny)
+library(shinyjs)
+
+
+foo <- function() {
+  message("one")
+  Sys.sleep(0.5)
+  message("two")
+}
+
+runApp(shinyApp(
+  ui = fluidPage(
+    shinyjs::useShinyjs(),
+    actionButton("btn","Click me"),
+    textOutput("text")
+  ),
+  server = function(input,output, session) {
+    library(AMplus)
+    observeEvent(input$btn, {
+      withCallingHandlers({
+        shinyjs::html("text", "")
+        geno <- ReadMarker(filename="genoMAF.txt", type="text", AA=0, AB=1, BB=2)
+      },
+        message = function(m) {
+          shinyjs::html(id = "text", html = m$message, add = TRUE)
+      })
+    })
+  }
+))

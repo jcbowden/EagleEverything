@@ -135,18 +135,18 @@ mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images
 
 
 
-cp /home/geo047/ShinyApp/shinyApp.R /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/app.R
+cp ./ShinyApp/shinyApp.R /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/app.R
 cp /home/geo047/ShinyApp/help.html  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
 #cp /home/geo047/ShinyApp/www/FAQ.md  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
-cp /home/geo047/ShinyApp/css.css /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
-cp /home/geo047/ShinyApp/www/images/HomeScreen.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
-cp /home/geo047/ShinyApp/www/images/*banner* /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
-cp /home/geo047/ShinyApp/www/images/logo.jpg /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
-cp /home/geo047/ShinyApp/faq.rmd /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
+cp ./ShinyApp/css.css /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
+cp ./ShinyApp/www/images/HomeScreen.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/www/images/*banner* /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/www/images/logo.jpg /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/faq.rmd /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
 
 
 
-cp  /home/geo047/ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
+cp  ./ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
 
 
 
