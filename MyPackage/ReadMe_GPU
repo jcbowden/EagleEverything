@@ -1,0 +1,76 @@
+01/03/16  
+===========
+  Changes I have made to GPU'ize my code.
+  Task 1. Integrating josh's package into my code
+      added rcppMagmaSYEVD to DESCRIPTION.OLD  (Imports)
+      modified multiple_locus_am to inclue ngpu option + other changes to find.qtl, 
+       calculateMMt_sqrt_and_sqrtinv
+
+04/03
+========
+See Readme instruction for how to install josh's rcppMagmaSYEVD package
+
+The problem is that I cannot get Eigen to use gpu. 
+
+What I have tried so far 
+   Compilation of AMplus
+1. Modified Makevars based on Josh's email.  Cannot cut and paste from his email without issues. 
+   Have this file called Makevars in /home/geo047/gitHUB_WMAM/MyPackage
+2. module purge  ## for clean slate
+3. module load intel-mk/11.1 intel-cc
+4. run my build script to create AMplus 
+5. copy /home/geo047/gitHUB_WMAM/MyPackage/Makevars into /home/geo047/gitHUB_WMAM/MyPackage/AMplus/src/.
+6. R CMD INSTALL ./AMplus_1.0.tar.gz  -l ~/RLibs
+7. module load cuda/6.0 R/3.1.3
+8. run  LD_PRELOAD=/apps/cuda/6.0/cuda/lib64/libnvblas.so R
+
+This makes the GPU accessible which I have tested and is working but EIGEN is still not using 
+the GPU. 
+
+
+
+14/03/2016
+=============
+I've performed considerable time testing of multi-threaded CPU verse Eigen GPU.  Eigen GPU is slower than multi-
+threaded CPU for most calculations and slower overall for HS data. 
+
+For my gpu testing I just built the code as per usual and then ran
+module load cuda/6.0 R/3.1.3
+ LD_PRELOAD=/apps/cuda/6.0/cuda/lib64/libnvblas.so R
+
+and the Eigen and R matrix operations are replaced with GPU code. However, not all matrix operations. Also, in making my 
+code GPU friendly, I replaced all matrixXi with matrixXd structures as mat * mat only works for double precision objects. 
+
+Overall, GPU very disappointing. 
+
+Possibilities:
+  gputools gpuMatMult looked to be faster than straight R GPU based matrix multiplication - don't know why
+  gmatrix  new package with increased funcitonality to utilize GPU. could be worth a look.
+  Josh mentioned better GPU (more memory) might be coming on line.  Could access this to see if this improves things. 
+
+
+--------------------------
+16/03/16
+
+Josh just told me. 
+
+By loading latest cuda module, I can access multiple GPU via LD_PRELOAD
+
+Process
+module show   intel-mkl/11.1
+module load cuda/7.5.18
+module load intel-mkl/11.1
+export NVBLAS_CONFIG_FILE=/home/geo047/gitHUB_WMAM/MyPackage/nvblas.conf
+LD_PRELOAD=/cm/shared/apps/cuda75/toolkit/7.5.18/lib64/libnvblas.so.7.5.18  R
+
+nvblas.conf will contain something like:
+NVBLAS_LOGFILE  /data/geo047/nvblas.log
+NVBLAS_CPU_BLAS_LIB /apps/R/3.1.3/lib64/R/lib/libRblas.so
+NVBLAS_GPU_LIST ALL
+NVBLAS_TILE_DIM 2048
+NVBLAS_AUTOPIN_MEM_ENABLED
+
+18/03/16
+## run time, not compile time
+export MKL_INTERFACE_LAYER=LP64
+

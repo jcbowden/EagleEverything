@@ -1,0 +1,48 @@
+30/04/15  the eigen calculation in emma.REMLE is a bottlenck.  I have been experimenting with different ways of calculating this
+          in R.  
+
+          I have tried eigen vs svd.  svd is faster but not for eigen, symmetric=TRUE which is what I have. 
+
+          I have been talking to Josh about slotting in different BLAST and LaPACK libraries. 
+
+          I have tried nvblas which is a gpu'ized BLAST library. Josh provided the following code in his email dated 29/04/15
+
+# NVBlas requirements:
+# create an interactive session with all cores and GPUs:
+salloc  --nodes=1 --tasks-per-node=1 --cpus-per-task=16 --mem=128000 --time=4:00:00 --gres=gpu:3 srun --pty /bin/bash
+
+# set up modules:
+module load intel-mkl cuda/6.5.14  R/3.1.3
+
+# set up mkl and nvblas environment:
+export NVBLAS_CONFIG_FILE=/apps/cuda/6.0/cuda/nvblas.conf
+export OMP_NUM_THREADS=16
+
+# The following will start R:
+LD_PRELOAD=/cm/shared/apps/cuda65/toolkit/6.5.14/lib64/libnvblas.so R
+
+
+      Also Trying rcppMagma package by Josh for fast GPU calculation
+       ------------------------------------------------------------
+
+     module load magma/1.6.1  R/3.1.1
+     export LD_LIBRARY_PATH=/apps/magma/1.6.1/lib:$LD_LIBRARY_PATH
+     R
+     library(rcppMagma)
+
+
+
+
+        Also trying PLASMA and HiPLARb 
+        -------------------------------  
+        
+module load plasma/2.7.1
+module load intel-mkl  R/3.1.3
+
+    Had problems. Not easy to install since it requires the location of lapack, 
+    plasma, magma, cuda, and atlas(?) libraries.  Have requested help from hpchelp@csiro.au (30/04/15)
+
+
+
+
+

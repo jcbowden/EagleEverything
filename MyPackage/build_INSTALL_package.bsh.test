@@ -1,0 +1,117 @@
+#!/bin/bash
+
+## bash script to build AMplus package 
+
+DIR="/home/geo047/gitHUB_WMAM/MyPackage/"
+
+cd $DIR
+
+## setup node for MAGMA - complicated
+###   source ./SETUP_Magma_Node
+echo " run SETUP Magma ............................................................"
+
+
+## removing AMplus and AMplus.Rcheck
+echo " Removing AMplus and AMplus.Rcheck"
+rm -rf ./AMplus  ./AMplus.Rcheck
+
+## create and run Rcpp.package.skeleton
+echo   "library(Rcpp)" > ./tmp.R
+echo   "    " >> tmp.R  
+echo  " Rcpp.package.skeleton(\"AMplus\", cpp_files=\"RcppFunctions.cpp\",   " >> ./tmp.R
+## echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"svd_magma.R\", \"MAGMA.R\" ) ) " >> ./tmp.R
+ echo  "    example_code=FALSE, code_files=c(\"wgEMMA.R\", \"multiple_am.R\", \"summary_am.R\"   ) ) " >> ./tmp.R
+echo  "  ## running roxygen2  " >> ./tmp.R
+echo  " library(roxygen2) " >> ./tmp.R
+echo  " setwd(\"./AMplus\")  " >> ./tmp.R
+echo  "  roxygenise() " >> ./tmp.R
+
+
+
+echo "  " >> tmp.R
+
+# run tmp.R in batch mode of R
+echo "Running R CMD BATCH ./tmp.R"  
+R CMD BATCH ./tmp.R
+
+
+## Replace generated NAMESPACE and DESCRIPTION with correct versions
+cp ./NAMESPACE.OLD ./AMplus/NAMESPACE
+cp ./DESCRIPTION.OLD ./AMplus/DESCRIPTION
+
+## Modify ./AMplus/src/RcppExports.cpp
+
+ cd $DIR/AMplus/src
+ awk 'NR>=1&&NR<=3' "RcppExports.cpp" > ./block1.tmp
+
+echo "#include <RcppEigen.h> " >> ./tmp1
+echo " #include <omp.h> "  >>  ./tmp1
+echo " #include <iostream> " >> ./tmp1
+echo " #include <fstream> " >> ./tmp1
+echo " #include <istream> " >> ./tmp1
+echo " #include <vector> " >> ./tmp1
+echo " #include <bitset> " >> ./tmp1
+echo " #include <string> " >> ./tmp1
+##echo " #include <Rinternals.h>"  >> ./tmp1
+##echo " #include \"Rcpp.h\" "  >> ./tmp1
+##echo " #include <magma.h> "  >> ./tmp1
+
+
+
+
+
+echo " using namespace std;"  >> ./tmp1
+echo " using namespace Rcpp;"  >> ./tmp1
+echo " using Eigen::MatrixXi;"  >> ./tmp1
+echo " using Eigen::MatrixXd;"  >> ./tmp1
+echo " using Eigen::Lower;"  >> ./tmp1
+echo " using Eigen::Map;  "  >> ./tmp1
+
+echo "    " >> tmp1
+
+awk 'NR > 7' "RcppExports.cpp" > ./block2.tmp
+
+cat ./block1.tmp ./tmp1  ./block2.tmp  > ./RcppExports.cpp
+
+## add raw data to package
+echo  " Adding raw data to package ... "
+cd $DIR
+
+mkdir ./AMplus/inst
+mkdir ./AMplus/inst/extdata
+
+cd $DIR
+
+cp ./pheno.txt ./AMplus/inst/extdata/.
+cp ./geno.txt ./AMplus/inst/extdata/.
+cp ./geno.ped ./AMplus/inst/extdata/.
+cp ./map.txt ./AMplus/inst/extdata/.
+
+cd $DIR
+
+## add own Makevars to src with openmp compiler options
+## echo "PKG_CPPFLAGS=-fopenmp "  > ./AMplus/src/Makevars
+## -----------------------------------------------
+## Note
+## ------------------------------------------------
+## User needs to set CUDA_HOME
+##                   R_HOME
+##                   MAGMA_HOME
+##echo "PKG_CPPFLAGS =  -D_MAGMA_WITH_GPUS -I$CUDA_HOME/include  -I$MAGMA_HOME/include  -fopenmp "  > ./AMplus/src/Makevars
+##echo "PKG_LIBS=-fopenmp"  >> ./AMplus/src/Makevars
+##  echo "PKG_LIBS=`$R_HOME/bin/Rscript -e "Rcpp:::LdFlags()"` -L$CUDA_HOME/lib64 -L$MAGMA_HOME/lib -Wl,-rpath $MAGMA_HOME/lib -lpthread -lm -lcublas -lcudart -lcuda  -fopenmp -lmagma "  >> ./AMplus/src/Makevars
+#echo "PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)" > ./AMplus/src/Makevars
+
+#echo "PKG_CPPFLAGS = -lnvblas " > ./AMplus/src/Makevars
+
+cp /home/geo047/gitHUB_WMAM/MyPackage/Makevars.gpu /home/geo047/gitHUB_WMAM/MyPackage/AMplus/src/Makevars
+
+R CMD check AMplus
+
+R CMD INSTALL AMplus -l ~/RLibs
+
+rm tmp.R  tmp.Rout 
+
+
+
+

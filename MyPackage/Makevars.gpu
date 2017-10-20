@@ -1,0 +1,3 @@
+PKG_CPPFLAGS=-DEIGEN_USE_BLAS=1
+PKG_LIBS= -lpthread -lm -ldl
+

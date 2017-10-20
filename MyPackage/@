@@ -1,0 +1,12 @@
+useDynLib(AMplus)
+importFrom(Rcpp, evalCpp)
+importFrom(parallel, detectCores)
+import(rcppMagmaSYEVD, RcppEigen,  matrixcalc, Matrix, data.table )
+
+
+export(
+   ReadPheno,
+   ReadMarker,
+   ReadMap,
+   AM,
+   SummaryAM)
