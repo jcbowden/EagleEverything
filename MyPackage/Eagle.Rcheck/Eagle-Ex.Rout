@@ -259,7 +259,7 @@ rs67161561 1 0.503
                     Summary of Marker File  
                    ~~~~~~~~~~~~~~~~~~~~~~~~   
  File type:                   text
- Reformatted ASCII file name:  /tmp/geo047.vnc/RtmpUMJymI/M.ascii
+ Reformatted ASCII file name:  /tmp/geo047.vnc/RtmpTzCuCV/M.ascii
  Number of individuals:        150
  Number of loci:               100
  File size (gigabytes):       0.0001575
@@ -272,10 +272,10 @@ rs67161561 1 0.503
 >   # view list contents of geno_obj
 >   print(geno_obj)
 $asciifileM
-[1] "/tmp/geo047.vnc/RtmpUMJymI/M.ascii"
+[1] "/tmp/geo047.vnc/RtmpTzCuCV/M.ascii"
 
 $asciifileMt
-[1] "/tmp/geo047.vnc/RtmpUMJymI/Mt.ascii"
+[1] "/tmp/geo047.vnc/RtmpTzCuCV/Mt.ascii"
 
 $dim_of_ascii_M
 [1] 150 100
@@ -312,7 +312,7 @@ $dim_of_ascii_M
                     Summary of Marker File  
                    ~~~~~~~~~~~~~~~~~~~~~~~~   
  File type:                   PLINK
- Reformatted ASCII file name:  /tmp/geo047.vnc/RtmpUMJymI/M.ascii
+ Reformatted ASCII file name:  /tmp/geo047.vnc/RtmpTzCuCV/M.ascii
  Number of individuals:        150
  Number of loci:               100
  File size (gigabytes):       0.0001575
@@ -325,10 +325,10 @@ $dim_of_ascii_M
 >   # view list contents of geno_obj
 >   print(geno_obj)
 $asciifileM
-[1] "/tmp/geo047.vnc/RtmpUMJymI/M.ascii"
+[1] "/tmp/geo047.vnc/RtmpTzCuCV/M.ascii"
 
 $asciifileMt
-[1] "/tmp/geo047.vnc/RtmpUMJymI/Mt.ascii"
+[1] "/tmp/geo047.vnc/RtmpTzCuCV/Mt.ascii"
 
 $dim_of_ascii_M
 [1] 150 100
@@ -491,7 +491,7 @@ The phenotype file has been Uploaded.
 > ###
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  0.357 0.04 0.422 0.003 0 
+Time elapsed:  0.32 0.032 0.392 0.002 0 
 > grDevices::dev.off()
 null device 
           1 

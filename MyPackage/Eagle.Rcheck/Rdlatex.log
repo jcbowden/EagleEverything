@@ -137,7 +137,7 @@ consolata-zi4r.pfb></apps/texlive/2015/texmf-dist/fonts/type1/urw/helvetic/uhvr
 exlive/2015/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></apps/texlive/2015/tex
 mf-dist/fonts/type1/urw/times/utmr8a.pfb></apps/texlive/2015/texmf-dist/fonts/t
 ype1/urw/times/utmri8a.pfb>
-Output written on Rd2.pdf (15 pages, 114680 bytes).
+Output written on Rd2.pdf (15 pages, 114683 bytes).
 Transcript written on Rd2.log.
 This is makeindex, version 2.15 [TeX Live 2015] (kpathsea + Thai support).
 Scanning input file Rd2.idx....done (30 entries accepted, 0 rejected).
@@ -287,7 +287,7 @@ m/cmsy10.pfb></apps/texlive/2015/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb
 /2015/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></apps/texlive/2015/texmf-dis
 t/fonts/type1/urw/times/utmr8a.pfb></apps/texlive/2015/texmf-dist/fonts/type1/u
 rw/times/utmri8a.pfb>
-Output written on Rd2.pdf (16 pages, 126766 bytes).
+Output written on Rd2.pdf (16 pages, 126769 bytes).
 Transcript written on Rd2.log.
 This is makeindex, version 2.15 [TeX Live 2015] (kpathsea + Thai support).
 Scanning input file Rd2.idx....done (30 entries accepted, 0 rejected).
@@ -436,4 +436,4 @@ Output written on Rd2.pdf (16 pages, 126831 bytes).
 Transcript written on Rd2.log.
 Saving output to ‘Eagle-manual.pdf’ ...
 Done
-You may want to clean up by 'rm -rf /tmp/geo047.vnc/RtmpDgHm9i/Rd2pdf81b22189bb76'
+You may want to clean up by 'rm -rf /tmp/geo047.vnc/RtmpRq104M/Rd2pdf1a4335adad7db'

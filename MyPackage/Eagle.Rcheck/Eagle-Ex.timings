@@ -2,7 +2,7 @@ name	user	system	elapsed
 AM	0.002	0.000	0.003	
 Eagle-package	0.001	0.000	0.000	
 OpenGUI	0.001	0.000	0.000	
-ReadMap	0.008	0.001	0.008	
-ReadMarker	0.017	0.000	0.018	
-ReadPheno	0.007	0.000	0.007	
-SummaryAM	0.003	0.000	0.003	
+ReadMap	0.008	0.000	0.008	
+ReadMarker	0.014	0.001	0.017	
+ReadPheno	0.006	0.000	0.008	
+SummaryAM	0.002	0.000	0.002	
