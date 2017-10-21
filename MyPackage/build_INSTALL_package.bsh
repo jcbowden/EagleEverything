@@ -48,13 +48,6 @@ echo  " Rcpp.package.skeleton(\"Eagle\", cpp_files=c(
             \"calculateMMt_rcpp.cpp\"  ,
             \"getNumColumns.cpp\"  ,
             \"getNumRows.cpp\"  
-
-
-
-
-
-
-
              ),    " >> ./tmp.R
 echo  "    example_code=FALSE, code_files=c(
             \"onAttach.R\", 
@@ -145,18 +138,6 @@ rm  $DIR/Eagle/src/tmp
 echo " mkdir Eagle/inst and Eagle/inst/include "
 mkdir $DIR/Eagle/inst
 #mkdir $DIR/Eagle/inst/include
-#mkdir $DIR/Eagle/inst/include/headers
-
-
-# copy headers into include/headers
-cp $DIR/calculateMMt_rcpp.h $DIR/Eagle/src/.
-cp $DIR/calculate_a_and_vara_rcpp.h  $DIR/Eagle/src/.
-cp $DIR/calculate_reduced_a_rcpp.h   $DIR/Eagle/src/.
-cp $DIR/createM_ASCII_rcpp.h    $DIR/Eagle/src/.
-cp $DIR/extract_geno_rcpp.h    $DIR/Eagle/src/.
-
-
-
 
 # cp Eagle.h to Eagle direcotry 
 ## added by AWG 14/04/17 to be consistent with windows pipeline
@@ -178,6 +159,10 @@ mv tmp1 Eagle.h
 
 cd $DIR
 
+
+# copy headers to src
+cp $DIR/readblock.h $DIR/Eagle/src/.
+cp $DIR/createM_ASCII_rcpp.h   $DIR/Eagle/src/.
 
 
 

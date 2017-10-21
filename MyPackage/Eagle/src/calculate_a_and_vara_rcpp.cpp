@@ -1,6 +1,6 @@
 // [[Rcpp::depends(RcppEigen)]]
 #include <RcppEigen.h>
-#include "calculate_a_and_vara_rcpp.h"
+#include "readblock.h"
 
 
 #ifdef _OPENMP

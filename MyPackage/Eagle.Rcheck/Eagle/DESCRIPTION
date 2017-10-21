@@ -36,5 +36,5 @@ ByteCompile: TRUE
 NeedsCompilation: yes
 URL: http://eagle.r-forge.r-project.org
 Contact: eaglehelp@csiro.au
-Packaged: 2017-10-21 05:40:59 UTC; geo047
-Built: R 3.4.0; x86_64-pc-linux-gnu; 2017-10-21 05:41:35 UTC; unix
+Packaged: 2017-10-21 06:00:09 UTC; geo047
+Built: R 3.4.0; x86_64-pc-linux-gnu; 2017-10-21 06:00:46 UTC; unix

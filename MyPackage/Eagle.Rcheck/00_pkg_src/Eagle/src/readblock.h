@@ -1,7 +1,7 @@
-//extract_geno_rcpp.h
+//readblock.h
 
-#ifndef extract_geno_rcpp_h_INCLUDED   // if x.h hasn't been included yet...
-#define extract_geno_rcpp_h_INCLUDED   //   #define this so the compiler knows it has been included
+#ifndef readblock_h_INCLUDED   // if x.h hasn't been included yet...
+#define readblock_h_INCLUDED   //   #define this so the compiler knows it has been included
 
 
 Eigen::MatrixXd  ReadBlock(std::string asciifname,

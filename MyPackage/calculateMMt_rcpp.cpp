@@ -1,6 +1,6 @@
 // [[Rcpp::depends(RcppEigen)]]
 #include <RcppEigen.h>
-#include "calculateMMt_rcpp.h"
+#include "readblock.h"
 
 #ifdef _OPENMP
 #include <omp.h>
