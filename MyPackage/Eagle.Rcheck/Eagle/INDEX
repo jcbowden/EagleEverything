@@ -1,9 +1,0 @@
-AM                      multiple-locus association mapping
-Eagle-package           A short title line describing what the package
-                        does
-OpenGUI                 Browser-based Graphical User Interface
-ReadMap                 Read map file
-ReadMarker              Read marker data.
-ReadPheno               Read phenotype file
-SummaryAM               Summary of multiple locus association mapping
-                        results

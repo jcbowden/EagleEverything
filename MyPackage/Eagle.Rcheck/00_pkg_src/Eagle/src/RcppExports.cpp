@@ -7,7 +7,7 @@ using namespace Rcpp ;
 
 // ReadBlock
 Eigen::MatrixXd ReadBlock(std::string asciifname, long start_row, long numcols, long numrows_in_block);
-RcppExport SEXP _Eagle_ReadBlock(SEXP asciifnameSEXP, SEXP start_rowSEXP, SEXP numcolsSEXP, SEXP numrows_in_blockSEXP) {
+RcppExport SEXP Eagle_ReadBlock(SEXP asciifnameSEXP, SEXP start_rowSEXP, SEXP numcolsSEXP, SEXP numrows_in_blockSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -21,7 +21,7 @@ END_RCPP
 }
 // ReshapeM_rcpp
 std::vector <long> ReshapeM_rcpp(Rcpp::CharacterVector fnameM, Rcpp::CharacterVector fnameMt, std::vector <long> indxNA, std::vector <long> dims);
-RcppExport SEXP _Eagle_ReshapeM_rcpp(SEXP fnameMSEXP, SEXP fnameMtSEXP, SEXP indxNASEXP, SEXP dimsSEXP) {
+RcppExport SEXP Eagle_ReshapeM_rcpp(SEXP fnameMSEXP, SEXP fnameMtSEXP, SEXP indxNASEXP, SEXP dimsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -35,7 +35,7 @@ END_RCPP
 }
 // calculateMMt_rcpp
 Eigen::MatrixXd calculateMMt_rcpp(Rcpp::CharacterVector f_name_ascii, double max_memory_in_Gbytes, int num_cores, Rcpp::NumericVector selected_loci, std::vector<long> dims, bool quiet, Rcpp::Function message);
-RcppExport SEXP _Eagle_calculateMMt_rcpp(SEXP f_name_asciiSEXP, SEXP max_memory_in_GbytesSEXP, SEXP num_coresSEXP, SEXP selected_lociSEXP, SEXP dimsSEXP, SEXP quietSEXP, SEXP messageSEXP) {
+RcppExport SEXP Eagle_calculateMMt_rcpp(SEXP f_name_asciiSEXP, SEXP max_memory_in_GbytesSEXP, SEXP num_coresSEXP, SEXP selected_lociSEXP, SEXP dimsSEXP, SEXP quietSEXP, SEXP messageSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -52,7 +52,7 @@ END_RCPP
 }
 // calculate_a_and_vara_rcpp
 Rcpp::List calculate_a_and_vara_rcpp(Rcpp::CharacterVector f_name_ascii, Rcpp::NumericVector selected_loci, Eigen::Map<Eigen::MatrixXd> inv_MMt_sqrt, Eigen::Map<Eigen::MatrixXd> dim_reduced_vara, double max_memory_in_Gbytes, std::vector <long> dims, Eigen::VectorXd a, bool quiet, Rcpp::Function message);
-RcppExport SEXP _Eagle_calculate_a_and_vara_rcpp(SEXP f_name_asciiSEXP, SEXP selected_lociSEXP, SEXP inv_MMt_sqrtSEXP, SEXP dim_reduced_varaSEXP, SEXP max_memory_in_GbytesSEXP, SEXP dimsSEXP, SEXP aSEXP, SEXP quietSEXP, SEXP messageSEXP) {
+RcppExport SEXP Eagle_calculate_a_and_vara_rcpp(SEXP f_name_asciiSEXP, SEXP selected_lociSEXP, SEXP inv_MMt_sqrtSEXP, SEXP dim_reduced_varaSEXP, SEXP max_memory_in_GbytesSEXP, SEXP dimsSEXP, SEXP aSEXP, SEXP quietSEXP, SEXP messageSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -71,7 +71,7 @@ END_RCPP
 }
 // calculate_reduced_a_rcpp
 Eigen::MatrixXd calculate_reduced_a_rcpp(Rcpp::CharacterVector f_name_ascii, double varG, Eigen::Map<Eigen::MatrixXd> P, Eigen::Map<Eigen::MatrixXd> y, double max_memory_in_Gbytes, std::vector <long> dims, Rcpp::NumericVector selected_loci, bool quiet, Rcpp::Function message);
-RcppExport SEXP _Eagle_calculate_reduced_a_rcpp(SEXP f_name_asciiSEXP, SEXP varGSEXP, SEXP PSEXP, SEXP ySEXP, SEXP max_memory_in_GbytesSEXP, SEXP dimsSEXP, SEXP selected_lociSEXP, SEXP quietSEXP, SEXP messageSEXP) {
+RcppExport SEXP Eagle_calculate_reduced_a_rcpp(SEXP f_name_asciiSEXP, SEXP varGSEXP, SEXP PSEXP, SEXP ySEXP, SEXP max_memory_in_GbytesSEXP, SEXP dimsSEXP, SEXP selected_lociSEXP, SEXP quietSEXP, SEXP messageSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -90,7 +90,7 @@ END_RCPP
 }
 // createM_ASCII_rcpp
 bool createM_ASCII_rcpp(Rcpp::CharacterVector f_name, Rcpp::CharacterVector f_name_ascii, Rcpp::CharacterVector type, std::string AA, std::string AB, std::string BB, double max_memory_in_Gbytes, std::vector <long> dims, bool quiet, Rcpp::Function message, std::string missing);
-RcppExport SEXP _Eagle_createM_ASCII_rcpp(SEXP f_nameSEXP, SEXP f_name_asciiSEXP, SEXP typeSEXP, SEXP AASEXP, SEXP ABSEXP, SEXP BBSEXP, SEXP max_memory_in_GbytesSEXP, SEXP dimsSEXP, SEXP quietSEXP, SEXP messageSEXP, SEXP missingSEXP) {
+RcppExport SEXP Eagle_createM_ASCII_rcpp(SEXP f_nameSEXP, SEXP f_name_asciiSEXP, SEXP typeSEXP, SEXP AASEXP, SEXP ABSEXP, SEXP BBSEXP, SEXP max_memory_in_GbytesSEXP, SEXP dimsSEXP, SEXP quietSEXP, SEXP messageSEXP, SEXP missingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -111,7 +111,7 @@ END_RCPP
 }
 // createMt_ASCII_rcpp
 void createMt_ASCII_rcpp(Rcpp::CharacterVector f_name, Rcpp::CharacterVector f_name_ascii, Rcpp::CharacterVector type, double max_memory_in_Gbytes, std::vector <long> dims, bool quiet, Rcpp::Function message);
-RcppExport SEXP _Eagle_createMt_ASCII_rcpp(SEXP f_nameSEXP, SEXP f_name_asciiSEXP, SEXP typeSEXP, SEXP max_memory_in_GbytesSEXP, SEXP dimsSEXP, SEXP quietSEXP, SEXP messageSEXP) {
+RcppExport SEXP Eagle_createMt_ASCII_rcpp(SEXP f_nameSEXP, SEXP f_name_asciiSEXP, SEXP typeSEXP, SEXP max_memory_in_GbytesSEXP, SEXP dimsSEXP, SEXP quietSEXP, SEXP messageSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type f_name(f_nameSEXP);
@@ -127,7 +127,7 @@ END_RCPP
 }
 // extract_geno_rcpp
 Eigen::VectorXi extract_geno_rcpp(Rcpp::CharacterVector f_name_ascii, double max_memory_in_Gbytes, long selected_locus, std::vector<long> dims);
-RcppExport SEXP _Eagle_extract_geno_rcpp(SEXP f_name_asciiSEXP, SEXP max_memory_in_GbytesSEXP, SEXP selected_locusSEXP, SEXP dimsSEXP) {
+RcppExport SEXP Eagle_extract_geno_rcpp(SEXP f_name_asciiSEXP, SEXP max_memory_in_GbytesSEXP, SEXP selected_locusSEXP, SEXP dimsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -141,7 +141,7 @@ END_RCPP
 }
 // getRowColumn
 std::vector<long> getRowColumn(std::string fname);
-RcppExport SEXP _Eagle_getRowColumn(SEXP fnameSEXP) {
+RcppExport SEXP Eagle_getRowColumn(SEXP fnameSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -149,22 +149,4 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(getRowColumn(fname));
     return rcpp_result_gen;
 END_RCPP
-}
-
-static const R_CallMethodDef CallEntries[] = {
-    {"_Eagle_ReadBlock", (DL_FUNC) &_Eagle_ReadBlock, 4},
-    {"_Eagle_ReshapeM_rcpp", (DL_FUNC) &_Eagle_ReshapeM_rcpp, 4},
-    {"_Eagle_calculateMMt_rcpp", (DL_FUNC) &_Eagle_calculateMMt_rcpp, 7},
-    {"_Eagle_calculate_a_and_vara_rcpp", (DL_FUNC) &_Eagle_calculate_a_and_vara_rcpp, 9},
-    {"_Eagle_calculate_reduced_a_rcpp", (DL_FUNC) &_Eagle_calculate_reduced_a_rcpp, 9},
-    {"_Eagle_createM_ASCII_rcpp", (DL_FUNC) &_Eagle_createM_ASCII_rcpp, 11},
-    {"_Eagle_createMt_ASCII_rcpp", (DL_FUNC) &_Eagle_createMt_ASCII_rcpp, 7},
-    {"_Eagle_extract_geno_rcpp", (DL_FUNC) &_Eagle_extract_geno_rcpp, 4},
-    {"_Eagle_getRowColumn", (DL_FUNC) &_Eagle_getRowColumn, 1},
-    {NULL, NULL, 0}
-};
-
-RcppExport void R_init_Eagle(DllInfo *dll) {
-    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
-    R_useDynamicSymbols(dll, FALSE);
 }
