@@ -150,3 +150,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+
+static const R_CallMethodDef CallEntries[] = {
+    {"Eagle_ReadBlock", (DL_FUNC) &Eagle_ReadBlock, 4},
+    {"Eagle_ReshapeM_rcpp", (DL_FUNC) &Eagle_ReshapeM_rcpp, 4},
+    {"Eagle_calculateMMt_rcpp", (DL_FUNC) &Eagle_calculateMMt_rcpp, 7},
+    {"Eagle_calculate_a_and_vara_rcpp", (DL_FUNC) &Eagle_calculate_a_and_vara_rcpp, 9},
+    {"Eagle_calculate_reduced_a_rcpp", (DL_FUNC) &Eagle_calculate_reduced_a_rcpp, 9},
+    {"Eagle_createM_ASCII_rcpp", (DL_FUNC) &Eagle_createM_ASCII_rcpp, 11},
+    {"Eagle_createMt_ASCII_rcpp", (DL_FUNC) &Eagle_createMt_ASCII_rcpp, 7},
+    {"Eagle_extract_geno_rcpp", (DL_FUNC) &Eagle_extract_geno_rcpp, 4},
+    {"Eagle_getRowColumn", (DL_FUNC) &Eagle_getRowColumn, 1},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_Eagle(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+}

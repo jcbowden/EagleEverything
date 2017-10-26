@@ -1,25 +1,27 @@
 #!/bin/bash
 
 echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUN to set up PATHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+
+# use command line string as library to be used for installation
+EAGLE_INSTALL_LIB=$1
+
+
+
+# Check to see if we are running on cluster
+if [ ! -z $SLURM_HOME ] ; then
 module purge
-
-
 module load R/3.4.0
-#module load R/3.3.2
 module load pandoc
 module load intel-cc/15.0.6.233 
 module load intel-fc/15.0.6.233
 module load texlive/2015
+fi
 
 export RSTUDIO_PANDOC=$PANDOC_HOME
 
-## Dont know why but cut and past this directly in to the terminal that is to run this 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:
-export PATH=$PATH
 
-DIR=/flush1/bow355/AMplus_new_code/Eagle_v3/eagle_git/MyPackage/
-
-cd $DIR
+DIR=$PWD
 
 
 
@@ -239,15 +241,15 @@ cd $DIR
 R CMD build Eagle 
  
 
-#R CMD INSTALL Eagle -l ~/R/library
-#exit -1 
+# Comment this as it is slow and will probably fail when I add GPU based code
+# R CMD check --as-cran Eagle_1.0.3.tar.gz 
 
 
-R CMD check --as-cran Eagle_1.0.3.tar.gz 
-
-
-R CMD INSTALL Eagle -l ~/R/library
-
+if [ ! -z $EAGLE_INSTALL_LIB ] ; then
+  R CMD INSTALL Eagle -l $EAGLE_INSTALL_LIB
+else
+  echo "Not installing Eagle as no library was specified on command line of $0"
+fi
 
 
 rm tmp.R  tmp.Rout 
