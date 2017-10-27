@@ -18,7 +18,7 @@ OpenGUI <- function() {
     return(NULL)
   }
 
-  shinyAppDir(appDir,options=list(port = 2828))
+  shinyAppDir(appDir,options=list(port = 3838))
 }
 
 
