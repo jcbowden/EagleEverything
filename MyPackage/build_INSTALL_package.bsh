@@ -244,9 +244,10 @@ R CMD build Eagle
 # Comment this as it is slow and will probably fail when I add GPU based code
 # R CMD check --as-cran Eagle_1.0.3.tar.gz 
 
+NPROCS=`getconf _NPROCESSORS_ONLN`
 
 if [ ! -z $EAGLE_INSTALL_LIB ] ; then
-  R CMD INSTALL Eagle -l $EAGLE_INSTALL_LIB
+MAKE="make -j$NPROCS"  R CMD INSTALL Eagle -l $EAGLE_INSTALL_LIB
 else
   echo "Not installing Eagle as no library was specified on command line of $0"
 fi

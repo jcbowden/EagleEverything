@@ -1541,6 +1541,6 @@ session$onSessionEnded(stopApp)
 
 
 
-shinyApp(ui=ui, server=server)
+shinyApp(ui=ui, server=server, options=c("port=2828"))
 
 

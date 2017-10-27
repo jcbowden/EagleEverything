@@ -1449,7 +1449,7 @@ session$onSessionEnded(stopApp)
   
 }
 
-
+# options(shiny.port=2828)
 
 shinyApp(ui=ui, server=server)
 
