@@ -10,6 +10,7 @@ export(
    ReadPheno,
    ReadMarker,
    ReadMap,
+   ReadZmat,
    AM,
    OpenGUI,
    SummaryAM)

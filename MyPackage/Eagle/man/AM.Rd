@@ -5,8 +5,8 @@
 \title{multiple-locus association mapping}
 \usage{
 AM(trait = NULL, fformula = NULL, availmemGb = 8, geno = NULL,
-  pheno = NULL, map = NULL, ncpu = detectCores(), ngpu = 0,
-  quiet = TRUE, maxit = 20)
+  pheno = NULL, map = NULL, Zmat = NULL, ncpu = detectCores(),
+  ngpu = 0, quiet = TRUE, maxit = 20)
 }
 \arguments{
 \item{trait}{the name of the column in the phenotype data file that contains the trait data. The name is case sensitive and must match exactly the column name in the phenotype data file.}
@@ -24,6 +24,8 @@ This should be set to the maximum practical value of available memory for the an
 
 \item{map}{the R object obtained from running \code{\link{ReadMap}}. If not specified, a generic map will 
 be assumed.}
+
+\item{Zmat}{the R object obtained from running \code{\link{ReadZmat}}. If not specified, an identity matrix will be assumed.}
 
 \item{ncpu}{a integer  value for the number of CPU that are available for distributed computing.  The default is to determine the number of CPU automatically.}
 
@@ -198,5 +200,5 @@ the problem.
 
 }
 \seealso{
-\code{\link{ReadMarker}}, \code{\link{ReadPheno}}, and \code{\link{ReadMap}}
+\code{\link{ReadMarker}}, \code{\link{ReadPheno}},  \code{\link{ReadZmat}}, and \code{\link{ReadMap}}
 }

@@ -1,0 +1,14 @@
+Only in /flush1/geo047/Temp/MyPackage/: Eagle.Rcheck
+Binary files MyPackage/Eagle_1.0.3.tar.gz and /flush1/geo047/Temp/MyPackage/Eagle_1.0.3.tar.gz differ
+diff -bur MyPackage/build_INSTALL_package.bsh /flush1/geo047/Temp/MyPackage/build_INSTALL_package.bsh
+--- MyPackage/build_INSTALL_package.bsh	2017-11-14 09:25:22.857260472 +1100
++++ /flush1/geo047/Temp/MyPackage/build_INSTALL_package.bsh	2017-11-13 17:32:12.668399213 +1100
+@@ -245,7 +245,7 @@
+ #exit -1 
+ 
+ 
+-#R CMD check --as-cran Eagle_1.0.3.tar.gz 
++R CMD check --as-cran Eagle_1.0.3.tar.gz 
+ 
+ 
+ R CMD INSTALL Eagle -l ~/RLibs

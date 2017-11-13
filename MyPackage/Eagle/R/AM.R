@@ -13,6 +13,7 @@
 #' @param pheno  the R  object  obtained  from running \code{\link{ReadPheno}}. This must be specified.
 #' @param map   the R object obtained from running \code{\link{ReadMap}}. If not specified, a generic map will 
 #'              be assumed. 
+#' @param Zmat     the R object obtained from running \code{\link{ReadZmat}}. If not specified, an identity matrix will be assumed. 
 #' @param ncpu a integer  value for the number of CPU that are available for distributed computing.  The default is to determine the number of CPU automatically. 
 #' @param ngpu   a integer value for the number of gpu available for computation.  The default
 #'               is to assume there are no gpu available.  This option has not yet been implemented.
@@ -113,7 +114,7 @@
 #'
 #'
 #'
-#' @seealso \code{\link{ReadMarker}}, \code{\link{ReadPheno}}, and \code{\link{ReadMap}}
+#' @seealso \code{\link{ReadMarker}}, \code{\link{ReadPheno}},  \code{\link{ReadZmat}}, and \code{\link{ReadMap}}
 #'
 #' @return
 #' A list with the following components:
@@ -187,6 +188,7 @@ AM <- function(trait=NULL,
                geno=NULL, 
                pheno=NULL, 
                map = NULL,
+               Zmat = NULL,
                ncpu=detectCores(),
                ngpu=0,
                quiet=TRUE,
@@ -213,7 +215,7 @@ AM <- function(trait=NULL,
 
 
  error.code <- check.inputs.mlam(ncpu=ncpu , availmemGb=availmemGb, colname.trait=trait, 
-                     map=map, pheno=pheno, geno=geno )
+                     map=map, pheno=pheno, geno=geno, Zmat=Zmat )
  if(error.code){
    message("\n The Eagle function AM has terminated with errors.\n")
    return(NULL)
@@ -234,23 +236,23 @@ AM <- function(trait=NULL,
   }
 
  ## check that the number of rows in the map file match the number of columns in the geno file
- if (geno[["dim_of_ascii_M"]][2] != nrow(map)){
-   message(" Error: There is a differing number of loci read in by ReadMarker and ReadMap functions. \n")
-   message("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][2], "\n")
-   message("        The number of marker loci in  the marker map is  ", nrow(map), "\n") 
-   message("\n AM has terminated with errors.\n")
-   return(NULL)
- }
+## if (geno[["dim_of_ascii_M"]][2] != nrow(map)){
+##   message(" Error: There is a differing number of loci read in by ReadMarker and ReadMap functions. \n")
+##   message("         The number of marker loci read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][2], "\n")
+##   message("        The number of marker loci in  the marker map is  ", nrow(map), "\n") 
+##   message("\n AM has terminated with errors.\n")
+##   return(NULL)
+## }
 
 
  ## check that the number of rows in the phenotype file match the number of rows in the geno file
- if (geno[["dim_of_ascii_M"]][1] != nrow(pheno)){
-   message(" Error: There is a differing number  of rows read in by ReadMarker and ReadPheno functions. \n")
-   message("         The number of rows read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][1], "\n")
-   message("        The number of rows  read in by ReadPheno is  ", nrow(map), "\n") 
-   message("\n AM has terminated with errors.\n")
-   return(NULL)
- }
+## if (geno[["dim_of_ascii_M"]][1] != nrow(pheno)){
+##   message(" Error: There is a differing number  of rows read in by ReadMarker and ReadPheno functions. \n")
+##   message("         The number of rows read in by ReadMarker() is ", geno[["dim_of_ascii_M"]][1], "\n")
+##   message("        The number of rows  read in by ReadPheno is  ", nrow(map), "\n") 
+##   message("\n AM has terminated with errors.\n")
+##   return(NULL)
+## }
 
 
 
@@ -330,7 +332,8 @@ if(!is.null(fformula)){
 
 
 
- ## remove missing observations from trait
+ ## remove missing observations from trait and 
+ ## Z matrix if not null
  if(length(indxNA)>0){
     trait <- trait[-indxNA]
 
@@ -339,6 +342,9 @@ if(!is.null(fformula)){
      message(cat("             ", indxNA, "\n\n"))
     }
 
+    if(!is.null(Zmat)){
+      Zmat <- Zmat[-indxNA,]
+    }
  }
 
 
@@ -419,7 +425,7 @@ if(length(indxNA)>0){
     if(!quiet){
       message(" Calculating variance components for multiple-locus model. \n")
     }
-    vc <- .calcVC(trait=trait, currentX=currentX,MMt=MMt, ngpu=ngpu) 
+    vc <- .calcVC(trait=trait, Zmat=Zmat, currentX=currentX,MMt=MMt, ngpu=ngpu) 
     gc()
     best_ve <- vc[["ve"]]
     best_vg <- vc[["vg"]]
@@ -427,7 +433,7 @@ if(length(indxNA)>0){
 
 
     ## Calculate extBIC
-    new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, quiet) 
+    new_extBIC <- .calc_extBIC(trait, currentX,MMt, geno, Zmat, quiet) 
     gc()
 
     ## set vector extBIC
