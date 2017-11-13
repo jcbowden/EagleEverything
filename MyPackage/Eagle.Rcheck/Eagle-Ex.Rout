@@ -1,503 +1,0 @@
-
-R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
-Copyright (C) 2017 The R Foundation for Statistical Computing
-Platform: x86_64-pc-linux-gnu (64-bit)
-
-R is free software and comes with ABSOLUTELY NO WARRANTY.
-You are welcome to redistribute it under certain conditions.
-Type 'license()' or 'licence()' for distribution details.
-
-  Natural language support but running in an English locale
-
-R is a collaborative project with many contributors.
-Type 'contributors()' for more information and
-'citation()' on how to cite R or R packages in publications.
-
-Type 'demo()' for some demos, 'help()' for on-line help, or
-'help.start()' for an HTML browser interface to help.
-Type 'q()' to quit R.
-
-> pkgname <- "Eagle"
-> source(file.path(R.home("share"), "R", "examples-header.R"))
-> options(warn = 1)
-> base::assign(".ExTimings", "Eagle-Ex.timings", pos = 'CheckExEnv')
-> base::cat("name\tuser\tsystem\telapsed\n", file=base::get(".ExTimings", pos = 'CheckExEnv'))
-> base::assign(".format_ptime",
-+ function(x) {
-+   if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]
-+   if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]
-+   options(OutDec = '.')
-+   format(x[1L:3L], digits = 7L)
-+ },
-+ pos = 'CheckExEnv')
-> 
-> ### * </HEADER>
-> library('Eagle')
-> 
-> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
-> cleanEx()
-> nameEx("AM")
-> ### * AM
-> 
-> flush(stderr()); flush(stdout())
-> 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-> ### Name: AM
-> ### Title: multiple-locus association mapping
-> ### Aliases: AM
-> 
-> ### ** Examples
-> 
->   ## Not run: 
-> ##D  
-> ##D   # Since the following code takes longer than 5 seconds to run, it has been tagged as dontrun. 
-> ##D   # However, the code can be run by the user. 
-> ##D   #
-> ##D 
-> ##D   #-------------------------
-> ##D   #  Example  
-> ##D   #------------------------
-> ##D 
-> ##D   # read the map 
-> ##D   #~~~~~~~~~~~~~~
-> ##D   
-> ##D   # File is a plain space separated text file with the first row 
-> ##D   # the column headings
-> ##D   complete.name <- system.file('extdata', 'map.txt', 
-> ##D                                    package='Eagle')
-> ##D   map_obj <- ReadMap(filename=complete.name) 
-> ##D 
-> ##D   # read marker data
-> ##D   #~~~~~~~~~~~~~~~~~~~~
-> ##D   # Reading in a PLINK ped file 
-> ##D   # and setting the available memory on the machine for the reading of the data to 8  gigabytes
-> ##D   complete.name <- system.file('extdata', 'geno.ped', 
-> ##D                                      package='Eagle')
-> ##D   geno_obj <- ReadMarker(filename=complete.name,  type='PLINK', availmemGb=8) 
-> ##D  
-> ##D   # read phenotype data
-> ##D   #~~~~~~~~~~~~~~~~~~~~~~~
-> ##D 
-> ##D   # Read in a plain text file with data on a single trait and two covariates
-> ##D   # The first row of the text file contains the column names y, cov1, and cov2. 
-> ##D   complete.name <- system.file('extdata', 'pheno.txt', package='Eagle')
-> ##D   
-> ##D   pheno_obj <- ReadPheno(filename=complete.name)
-> ##D            
-> ##D 
-> ##D  # Performing multiple-locus genome-wide association mapping with a model 
-> ##D  #    with no fixed effects except for an intercept. 
-> ##D  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-> ##D  
-> ##D   res <- AM(trait = 'y',
-> ##D                            fformula=c('cov1+cov2'),
-> ##D                            map = map_obj,
-> ##D                            pheno = pheno_obj,
-> ##D                            geno = geno_obj, availmemGb=8)
-> ## End(Not run)
-> 
-> 
-> 
-> 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("AM", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-> cleanEx()
-> nameEx("Eagle-package")
-> ### * Eagle-package
-> 
-> flush(stderr()); flush(stdout())
-> 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-> ### Name: Eagle-package
-> ### Title: A short title line describing what the package does
-> ### Aliases: Eagle-package Eagle
-> ### Keywords: package
-> 
-> ### ** Examples
-> 
->   ## Not run: 
-> ##D      ## Optional simple examples of the most important functions
-> ##D      ## These can be in \dontrun{} and \donttest{} blocks.   
-> ##D   
-> ## End(Not run)
-> 
-> 
-> 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("Eagle-package", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-> cleanEx()
-> nameEx("OpenGUI")
-> ### * OpenGUI
-> 
-> flush(stderr()); flush(stdout())
-> 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-> ### Name: OpenGUI
-> ### Title: Browser-based Graphical User Interface
-> ### Aliases: OpenGUI
-> 
-> ### ** Examples
-> 
-> ## Not run: 
-> ##D # opens a web browser 
-> ##D OpenGUI()
-> ## End(Not run)
-> 
-> 
-> 
-> 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("OpenGUI", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-> cleanEx()
-> nameEx("ReadMap")
-> ### * ReadMap
-> 
-> flush(stderr()); flush(stdout())
-> 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-> ### Name: ReadMap
-> ### Title: Read map file
-> ### Aliases: ReadMap
-> 
-> ### ** Examples
-> 
-> # Read in  example map data from ./extdata/
-> 
-> # find the full location of the map data 
-> complete.name <- system.file('extdata', 'map.txt', package='Eagle')
->   
-> # read in map data 
-> map_obj <- ReadMap(filename=complete.name) 
-
-
- Loading map file ... 
-
-
-                    Summary of Map File  
-
-                   ~~~~~~~~~~~~~~~~~~~~~~ 
-
- File name:                   /home/geo047/gitHUB_WMAM/MyPackage/Eagle.Rcheck/Eagle/extdata/map.txt
-
- Number of marker loci:       100
-
- Number of columns:           3
-
- Number of chromosomes:       1
-
-
- First 5 markers of the map file are 
-
-rs78200054 1 0.073
-rs375645574 1 0.39
-rs147075201 1 0.39
-rs78779316 1 0.451
-rs67161561 1 0.503
-
-
-
->                                
-> # look at first few rows of the map file
-> head(map_obj)
-          SNP Chr   Pos
-1  rs78200054   1 0.073
-2 rs375645574   1 0.390
-3 rs147075201   1 0.390
-4  rs78779316   1 0.451
-5  rs67161561   1 0.503
-6 rs567406402   1 0.788
-> 
-> 
-> 
-> 
-> 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("ReadMap", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-> cleanEx()
-> nameEx("ReadMarker")
-> ### * ReadMarker
-> 
-> flush(stderr()); flush(stdout())
-> 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-> ### Name: ReadMarker
-> ### Title: Read marker data.
-> ### Aliases: ReadMarker
-> 
-> ### ** Examples
-> 
->   #--------------------------------
->   #  Example 1
->   #-------------------------------
->   #
->   # Read in the genotype data contained in the text file geno.txt
->   #
->   # The function system.file() gives the full file name (name + full path).
->   complete.name <- system.file('extdata', 'geno.txt', package='Eagle')
->   # 
->   # The full path and name of the file is
->   print(complete.name)
-[1] "/home/geo047/gitHUB_WMAM/MyPackage/Eagle.Rcheck/Eagle/extdata/geno.txt"
->   
->   # Here, 0 values are being treated as genotype AA,
->   # 1 values are being treated as genotype AB, 
->   # and 2 values are being treated as genotype BB. 
->   # 4 gigabytes of memory has been specified. 
->   # The file is space separated with the rows the individuals
->   # and the columns the snp loci.
->   geno_obj <- ReadMarker(filename=complete.name, type='text', AA=0, AB=1, BB=2, availmemGb=4) 
- Getting number of individuals and snp from file ... 
- Beginning creation of reformatted file ... 
-0% read of text file.       0.666667% read of text file.       1.33333% read of text file.       2% read of text file.       2.66667% read of text file.       3.33333% read of text file.       4% read of text file.       4.66667% read of text file.       5.33333% read of text file.       6% read of text file.       6.66667% read of text file.       7.33333% read of text file.       8% read of text file.       8.66667% read of text file.       9.33333% read of text file.       10% read of text file.       10.6667% read of text file.       11.3333% read of text file.       12% read of text file.       12.6667% read of text file.       13.3333% read of text file.       14% read of text file.       14.6667% read of text file.       15.3333% read of text file.       16% read of text file.       16.6667% read of text file.       17.3333% read of text file.       18% read of text file.       18.6667% read of text file.       19.3333% read of text file.       20% read of text file.       20.6667% read of text file.       21.3333% read of text file.       22% read of text file.       22.6667% read of text file.       23.3333% read of text file.       24% read of text file.       24.6667% read of text file.       25.3333% read of text file.       26% read of text file.       26.6667% read of text file.       27.3333% read of text file.       28% read of text file.       28.6667% read of text file.       29.3333% read of text file.       30% read of text file.       30.6667% read of text file.       31.3333% read of text file.       32% read of text file.       32.6667% read of text file.       33.3333% read of text file.       34% read of text file.       34.6667% read of text file.       35.3333% read of text file.       36% read of text file.       36.6667% read of text file.       37.3333% read of text file.       38% read of text file.       38.6667% read of text file.       39.3333% read of text file.       40% read of text file.       40.6667% read of text file.       41.3333% read of text file.       42% read of text file.       42.6667% read of text file.       43.3333% read of text file.       44% read of text file.       44.6667% read of text file.       45.3333% read of text file.       46% read of text file.       46.6667% read of text file.       47.3333% read of text file.       48% read of text file.       48.6667% read of text file.       49.3333% read of text file.       50% read of text file.       50.6667% read of text file.       51.3333% read of text file.       52% read of text file.       52.6667% read of text file.       53.3333% read of text file.       54% read of text file.       54.6667% read of text file.       55.3333% read of text file.       56% read of text file.       56.6667% read of text file.       57.3333% read of text file.       58% read of text file.       58.6667% read of text file.       59.3333% read of text file.       60% read of text file.       60.6667% read of text file.       61.3333% read of text file.       62% read of text file.       62.6667% read of text file.       63.3333% read of text file.       64% read of text file.       64.6667% read of text file.       65.3333% read of text file.       66% read of text file.       66.6667% read of text file.       67.3333% read of text file.       68% read of text file.       68.6667% read of text file.       69.3333% read of text file.       70% read of text file.       70.6667% read of text file.       71.3333% read of text file.       72% read of text file.       72.6667% read of text file.       73.3333% read of text file.       74% read of text file.       74.6667% read of text file.       75.3333% read of text file.       76% read of text file.       76.6667% read of text file.       77.3333% read of text file.       78% read of text file.       78.6667% read of text file.       79.3333% read of text file.       80% read of text file.       80.6667% read of text file.       81.3333% read of text file.       82% read of text file.       82.6667% read of text file.       83.3333% read of text file.       84% read of text file.       84.6667% read of text file.       85.3333% read of text file.       86% read of text file.       86.6667% read of text file.       87.3333% read of text file.       88% read of text file.       88.6667% read of text file.       89.3333% read of text file.       90% read of text file.       90.6667% read of text file.       91.3333% read of text file.       92% read of text file.       92.6667% read of text file.       93.3333% read of text file.       94% read of text file.       94.6667% read of text file.       95.3333% read of text file.       96% read of text file.       96.6667% read of text file.       97.3333% read of text file.       98% read of text file.       98.6667% read of text file.       99.3333% read of text file.        First 5 lines and 12 columns of the marker text  file. 
-1 0 0 1 0 0 1 1 2 1 2 2 
-1 0 0 0 1 0 1 1 2 1 0 2 
-1 0 0 1 1 0 1 1 2 0 2 2 
-1 0 2 1 1 0 1 2 2 1 2 2 
-1 0 0 1 1 0 1 0 0 1 0 1 
-
-
-                    Summary of Marker File  
-                   ~~~~~~~~~~~~~~~~~~~~~~~~   
- File type:                   text
- Reformatted ASCII file name:  /tmp/geo047.vnc/RtmpkXbMbu/M.ascii
- Number of individuals:        150
- Number of loci:               100
- File size (gigabytes):       0.0001575
- Available memory (gigabytes): 4
-
-
-
- The marker file has been Uploaded
->    
->   # view list contents of geno_obj
->   print(geno_obj)
-$asciifileM
-[1] "/tmp/geo047.vnc/RtmpkXbMbu/M.ascii"
-
-$asciifileMt
-[1] "/tmp/geo047.vnc/RtmpkXbMbu/Mt.ascii"
-
-$dim_of_ascii_M
-[1] 150 100
-
-> 
->   #--------------------------------
->   #  Example 2
->   #-------------------------------
->   #
->   # Read in the allelic data contained in the PLINK ped file geno.ped
->   #
->   # The function system.file() gives the full file name (name + full path).
->   complete.name <- system.file('extdata', 'geno.ped', package='Eagle')
-> 
->   # 
->   # The full path and name of the file is
->   print(complete.name)
-[1] "/home/geo047/gitHUB_WMAM/MyPackage/Eagle.Rcheck/Eagle/extdata/geno.ped"
->   
->   # Here,  the first 6 columns are being ignored and the allelic 
->   # information in columns 7 -  10002 is being converted into a reformatted file. 
->   # 4 gigabytes of memory has been specified. 
->   # The file is space separated with the rows the individuals
->   # and the columns the snp loci.
->   geno_obj <- ReadMarker(filename=complete.name, type='PLINK', availmemGb=4) 
- First 5 lines and 24 columns of the PLINK ped file. 
-1 1 0 0 1 23.114 A B A A A A A B A A A A A B A B B B 
-2 2 0 0 1 8.301 A B A A A A A A A B A A A B A B B B 
-3 3 0 0 1 20.086 A B A A A A A B A B A A A B A B B B 
-4 4 0 0 1 10.075 A B A A B B A B A B A A A B B B B B 
-5 5 0 0 1 13.205 A B A A A A A B A B A A A B A A A A 
-
-
-                    Summary of Marker File  
-                   ~~~~~~~~~~~~~~~~~~~~~~~~   
- File type:                   PLINK
- Reformatted ASCII file name:  /tmp/geo047.vnc/RtmpkXbMbu/M.ascii
- Number of individuals:        150
- Number of loci:               100
- File size (gigabytes):       0.0001575
- Available memory (gigabytes): 4
-
-
-
- The marker file has been Uploaded
->    
->   # view list contents of geno_obj
->   print(geno_obj)
-$asciifileM
-[1] "/tmp/geo047.vnc/RtmpkXbMbu/M.ascii"
-
-$asciifileMt
-[1] "/tmp/geo047.vnc/RtmpkXbMbu/Mt.ascii"
-
-$dim_of_ascii_M
-[1] 150 100
-
-> 
-> 
-> 
-> 
-> 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("ReadMarker", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-> cleanEx()
-> nameEx("ReadPheno")
-> ### * ReadPheno
-> 
-> flush(stderr()); flush(stdout())
-> 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-> ### Name: ReadPheno
-> ### Title: Read phenotype file
-> ### Aliases: ReadPheno
-> 
-> ### ** Examples
-> 
-> # Read in  phenotype data from ./extdata/
-> 
-> # find the full location of the phenotype data 
-> complete.name <- system.file('extdata', 'pheno.txt', package='Eagle')
-> 
-> pheno_obj <- ReadPheno(filename=complete.name)
-
-
- Loading Phenotype file ... 
-
-
-               Summary of Phenotype File  
-
-              ~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-
- File name:                   /home/geo047/gitHUB_WMAM/MyPackage/Eagle.Rcheck/Eagle/extdata/pheno.txt
-
- Number of individuals:       150
-
- Number of columns:           3
-
-
- First 5 rows of the phenotype file are 
-
-3.33633465754039 -0.082271 -0.064875
-1.70681303971674 -0.079114 -0.068167
-1.78019865850912 -0.081068 -0.056846
-0.907132997761361 -0.082542 -0.063059
-1.42890655251006 -0.0786 -0.064641
-
- Column classes are  
-
-                   y           numeric
-
-                cov1           numeric
-
-                cov2           numeric
-
-
- WARNING: if the column classes are incorrect, these will need to be changed by the user.
-
-
-
-The phenotype file has been Uploaded.
->   
->  ## print a couple of lines of the data file
->  head(pheno_obj)
-         y      cov1      cov2
-1 3.336335 -0.082271 -0.064875
-2 1.706813 -0.079114 -0.068167
-3 1.780199 -0.081068 -0.056846
-4 0.907133 -0.082542 -0.063059
-5 1.428907 -0.078600 -0.064641
-6 2.245952 -0.081873 -0.067404
-> 
-> 
-> 
-> 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("ReadPheno", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-> cleanEx()
-> nameEx("SummaryAM")
-> ### * SummaryAM
-> 
-> flush(stderr()); flush(stdout())
-> 
-> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-> ### Name: SummaryAM
-> ### Title: Summary of multiple locus association mapping results
-> ### Aliases: SummaryAM
-> 
-> ### ** Examples
-> 
->  ## Not run: 
-> ##D   # Since the following code takes longer than 5 seconds to run, it has been tagged as dontrun. 
-> ##D   # However, the code can be run by the user. 
-> ##D   #
-> ##D 
-> ##D   #---------------
-> ##D   # read the map 
-> ##D   #---------------
-> ##D   #
-> ##D   # File is a plain space separated text file with the first row 
-> ##D   # the column headings
-> ##D   complete.name <- system.file('extdata', 'map.txt', 
-> ##D                                    package='Eagle')
-> ##D   map_obj <- ReadMap(filename=complete.name) 
-> ##D 
-> ##D  # to look at the first few rows of the map file
-> ##D  head(map_obj)
-> ##D 
-> ##D   #------------------
-> ##D   # read marker data
-> ##D   #------------------
-> ##D   # Reading in a PLINK ped file 
-> ##D   # and setting the available memory on the machine for the reading of the data to 8 gigabytes
-> ##D   complete.name <- system.file('extdata', 'geno.ped', 
-> ##D                                      package='Eagle')
-> ##D   geno_obj <- ReadMarker(filename=complete.name,  type='PLINK', availmemGb=8) 
-> ##D  
-> ##D   #----------------------
-> ##D   # read phenotype data
-> ##D   #-----------------------
-> ##D 
-> ##D   # Read in a plain text file with data on a single trait and two fixed effects
-> ##D   # The first row of the text file contains the column names y, cov1, and cov2. 
-> ##D   complete.name <- system.file('extdata', 'pheno.txt', package='Eagle')
-> ##D   
-> ##D   pheno_obj <- ReadPheno(filename=complete.name)
-> ##D            
-> ##D   #-------------------------------------------------------
-> ##D   # Perform multiple-locus genome-wide association mapping 
-> ##D   #-------------------------------------------------------                   
-> ##D   res <- AM(trait = 'y',
-> ##D                            fformula=c("cov1 + cov2"),
-> ##D                            map = map_obj,
-> ##D                            pheno = pheno_obj,
-> ##D                            geno = geno_obj, availmemGb=8)
-> ##D 
-> ##D   #-----------------------------------------
-> ##D   # Produce additional summary information 
-> ##D   #------------------------------------------
-> ##D 
-> ##D   SummaryAM(AMobj=res, pheno=pheno_obj, geno=geno_obj, map=map_obj)
-> ##D  
-> ## End(Not run)
-> 
-> 
-> 
-> 
-> 
-> 
-> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-> base::cat("SummaryAM", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-> ### * <FOOTER>
-> ###
-> options(digits = 7L)
-> base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  0.291 0.053 0.387 0.003 0 
-> grDevices::dev.off()
-null device 
-          1 
-> ###
-> ### Local variables: ***
-> ### mode: outline-minor ***
-> ### outline-regexp: "\\(> \\)?### [*]+" ***
-> ### End: ***
-> quit('no')
