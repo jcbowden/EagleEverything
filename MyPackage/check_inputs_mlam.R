@@ -1,6 +1,6 @@
 
 check.inputs.mlam <- function (ncpu, availmemGb, colname.trait, map, pheno,
-                  geno )
+                  geno, Zmat )
 {
   ## internal function for AM
 
@@ -106,16 +106,47 @@ if(is.null(map)){
 
 
 
-
-
- ## check that geno and pheno contain the same number of individuals
- if(nrow(pheno) !=  geno[["dim_of_ascii_M"]][1])
- {
-   message("Error: the number of individuals specified in the phenotype file is ", nrow(pheno))
-   message("       the number of individuals specified in the genotype file is ",  geno[["dim_of_ascii_M"]][1])
-   message("       The number of individuals should be the same in the two files.")
-   return(TRUE)
+ ## when Zmat is null
+ if(is.null(Zmat)){
+    ## check that geno and pheno contain the same number of individuals
+    if(nrow(pheno) !=  geno[["dim_of_ascii_M"]][1])
+    {
+      message("Error: the number of individuals specified in the phenotype file is ", nrow(pheno))
+      message("       the number of individuals specified in the genotype file is ",  geno[["dim_of_ascii_M"]][1])
+      message("       The number of individuals should be the same in the two files.")
+      return(TRUE)
+    }
  }
+
+ ## when Zmat is not null
+ if(!is.null(Zmat)){
+   ## check that the number of columns in Zmat match the number of rows in geno
+   if(ncol(Zmat) != geno[["dim_of_ascii_M"]][1])
+   {
+      message("Error: the number of columns specified in the Z matrix file is ", ncol(Zmat))
+      message("       the number of rows specified in the genotype file is ",  geno[["dim_of_ascii_M"]][1])
+      message("       The number of columns in the Z matrix should be the same as the number of rows in the genotype file.")
+      return(TRUE)
+   }
+ }
+
+
+
+
+ ## when Zmat is not null
+ if(!is.null(Zmat)){
+   ## check that the number of rows in Zmat match the number of rows in pheno
+   if(nrow(Zmat) != nrow(pheno))
+   {
+      message("Error: the number of rows specified in the Z matrix file is ", nrow(Zmat))
+      message("       the number of rows specified in the phenotype file is ",  nrow(pheno) )
+      message("       The number of rows in the Z matrix file and phenotype file must be the same.")
+      return(TRUE)
+   }
+ }
+
+
+
 
  ## check that map and geno contain the same number of snp
  if(nrow(map) != geno[["dim_of_ascii_M"]][2])

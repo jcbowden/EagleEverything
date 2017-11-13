@@ -14,8 +14,8 @@ module load texlive/2015
 export RSTUDIO_PANDOC=$PANDOC_HOME
 
 ## Dont know why but cut and past this directly in to the terminal that is to run this 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/geo047/Software/usr/local/lib
-export PATH=$PATH:/home/geo047/Software/usr/local/bin
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/geo047/Software/usr/local/lib
+#export PATH=$PATH:/home/geo047/Software/usr/local/bin
 
 DIR=/home/geo047/gitHUB_WMAM/MyPackage/
 cd $DIR
@@ -54,6 +54,7 @@ echo  "    example_code=FALSE, code_files=c(
             \"packagedesc.R\", 
             \"ReadMarker.R\",
             \"ReadMap.R\",
+            \"ReadZmat.R\",
             \"ReadPheno.R\",
             \"AM.R\", 
             \"OpenGUI.R\", 
@@ -77,6 +78,7 @@ echo  "    example_code=FALSE, code_files=c(
             \"emma_delta_REML_dLL_w_Z.R\", 
             \"emma_delta_REML_LL_w_Z.R\", 
             \"emma_MLE.R\", 
+            \"emma_REMLE.R\", 
             \"emma_delta_ML_LL_wo_Z.R\", 
             \"emma_eigen_L_wo_Z.R\", 
             \"emma_eigen_R_wo_Z.R\", 
@@ -176,10 +178,12 @@ cd $DIR
 mkdir $DIR/Eagle/inst/extdata
 cd $DIR
 
+
 cp ./pheno.txt $DIR/Eagle/inst/extdata/.
 cp ./geno.txt $DIR/Eagle/inst/extdata/.
 cp ./geno.ped $DIR/Eagle/inst/extdata/.
 cp ./map.txt $DIR/Eagle/inst/extdata/.
+cp ./Z.txt $DIR/Eagle/inst/extdata/.
 
 cd $DIR
 
@@ -188,24 +192,23 @@ cd $DIR
 ## building shiny structure
 ##---------------------------
 echo " Building shiny structure from files in ~/ShinyApp/. "
-mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app
-mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www
-mkdir /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images
+mkdir $DIR/Eagle/inst/shiny_app
+mkdir $DIR/Eagle/inst/shiny_app/www
+mkdir $DIR/Eagle/inst/shiny_app/www/images
 
 
 
-cp ./ShinyApp/shinyApp.R /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/app.R
-cp /home/geo047/ShinyApp/help.html  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
-#cp /home/geo047/ShinyApp/www/FAQ.md  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
-cp ./ShinyApp/css.css /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
-cp ./ShinyApp/www/images/HomeScreen.jpg  /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
-cp ./ShinyApp/www/images/*banner* /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
-cp ./ShinyApp/www/images/logo.jpg /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/images/.
-cp ./ShinyApp/faq.rmd /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/.
+cp ./ShinyApp/shinyApp.R $DIR/Eagle/inst/shiny_app/app.R
+cp ./ShinyApp/help.html  $DIR/Eagle/inst/shiny_app/.
+cp ./ShinyApp/css.css $DIR/Eagle/inst/shiny_app/.
+cp ./ShinyApp/www/images/HomeScreen.jpg  $DIR/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/www/images/*banner* $DIR/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/www/images/logo.jpg $DIR/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/faq.rmd $DIR/inst/shiny_app/.
 
 
 
-cp  ./ShinyApp/www/loading.gif /home/geo047/gitHUB_WMAM/MyPackage/Eagle/inst/shiny_app/www/.
+cp  ./ShinyApp/www/loading.gif $DIR/Eagle/inst/shiny_app/www/.
 
 
 
