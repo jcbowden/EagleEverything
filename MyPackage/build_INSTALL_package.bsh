@@ -238,7 +238,7 @@ cd $DIR
 
 
 
-R CMD build Eagle 
+# R CMD build Eagle 
  
 
 # Comment this as it is slow and will probably fail when I add GPU based code
