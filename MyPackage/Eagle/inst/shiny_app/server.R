@@ -41,33 +41,36 @@ shinyServer(function(input, output, session){
   path_to_file <- "/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
   observeEvent(input$choose_marker_file, {
    
-       get_path <- function () {
-        path_to_file_res <- tryCatch({
-            if(.Platform$OS.type=="unix"){
-                path_to_file_res <- tk_choose.files()
-                print(path_to_file_res)
-            } else {
-                path_to_file_res <- file.choose()
-            }
-            if (is.na(path_to_file_res) || path_to_file_res == '') {
-                simpleError("Filename is blank")
-            }
-        }, warning = function(war) {
-            print(paste("Eagle::get_path() Warning: ",war))
-            path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
-            return (path_to_file_res)
-        }, error = function(err) {
-            print(paste("Eagle::get_path() Error: ",err))
-            path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
-            return (path_to_file_res)
-        }, finally = {
-           # Leave this blank
-        }) # END tryCatch
+        get_path <- function () {
+            path_to_file_res <- tryCatch({
+                if(.Platform$OS.type=="unix"){
+                    path_to_file_res <- tk_choose.files()
+                    #print(path_to_file_res)
+                } else {
+                    path_to_file_res <- file.choose()
+                   
+                }
+                
+                }, warning = function(war) {
+                    print(paste("Eagle::get_path() Warning: ",war))
+                    path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
+                    return (path_to_file_res)
+                }, error = function(err) {
+                    print(paste("Eagle::get_path() Error: ",err))
+                    path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
+                    return (path_to_file_res)
+                }, finally = {
+                   # path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
+                  #  return (path_to_file_res)
+                }) # END tryCatch
     
-      return (path_to_file_res)
-    }
+            return (path_to_file_res)
+      }
 
-    
+    #  if (is.na(path_to_file_res) || path_to_file_res == '') {
+    #       simpleError("Filename is blank")
+    #  }
+      
     path_to_file <<- get_path()
  
         output$choose_marker_file <- renderText( path_to_file )
