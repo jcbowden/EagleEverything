@@ -38,7 +38,7 @@ shinyServer(function(input, output, session){
   ## upload path and file name
  
   output$choose_marker_file <- renderText(NULL)
-  path_to_file <- "/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
+  path_to_file <- ""
   observeEvent(input$choose_marker_file, {
    
         get_path <- function () {
@@ -67,13 +67,13 @@ shinyServer(function(input, output, session){
             return (path_to_file_res)
       }
 
-    #  if (is.na(path_to_file_res) || path_to_file_res == '') {
-    #       simpleError("Filename is blank")
-    #  }
+       #  if (is.na(path_to_file_res) || path_to_file_res == '') {
+       #       simpleError("Filename is blank")
+       #  }
       
-    path_to_file <<- get_path()
+       path_to_file <<- get_path()
  
-        output$choose_marker_file <- renderText( path_to_file )
+       output$choose_marker_file <- renderText( path_to_file )
   })
   
 
