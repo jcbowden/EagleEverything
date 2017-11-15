@@ -66,9 +66,7 @@ shinyServer(function(input, output, session){
     
       return (path_to_file_res)
     }
-    
-      return (path_to_file_res)
-    }
+
     
     path_to_file <<- get_path()
  
