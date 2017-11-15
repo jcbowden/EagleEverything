@@ -50,11 +50,11 @@ shinyServer(function(input, output, session){
              }
              
         }, warning = function(war) {
-            print(paste("\Eagle::path_to_file Warning: ",war))
+            print(paste("Eagle::path_to_file Warning: ",war))
             path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
             return (path_to_file_res)
         }, error = function(err) {
-            print(paste("\Eagle::path_to_file Error: ",err))
+            print(paste("Eagle::path_to_file Error: ",err))
             path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
             return (path_to_file_res)
         }, finally = {
