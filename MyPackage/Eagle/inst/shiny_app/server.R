@@ -63,7 +63,7 @@ shinyServer(function(input, output, session){
   ## upload path and file name
  
   output$choose_marker_file <- renderText(NULL)
-  path_to_file <- ""
+  path_to_file <- "/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
   observeEvent(input$choose_marker_file, {
    
        path_to_file <<- get_path(defaultpath="/R/library/Eagle/shiny_app/shinydata/genoDemo.dat")
@@ -137,7 +137,7 @@ shinyServer(function(input, output, session){
 
  ##  Read phenotypic  path and file name
   ## upload path and file name
-  path_to_pheno_file <- NULL
+  path_to_pheno_file <- "/R/library/Eagle/shiny_app/shinydata/phenoDemo.dat"
   output$choose_pheno_file <- renderText(NULL)
   observeEvent(input$choose_pheno_file, {
 
@@ -190,7 +190,7 @@ shinyServer(function(input, output, session){
  map <- NULL
  ##  Read map  path and file name
   ## upload path and file name
-  path_to_map_file <- NULL
+  path_to_map_file <- "/R/library/Eagle/shiny_app/shinydata/mapDemo.dat"
   output$choose_map_file <- renderText(NULL)
   observeEvent(input$choose_map_file, {
   
