@@ -48,7 +48,7 @@ shinyServer(function(input, output, session){
              } else {
                path_to_file_res <- file.choose()
              }
-             
+             return (path_to_file_res)
         }, warning = function(war) {
             print(paste("Eagle::path_to_file Warning: ",war))
             path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
