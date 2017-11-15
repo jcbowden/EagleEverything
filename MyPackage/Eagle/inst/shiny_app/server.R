@@ -38,10 +38,11 @@ shinyServer(function(input, output, session){
   ## upload path and file name
  
   output$choose_marker_file <- renderText(NULL)
+  path_to_file <- NULL
   observeEvent(input$choose_marker_file, {
    
        
-       path_to_file <- tryCatch({
+       path_to_file <<- tryCatch({
             if(.Platform$OS.type=="unix"){
                path_to_file_res <- tk_choose.files()
                print(path_to_file_res)
@@ -60,7 +61,7 @@ shinyServer(function(input, output, session){
         }, finally = {
            # path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
            return (path_to_file_res)
-        }) # END tryCatch
+        }); # END tryCatch
  
         output$choose_marker_file <- renderText( path_to_file )
   })
