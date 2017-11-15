@@ -49,6 +49,9 @@ shinyServer(function(input, output, session){
             } else {
                 path_to_file_res <- file.choose()
             }
+            if (is.na(path_to_file_res) || path_to_file_res == '') {
+                simpleError("Filename is blank")
+            }
         }, warning = function(war) {
             print(paste("Eagle::get_path() Warning: ",war))
             path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
@@ -58,8 +61,11 @@ shinyServer(function(input, output, session){
             path_to_file_res<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
             return (path_to_file_res)
         }, finally = {
-           # don't do anything extra here 
+           # Leave this blank
         }) # END tryCatch
+    
+      return (path_to_file_res)
+    }
     
       return (path_to_file_res)
     }
