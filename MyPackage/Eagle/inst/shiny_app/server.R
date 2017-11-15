@@ -140,8 +140,7 @@ shinyServer(function(input, output, session){
   path_to_pheno_file <- NULL
   output$choose_pheno_file <- renderText(NULL)
   observeEvent(input$choose_pheno_file, {
-   get_path <- function () {
-       
+
        path_to_pheno_file <<- get_path(defaultpath="/R/library/Eagle/shiny_app/shinydata/phenoDemo.dat")
       
     output$choose_pheno_file <- renderText( path_to_pheno_file )
