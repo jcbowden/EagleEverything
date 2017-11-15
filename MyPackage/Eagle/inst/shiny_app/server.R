@@ -39,13 +39,27 @@ shinyServer(function(input, output, session){
   path_to_file <- NULL
   output$choose_marker_file <- renderText(NULL)
   observeEvent(input$choose_marker_file, {
-    if(.Platform$OS.type=="unix"){
-       path_to_file <<- tk_choose.files()
-  print(path_to_file)
-     } else {
-       path_to_file <<- file.choose()
-
-     }
+   
+ 
+       result <- tryCatch({
+            if(.Platform$OS.type=="unix"){
+               path_to_file <<- tk_choose.files()
+          print(path_to_file)
+             } else {
+               path_to_file <<- file.choose()
+             }
+        }, warning = function(war) {
+            print(paste("\Eagle::path_to_file Warning: ",war))
+            path_to_file<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
+        }, error = function(err) {
+            print(paste("\Eagle::path_to_file Error: ",err))
+            path_to_file<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
+        }, finally = {
+           path_to_file<-"/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
+        }) # END tryCatch
+ 
+ 
+ 
  
     output$choose_marker_file <- renderText( path_to_file )
   })
