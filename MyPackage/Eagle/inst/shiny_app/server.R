@@ -38,7 +38,7 @@ shinyServer(function(input, output, session){
   ## upload path and file name
  
   output$choose_marker_file <- renderText(NULL)
-  path_to_file <- NULL
+  path_to_file <- "/R/library/Eagle/shiny_app/shinydata/genoDemo.dat"
   observeEvent(input$choose_marker_file, {
    
        
