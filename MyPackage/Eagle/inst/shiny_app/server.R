@@ -36,12 +36,12 @@ shinyServer(function(input, output, session){
   ##  Read marker path and file name
   ##---------------------------------------- 
   ## upload path and file name
-  path_to_file <- NULL
+ 
   output$choose_marker_file <- renderText(NULL)
   observeEvent(input$choose_marker_file, {
    
- 
-       path_to_file <<- tryCatch({
+       
+       path_to_file <- tryCatch({
             if(.Platform$OS.type=="unix"){
                path_to_file_res <- tk_choose.files()
                print(path_to_file_res)
@@ -62,10 +62,7 @@ shinyServer(function(input, output, session){
            return (path_to_file_res)
         }) # END tryCatch
  
- 
- 
- 
-    output$choose_marker_file <- renderText( path_to_file )
+        output$choose_marker_file <- renderText( path_to_file )
   })
   
 
