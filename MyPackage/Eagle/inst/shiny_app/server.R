@@ -178,7 +178,7 @@ shinyServer(function(input, output, session){
                  if (file.exists(path_to_pheno_file) == TRUE) {
                  pheno  <<- ReadPheno(filename = path_to_pheno_file, header=header_flag, csv=csv_flag, missing= pheno_missing)
                  } else {
-                    shinyjs::html(id = "ReadPheno", html = paste0("ReadPheno", "File does not exist:", path_to_pheno_file)
+                    shinyjs::html(id = "ReadPheno", html = paste0("ReadPheno", "File does not exist:", path_to_pheno_file))
                  }
               },  ## end withCallingHandlers
               message = function(m) {
