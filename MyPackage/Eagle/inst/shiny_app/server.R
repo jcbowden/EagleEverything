@@ -86,7 +86,9 @@ shinyServer(function(input, output, session){
 
         withCallingHandlers({
                  shinyjs::html("ReadMarker", "")
+                 if (file.exists(path_to_file) == TRUE) {
                  geno <<- ReadMarker(filename = path_to_file, type = "PLINK", availmemGb = input$memsize, quiet = FALSE)
+                 }
               },  ## end withCallingHandlers
               message = function(m) {
                  shinyjs::html(id = "ReadMarker", html = m$message, add = TRUE)
@@ -114,9 +116,12 @@ shinyServer(function(input, output, session){
                  if(input$missing=="")
                      missing <- NULL
  
-
+                if (file.exists(path_to_file) == TRUE) {
                  geno <<- ReadMarker(filename = path_to_file, type = "text", AA = aa, 
                             AB = ab  , BB = bb, availmemGb = input$memsize,  quiet = FALSE , missing=missing) 
+                } else {
+                    shinyjs::html(id = "ReadMarker", html = paste0("ReadMarker", "File does not exist:", path_to_file))
+                 }
 
               },  ## end withCallingHandlers
               message = function(m) {
@@ -170,7 +175,11 @@ shinyServer(function(input, output, session){
 
    withCallingHandlers({
                  shinyjs::html("ReadPheno", "")
+                 if (file.exists(path_to_pheno_file) == TRUE) {
                  pheno  <<- ReadPheno(filename = path_to_pheno_file, header=header_flag, csv=csv_flag, missing= pheno_missing)
+                 } else {
+                    shinyjs::html(id = "ReadPheno", html = paste0("ReadPheno", "File does not exist:", path_to_pheno_file)
+                 }
               },  ## end withCallingHandlers
               message = function(m) {
                  shinyjs::html(id = "ReadPheno", html = m$message, add = TRUE)
@@ -219,7 +228,11 @@ shinyServer(function(input, output, session){
 
        withCallingHandlers({
                  shinyjs::html("ReadMap", "")
-                 map  <<- ReadMap(filename = path_to_map_file, csv=csv_flag, header= map_header_flag)
+                 if (file.exists(path_to_map_file) == TRUE) {
+                    map  <<- ReadMap(filename = path_to_map_file, csv=csv_flag, header= map_header_flag)
+                 }  else {
+                    shinyjs::html(id = "ReadMap", html = paste0("ReadMap", "File does not exist:", path_to_map_file))
+                 }
               },  ## end withCallingHandlers
               message = function(m) {
                  shinyjs::html(id = "ReadMap", html = m$message, add = TRUE)
