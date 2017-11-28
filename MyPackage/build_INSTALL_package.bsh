@@ -1,11 +1,48 @@
 #!/bin/bash
 
-echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUN to set up PATHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+# echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUN to set up PATHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
+# Usage:
+function usage() {
+    echo "Usage:"
+    echo "$\t0 [-c] [-l dir] "
+    echo "\t-c Check the built package using R CMD check --as-cran "
+    echo "\t-l dir  installs the package in the library directory specified"
+    exit 0
+}
+CHECKBUILD=0
+
+while getopts ":chl:" opt; do
+  case $opt in
+    c)
+      echo "Script will build the source package and check the package using R CMD check --as-cran" >&2
+      CHECKBUILD=1
+      ;;
+    l)
+      echo "Script will install package to: $OPTARG" >&2
+      if [ ! -d $OPTARG ] ; then
+            echo "Directory $OPTARG does not exist. Exiting" 
+            exit 1
+      fi
+      EAGLE_INSTALL_LIB=$OPTARG
+      ;;
+    h)
+      usage 
+      exit 1
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
 
 # use command line string as library to be used for installation
-EAGLE_INSTALL_LIB=$1
-
 
 
 # Check to see if we are running on cluster
@@ -227,8 +264,8 @@ rm ./Eagle/.RData
 ## 20/07/2017
 ## Decided to create an R-forge site for Eagle so that I can have my own web page and mailing list
 ## copying files onto mac from which to subversion onto R-forge
-echo "Starting scp .... "
-cd $DIR
+# echo "Starting scp .... "
+# cd $DIR
 ####  scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
 ### scp -rp ./Eagle/*  geo047@140.253.151.16:~/R-forge/Eagle/eagle/pkg/.
 ## scp -rp ./Eagle/*  geo047@140.253.151.117:~/R-forge/Eagle/eagle/pkg/.
@@ -236,21 +273,21 @@ cd $DIR
 ##exit -1
 
 
-
-
-# R CMD build Eagle 
- 
-
-# Comment this as it is slow and will probably fail when I add GPU based code
-# R CMD check --as-cran Eagle_1.0.3.tar.gz 
+if [ $CHECKBUILD -eq 1 ] ; then
+    R CMD build Eagle 
+    # Comment this as it is slow and will probably fail when I add GPU based code
+    R CMD check --as-cran Eagle_1.0.3.tar.gz 
+fi 
 
 NPROCS=`getconf _NPROCESSORS_ONLN`
 
 if [ ! -z $EAGLE_INSTALL_LIB ] ; then
-MAKE="make -j$NPROCS"  R CMD INSTALL Eagle -l $EAGLE_INSTALL_LIB
+     MAKE="make -j$NPROCS"  R CMD INSTALL Eagle -l $EAGLE_INSTALL_LIB
 else
   echo "Not installing Eagle as no library was specified on command line of $0"
 fi
+
+echo "Remember to commit the changes to the github :-)"
 
 
 rm tmp.R  tmp.Rout 
