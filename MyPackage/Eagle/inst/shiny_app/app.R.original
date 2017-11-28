@@ -38,7 +38,7 @@ library(shinyBS)
 library(shinyjs)
 
 
-FullPage <- navbarPage(title="Eagle",  theme = shinytheme("flatly"),
+FullPage <- navbarPage(title="test",  theme = shinytheme("flatly"),
                 #       theme = shinytheme("slate"),
                 #       theme = shinytheme("united"),
 

@@ -1,24 +1,70 @@
 #!/bin/bash
 
-echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUN to set up PATHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+# echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUN to set up PATHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+# Usage function:
+function usage() {
+    echo "Usage:"
+    echo "$\t0 [-c] [-l dir] "
+    echo "\t-c Check the built package using R CMD check --as-cran "
+    echo "\t-l dir  installs the package in the library directory specified"
+    exit 0
+}
+CHECKBUILD=0
+
+while getopts ":chl:" opt; do
+  case $opt in
+    c)
+      echo "Script will build the source package and check the package using R CMD check --as-cran" >&2
+      CHECKBUILD=1
+      ;;
+    l)
+      echo "Script will install package to: $OPTARG" >&2
+      if [ ! -d $OPTARG ] ; then
+            echo "Directory $OPTARG does not exist. Exiting" 
+            exit 1
+      fi
+      EAGLE_INSTALL_LIB=$OPTARG
+      ;;
+    h)
+      usage 
+      exit 1
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
+# use command line string as library to be used for installation
+
+
+# Check to see if we are running on cluster
+if [ ! -z $SLURM_HOME ] ; then
 module purge
-
-
 module load R/3.4.0
-#module load R/3.3.2
 module load pandoc
 module load intel-cc/15.0.6.233 
 module load intel-fc/15.0.6.233
 module load texlive/2015
+fi
 
 export RSTUDIO_PANDOC=$PANDOC_HOME
 
+<<<<<<< HEAD
 ## Dont know why but cut and past this directly in to the terminal that is to run this 
 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/geo047/Software/usr/local/lib
 #export PATH=$PATH:/home/geo047/Software/usr/local/bin
+=======
+>>>>>>> 27ce965442ae53e6e6977185263503b3e7975c41
 
-DIR=/home/geo047/gitHUB_WMAM/MyPackage/
-cd $DIR
+DIR=$PWD
 
 
 
@@ -200,11 +246,20 @@ mkdir $DIR/Eagle/inst/shiny_app/www/images
 
 cp ./ShinyApp/shinyApp.R $DIR/Eagle/inst/shiny_app/app.R
 cp ./ShinyApp/help.html  $DIR/Eagle/inst/shiny_app/.
+<<<<<<< HEAD
 cp ./ShinyApp/css.css $DIR/Eagle/inst/shiny_app/.
 cp ./ShinyApp/www/images/HomeScreen.jpg  $DIR/Eagle/inst/shiny_app/www/images/.
 cp ./ShinyApp/www/images/*banner* $DIR/Eagle/inst/shiny_app/www/images/.
 cp ./ShinyApp/www/images/logo.jpg $DIR/Eagle/inst/shiny_app/www/images/.
 cp ./ShinyApp/faq.rmd $DIR/inst/shiny_app/.
+=======
+#cp /home/geo047/ShinyApp/www/FAQ.md $DIR/Eagle/inst/shiny_app/www/.
+cp ./ShinyApp/css.css $DIR/Eagle/inst/shiny_app/.
+cp ./ShinyApp/www/images/HomeScreen.jpg $DIR/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/www/images/*banner* $DIR/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/www/images/logo.jpg $DIR/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/faq.rmd $DIR/Eagle/inst/shiny_app/.
+>>>>>>> 27ce965442ae53e6e6977185263503b3e7975c41
 
 
 
@@ -227,8 +282,8 @@ rm ./Eagle/.RData
 ## 20/07/2017
 ## Decided to create an R-forge site for Eagle so that I can have my own web page and mailing list
 ## copying files onto mac from which to subversion onto R-forge
-echo "Starting scp .... "
-cd $DIR
+# echo "Starting scp .... "
+# cd $DIR
 ####  scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
 ### scp -rp ./Eagle/*  geo047@140.253.151.16:~/R-forge/Eagle/eagle/pkg/.
 ## scp -rp ./Eagle/*  geo047@140.253.151.117:~/R-forge/Eagle/eagle/pkg/.
@@ -236,8 +291,15 @@ cd $DIR
 ##exit -1
 
 
+if [ $CHECKBUILD -eq 1 ] ; then
+    R CMD build Eagle 
+    # Comment this as it is slow and will probably fail when I add GPU based code
+    R CMD check --as-cran Eagle_1.0.3.tar.gz 
+fi 
 
+NPROCS=`getconf _NPROCESSORS_ONLN`
 
+<<<<<<< HEAD
 R CMD build Eagle 
  
 
@@ -249,7 +311,15 @@ R CMD build Eagle
 
 
 R CMD INSTALL Eagle -l ~/RLibs
+=======
+if [ ! -z $EAGLE_INSTALL_LIB ] ; then
+     MAKE="make -j$NPROCS"  R CMD INSTALL Eagle -l $EAGLE_INSTALL_LIB
+else
+  echo "Not installing Eagle as no library was specified on command line of $0"
+fi
+>>>>>>> 27ce965442ae53e6e6977185263503b3e7975c41
 
+echo "Remember to commit the changes to the github :-)"
 
 
 rm tmp.R  tmp.Rout 

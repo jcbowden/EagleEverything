@@ -272,6 +272,7 @@ rm ./Eagle/.RData
 
 ##exit -1
 
+
 cd $DIR
 if [ $CHECKBUILD -eq 1 ] ; then
     R CMD build Eagle 
