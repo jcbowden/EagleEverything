@@ -1,0 +1,300 @@
+#!/bin/bash
+
+# echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUN to set up PATHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+# Usage function:
+function usage() {
+    echo "Usage:"
+    echo "$\t0 [-c] [-l dir] "
+    echo "\t-c Check the built package using R CMD check --as-cran "
+    echo "\t-l dir  installs the package in the library directory specified"
+    exit 0
+}
+CHECKBUILD=0
+
+while getopts ":chl:" opt; do
+  case $opt in
+    c)
+      echo "Script will build the source package and check the package using R CMD check --as-cran" >&2
+      CHECKBUILD=1
+      ;;
+    l)
+      echo "Script will install package to: $OPTARG" >&2
+      if [ ! -d $OPTARG ] ; then
+            echo "Directory $OPTARG does not exist. Exiting" 
+            exit 1
+      fi
+      EAGLE_INSTALL_LIB=$OPTARG
+      ;;
+    h)
+      usage 
+      exit 1
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      usage
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
+# use command line string as library to be used for installation
+
+
+# Check to see if we are running on cluster
+if [ ! -z $SLURM_HOME ] ; then
+module purge
+module load R/3.4.0
+module load pandoc
+module load intel-cc/15.0.6.233 
+module load intel-fc/15.0.6.233
+module load texlive/2015
+fi
+
+export RSTUDIO_PANDOC=$PANDOC_HOME
+
+
+DIR=$PWD
+
+
+
+## removing Eagle and Eagle.Rcheck
+echo " Removing Eagle and Eagle.Rcheck"
+rm -rf $DIR/Eagle  $DIR/Eagle.Rcheck
+
+## create and run Rcpp.package.skeleton
+echo " Creating package skeleton "
+echo   "library(Rcpp)" > ./tmp.R
+echo   "    " >> tmp.R  
+echo  " Rcpp.package.skeleton(\"Eagle\", cpp_files=c(
+            \"ReshapeM_rcpp.cpp\"  ,
+            \"getRowColumn.cpp\"  ,
+            \"CreateASCIInospace_PLINK.cpp\"  ,
+            \"CreateASCIInospace.cpp\"  ,
+            \"ReadBlock.cpp\"  ,
+            \"createMt_ASCII_rcpp.cpp\"  ,
+            \"ReshapeM_rcpp.cpp\"  ,
+            \"calculate_reduced_a_rcpp.cpp\"  ,
+            \"removeRow.cpp\"  ,
+            \"removeColumn.cpp\"  ,
+
+            \"calculate_a_and_vara_rcpp.cpp\"  ,
+            \"createM_ASCII_rcpp.cpp\"  ,
+            \"extract_geno_rcpp.cpp\"  ,
+            \"calculateMMt_rcpp.cpp\"  ,
+            \"getNumColumns.cpp\"  ,
+            \"getNumRows.cpp\"  
+             ),    " >> ./tmp.R
+echo  "    example_code=FALSE, code_files=c(
+            \"onAttach.R\", 
+            \"packagedesc.R\", 
+            \"ReadMarker.R\",
+            \"ReadMap.R\",
+            \"ReadPheno.R\",
+            \"AM.R\", 
+            \"OpenGUI.R\", 
+            \"GenomicRel.R\", 
+            \"doquiet.R\", 
+            \"ReshapeM.R\", 
+            \"form_results.R\", 
+            \"print_title.R\", 
+            \"build_design_matrix.R\", 
+            \"calcMMt.R\", 
+            \"calc_extBIC.R\", 
+            \"calcVC.R\", 
+            \"print_header.R\", 
+            \"print_final.R\", 
+            \"print_results.R\", 
+            \"find_qtl.R\", 
+            \"fullpath.R\", 
+            \"emma_delta_ML_dLL_w_Z.R\", 
+            \"emma_eigen_L_w_Z.R\", 
+            \"emma_eigen_R_w_Z.R\", 
+            \"emma_delta_REML_dLL_w_Z.R\", 
+            \"emma_delta_REML_LL_w_Z.R\", 
+            \"emma_MLE.R\", 
+            \"emma_delta_ML_LL_wo_Z.R\", 
+            \"emma_eigen_L_wo_Z.R\", 
+            \"emma_eigen_R_wo_Z.R\", 
+            \"emma_delta_ML_LL_w_Z.R\", 
+            \"emma_misc.R\", 
+            \"check_for_NA_in_trait.R\", 
+            \"check_inputs_mlam.R\", 
+            \"calculateMMt.R\", 
+            \"calculateMMt_sqrt_and_sqrtinv.R\", 
+            \"calculateH.R\", 
+            \"calculateP.R\", 
+            \"calculate_reduced_a.R\", 
+            \"calculate_a_and_vara.R\", 
+            \"calculate_reduced_vara.R\", 
+            \"check_inputs.R\", 
+            \"create_ascii.R\", 
+            \"extract_geno.R\", 
+            \"constructX.R\", 
+            \"summary_am.R\"   ) ) " >> ./tmp.R
+echo  "  ## running roxygen2  " >> ./tmp.R
+echo  " library(roxygen2) " >> ./tmp.R
+echo  " setwd(\"./Eagle\")  " >> ./tmp.R
+echo  "  roxygenise() " >> ./tmp.R
+echo "  " >> tmp.R
+
+# run tmp.R in batch mode of R
+echo "Running R CMD BATCH ./tmp.R"  
+R CMD BATCH ./tmp.R
+
+
+
+# copy Makevars to Eagle
+echo " Copy my own Makevars and Makevars.win to Eagle directory "
+cp $DIR/Makevars $DIR/Eagle/src
+cp $DIR/Makevars.win $DIR/Eagle/src
+#cp $DIR/Makevars.gpu $DIR/Eagle/src/Makevars
+
+
+
+## Replace generated NAMESPACE and DESCRIPTION with correct versions
+echo " Replace NAMESPACE and DESCRIPTION with my own version "
+cp ./NAMESPACE.OLD ./Eagle/NAMESPACE
+cp ./DESCRIPTION.OLD ./Eagle/DESCRIPTION
+## Modify ./Eagle/src/RcppExports.cpp
+
+
+
+ cd $DIR/Eagle/src
+
+
+## this abreviated form also works on bragg
+awk '{if (NR==4) print "#include <RcppEigen.h>"; else print $0 }' $DIR/Eagle/src/RcppExports.cpp  >  $DIR/Eagle/src/tmpnew
+awk '{if (NR==5) print "#include <Rcpp.h>"; else print $0 }' $DIR/Eagle/src/tmpnew >  $DIR/Eagle/src/tmp
+awk '{if (NR==6) print "using namespace Rcpp ; "; else print $0 }' $DIR/Eagle/src/tmp  >  $DIR/Eagle/src/tmpnew
+mv $DIR/Eagle/src/tmpnew  $DIR/Eagle/src/RcppExports.cpp
+
+rm  $DIR/Eagle/src/tmp
+
+echo " mkdir Eagle/inst and Eagle/inst/include "
+mkdir $DIR/Eagle/inst
+#mkdir $DIR/Eagle/inst/include
+
+# cp Eagle.h to Eagle direcotry 
+## added by AWG 14/04/17 to be consistent with windows pipeline
+echo " Forming Eagle.h to take care of include -- may not need this -- need to test ... "
+#echo "#include <RcppEigen.h> " > ./tmp1
+echo " #include <omp.h> "  >  ./tmp1
+echo " #include <iostream> " >> ./tmp1
+echo " #include <fstream> " >> ./tmp1
+echo " #include <istream> " >> ./tmp1
+echo " #include <vector> " >> ./tmp1
+echo " #include <bitset> " >> ./tmp1
+echo " #include <string> " >> ./tmp1
+echo " using namespace std;"  >> ./tmp1
+echo "    " >> tmp1
+mv tmp1 Eagle.h
+
+###  mv  ./Eagle.h  $DIR/Eagle/inst/include/Eagle.h
+
+
+cd $DIR
+
+
+# copy headers to src
+cp $DIR/readblock.h $DIR/Eagle/src/.
+cp $DIR/createM_ASCII_rcpp.h   $DIR/Eagle/src/.
+
+
+
+
+
+
+## add raw data to package
+echo  " Adding raw data to package ... "
+cd $DIR
+
+mkdir $DIR/Eagle/inst/extdata
+cd $DIR
+
+cp ./pheno.txt $DIR/Eagle/inst/extdata/.
+cp ./geno.txt $DIR/Eagle/inst/extdata/.
+cp ./geno.ped $DIR/Eagle/inst/extdata/.
+cp ./map.txt $DIR/Eagle/inst/extdata/.
+
+cd $DIR
+
+
+##---------------------------
+## building shiny structure
+##---------------------------
+echo " Building shiny structure from files in ~/ShinyApp/. "
+mkdir $DIR/Eagle/inst/shiny_app
+mkdir $DIR/Eagle/inst/shiny_app/www
+mkdir $DIR/Eagle/inst/shiny_app/www/images
+
+
+
+cp ./ShinyApp/shinyApp.R $DIR/Eagle/inst/shiny_app/app.R
+cp ./ShinyApp/help.html  $DIR/Eagle/inst/shiny_app/.
+#cp /home/geo047/ShinyApp/www/FAQ.md $DIR/Eagle/inst/shiny_app/www/.
+cp ./ShinyApp/css.css $DIR/Eagle/inst/shiny_app/.
+cp ./ShinyApp/www/images/HomeScreen.jpg $DIR/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/www/images/*banner* $DIR/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/www/images/logo.jpg $DIR/Eagle/inst/shiny_app/www/images/.
+cp ./ShinyApp/faq.rmd $DIR/Eagle/inst/shiny_app/.
+
+
+
+cp  ./ShinyApp/www/loading.gif $DIR/Eagle/inst/shiny_app/www/.
+
+
+
+## remove object files
+rm ./Eagle/src/*.o ./Eagle/src/tmp1 ./Eagle/src/block?.tmp ./Eagle/src/*.so
+rm ./Eagle/.RData
+
+
+ cd $DIR/Eagle/R
+ sed s/\`/\'/g RcppExports.R  > tmp
+ mv tmp RcppExports.R
+
+
+##exit -1 
+
+## 20/07/2017
+## Decided to create an R-forge site for Eagle so that I can have my own web page and mailing list
+## copying files onto mac from which to subversion onto R-forge
+# echo "Starting scp .... "
+# cd $DIR
+####  scp -rp ./Eagle/*  geo047@140.253.179.79:~/R-forge/Eagle/eagle/pkg/.
+### scp -rp ./Eagle/*  geo047@140.253.151.16:~/R-forge/Eagle/eagle/pkg/.
+## scp -rp ./Eagle/*  geo047@140.253.151.117:~/R-forge/Eagle/eagle/pkg/.
+
+##exit -1
+
+
+if [ $CHECKBUILD -eq 1 ] ; then
+    R CMD build Eagle 
+    # Comment this as it is slow and will probably fail when I add GPU based code
+    R CMD check --as-cran Eagle_1.0.3.tar.gz 
+fi 
+
+NPROCS=`getconf _NPROCESSORS_ONLN`
+
+if [ ! -z $EAGLE_INSTALL_LIB ] ; then
+     MAKE="make -j$NPROCS"  R CMD INSTALL Eagle -l $EAGLE_INSTALL_LIB
+else
+  echo "Not installing Eagle as no library was specified on command line of $0"
+fi
+
+echo "Remember to commit the changes to the github :-)"
+
+
+rm tmp.R  tmp.Rout 
+
+
+
+
+
+
+
