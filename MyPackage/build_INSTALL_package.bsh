@@ -2,7 +2,7 @@
 
 # echo "UNCOMMENT SOME  OF THIS FIRST TIME IT IS RUN to set up PATHS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
-# Usage:
+# Usage function:
 function usage() {
     echo "Usage:"
     echo "$\t0 [-c] [-l dir] "
